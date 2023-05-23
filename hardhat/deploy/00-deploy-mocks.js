@@ -12,4 +12,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   console.log('Mocks deployed!');
 };
 
-module.exports.tags = ['all', '_', 'mocks'];
+module.exports.tags = ['all', 'DACAggregator', 'mocks'];

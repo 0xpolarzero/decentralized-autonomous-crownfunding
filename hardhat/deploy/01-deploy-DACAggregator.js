@@ -1,14 +1,14 @@
 const { network, ethers } = require('hardhat');
-const { developmentChains } = require('../helper-hardhat-config');
+const { developmentChains, PHASE_PERIOD } = require('../helper-hardhat-config');
 const { verify } = require('../utils/verify');
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const args = [];
+  const args = [PHASE_PERIOD];
 
-  const _ = await deploy('_', {
+  const dacAggregator = await deploy('DACAggregator', {
     from: deployer,
     args,
     log: true,
@@ -20,8 +20,8 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     process.env.ARBISCAN_API_KEY
   ) {
     console.log('Verifying contract...');
-    await verify(_.address, args);
+    await verify(dacAggregator.address, args);
   }
 };
 
-module.exports.tags = ['all', '_', 'main'];
+module.exports.tags = ['all', 'DACAggregator', 'main'];
