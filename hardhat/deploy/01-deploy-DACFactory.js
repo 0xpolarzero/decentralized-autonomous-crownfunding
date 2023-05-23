@@ -1,12 +1,12 @@
 const { network, ethers } = require('hardhat');
-const { developmentChains, PHASE_PERIOD } = require('../helper-hardhat-config');
+const { developmentChains } = require('../helper-hardhat-config');
 const { verify } = require('../utils/verify');
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const args = [PHASE_PERIOD];
+  const args = [];
 
   const dacFactory = await deploy('DACFactory', {
     from: deployer,

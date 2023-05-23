@@ -24,8 +24,7 @@ const {
         submitProjectArgs = {
           collaborators: [deployer.address, user.address], // collaborators
           shares: [70, 30], // shares of 70% and 30%
-          target: ethers.utils.parseEther('10'), // target of 10 ETH
-          timeSpan: 2 * 30 * 24 * 60 * 60, // time span of 2 months
+          paymentInterval: 7 * 24 * 60 * 60, // payment interval of 7 days
           name: 'Project 1', // project name
           description: 'Project 1 description', // project description
         };
@@ -41,11 +40,6 @@ const {
             await dacFactoryContract.getOwner(),
             deployer.address,
             'Should initialize the owner with the deployer address',
-          );
-          assert.equal(
-            await dacFactoryContract.getPhasePeriod(),
-            PHASE_PERIOD,
-            'Should initialize the phase period with the right value',
           );
         });
       });
@@ -82,7 +76,7 @@ const {
         });
 
         // same if sender not included in collaborators, total shares not 100, timeSpan not > 30 days, name not between 2 and 50 characters
-        it('Should revert if the called is not included in the collaborators array', async () => {
+        it('Should revert if the caller is not included in the collaborators array', async () => {
           const args = {
             ...submitProjectArgs,
             collaborators: [user.address, user.address], // remove the caller address
@@ -107,20 +101,6 @@ const {
           ).to.be.revertedWith(
             'DACFactory__submitProject__INVALID_SHARES()',
             'Should revert if the total shares is not 100%',
-          );
-        });
-
-        it('Should revert if the timeSpan is not > 30 days', async () => {
-          const args = {
-            ...submitProjectArgs,
-            timeSpan: 29 * 24 * 60 * 60, // time span of 29 days
-          };
-
-          await expect(
-            dacFactoryContract.submitProject(...Object.values(args)),
-          ).to.be.revertedWith(
-            'DACFactory__submitProject__INVALID_TIMESPAN()',
-            'Should revert if the timeSpan is not > 30 days',
           );
         });
 
@@ -177,14 +157,9 @@ const {
             'The initiator should be the deployer',
           );
           assert.equal(
-            Number(project.target),
-            submitProjectArgs.target,
-            'The target should be the one submitted',
-          );
-          assert.equal(
-            Number(project.timeSpan),
-            submitProjectArgs.timeSpan,
-            'The timeSpan should be the one submitted',
+            Number(project.paymentInterval),
+            submitProjectArgs.paymentInterval,
+            'The paymentInterval should be the one submitted',
           );
           assert.equal(
             project.name,
@@ -234,14 +209,9 @@ const {
             'The initiator should be the deployer',
           );
           assert.equal(
-            Number(event.target),
-            submitProjectArgs.target,
-            'The target should be the one submitted',
-          );
-          assert.equal(
-            Number(event.timeSpan),
-            submitProjectArgs.timeSpan,
-            'The timeSpan should be the one submitted',
+            Number(event.paymentInterval),
+            submitProjectArgs.paymentInterval,
+            'The paymentInterval should be the one submitted',
           );
           assert.equal(
             event.name,

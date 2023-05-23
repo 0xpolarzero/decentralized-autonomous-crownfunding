@@ -36,12 +36,8 @@ contract DACProject {
     address[] private i_collaborators;
     /// @dev The address of the initiator of this project
     address private immutable i_initiator;
-    /// @dev The hardcap of the project in wei (will be 0 if there is no hardcap)
-    uint256 private immutable i_target;
-    /// @dev The timespan of the payment process in seconds
-    uint256 private immutable i_timeSpan;
-    /// @dev The period of each phase in seconds
-    uint256 private immutable i_phasePeriod;
+    /// @dev The interval between each payment in seconds
+    uint256 private immutable i_paymentInterval;
     /// @dev The creation date of this project
     uint256 private immutable i_createdAt;
     /// @dev The name of the project
@@ -53,16 +49,13 @@ contract DACProject {
     mapping(address => uint256) private i_shares;
 
     /**
-     * @dev Updated later
+     * @dev Can be updated
      */
 
-    /// @dev The starting time of the payment process
-    uint256 private s_startedPaymentAt;
-    /// @dev The current phase of the project
-    // 0 = Funding -> anyone can deposit their contribution, this will last for i_phasePeriod
-    // 1 = Payment -> collaborators can withdraw part of their share whenever they want,
-    // based on the elapsed time, this will last for i_timeSpan
-    uint256 private s_currentPhase;
+    /// @dev The state of this project
+    /// One of the founders should manifest themselves at least once every 30 days
+    /// Otherwise, the project will be considered as abandoned and the funds will be sent back to the contributors
+    bool private s_active;
 
     /* -------------------------------------------------------------------------- */
     /*                                  MODIFIERS                                 */
@@ -95,9 +88,7 @@ contract DACProject {
      * @param _collaborators The addresses of the collaborators (including the initiator)
      * @param _shares The shares of each collaborator (in the same order as the collaborators array)
      * @param _initiator The address of the initiator
-     * @param _target The hardcap of the project in wei (can be left to 0 if there is no hardcap)
-     * @param _timeSpan The timespan of the payment process in seconds
-     * @param _phasePeriod The period for each phase in seconds
+     * @param _paymentInterval The interval between each payment in seconds
      * @param _name The name of the project
      * @param _description A short description of the project
      * @dev All verifications have been done already in the factory contract, so we don't need to check them again
@@ -107,18 +98,14 @@ contract DACProject {
         address[] memory _collaborators,
         uint256[] memory _shares,
         address _initiator,
-        uint256 _target,
-        uint256 _timeSpan,
-        uint256 _phasePeriod,
+        uint256 _paymentInterval,
         string memory _name,
         string memory _description
     ) {
         // Initialize immutable variables
         i_collaborators = _collaborators;
         i_initiator = _initiator;
-        i_target = _target;
-        i_timeSpan = _timeSpan;
-        i_phasePeriod = _phasePeriod;
+        i_paymentInterval = _paymentInterval;
         i_name = _name;
         i_description = _description;
         i_createdAt = block.timestamp;
@@ -126,6 +113,9 @@ contract DACProject {
         for (uint256 i = 0; i < _collaborators.length; i++) {
             i_shares[_collaborators[i]] = _shares[i];
         }
+
+        // Initialize state variables
+        s_active = true;
 
         // Register a new Chainlink Upkeep
     }
@@ -171,30 +161,12 @@ contract DACProject {
     }
 
     /**
-     * @notice Get the hardcap target of the project
-     * @return uint256 The hardcap of the project
+     * @notice Get the interval between each payment in seconds
+     * @return uint256 The interval between each payment in seconds
      */
 
-    function getTarget() external view returns (uint256) {
-        return i_target;
-    }
-
-    /**
-     * @notice Get the timespan of the payment process
-     * @return uint256 The timespan of the payment process
-     */
-
-    function getTimeSpan() external view returns (uint256) {
-        return i_timeSpan;
-    }
-
-    /**
-     * @notice Get the period of each phase
-     * @return uint256 The period of each phase
-     */
-
-    function getPhasePeriod() external view returns (uint256) {
-        return i_phasePeriod;
+    function getPaymentInterval() external view returns (uint256) {
+        return i_paymentInterval;
     }
 
     /**
@@ -225,20 +197,11 @@ contract DACProject {
     }
 
     /**
-     * @notice Get the current phase of the project
-     * @return uint256 The current phase of the project
+     * @notice Get the state of the project
+     * @return bool The state of the project
      */
 
-    function getCurrentPhase() external view returns (uint256) {
-        return s_currentPhase;
-    }
-
-    /**
-     * @notice Get the starting time of the payment process
-     * @return uint256 The starting time of the payment process
-     */
-
-    function getStartedPaymentAt() external view returns (uint256) {
-        return s_startedPaymentAt;
+    function isActive() external view returns (bool) {
+        return s_active;
     }
 }

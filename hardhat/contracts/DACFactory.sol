@@ -28,8 +28,6 @@ contract DACFactory {
     error DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR();
     /// @dev The total shares should be 100
     error DACFactory__submitProject__INVALID_SHARES();
-    /// @dev The timespan should be at least 30 days
-    error DACFactory__submitProject__INVALID_TIMESPAN();
     /// @dev The name should be at least 2 characters and at most 50 characters
     error DACFactory__submitProject__INVALID_NAME();
 
@@ -48,19 +46,14 @@ contract DACFactory {
 
     /// @dev The address of the owner (deployer) of this contract
     address private immutable i_owner;
-    /// @dev The period of each phase in seconds
-    // This can be updated and will be reflected in the next child contracts, but not in the current ones
-    uint256 private s_phasePeriod;
 
     /// @dev A project that was submitted to the DAC process
     /// @param collaborators The addresses of the collaborators (including the initiator)
     /// @param shares The shares of each collaborator (in the same order as the collaborators array)
     /// @param projectContract The address of the child contract for this project
-    /// @param initiator The address of the initiator
-    /// @param target The hardcap of the project in wei (can be left to 0 if there is no hardcap)
-    /// @param timeSpan The timespan of the payment process in seconds
+    /// @param initiator The address of the initiator of this project
+    /// @param paymentInterval The interval between each payment in seconds
     /// @param createdAt The timestamp of when the project was submitted
-    /// @param phasePeriod The period for each phase in seconds
     /// @param name The name of the project
     /// @param description A short description of the project
     /// @dev See the `submitProject()` function for more details
@@ -69,10 +62,8 @@ contract DACFactory {
         uint256[] shares;
         address projectContract;
         address initiator;
-        uint256 target;
-        uint256 timeSpan;
+        uint256 paymentInterval;
         uint256 createdAt;
-        uint256 phasePeriod;
         string name;
         string description;
     }
@@ -99,14 +90,10 @@ contract DACFactory {
 
     /**
      * @notice The constructor of the DAC aggregator contract
-     * @param _phasePeriod The period for each phase in seconds
      */
-    constructor(uint256 _phasePeriod) {
+    constructor() {
         // Set the deployer
         i_owner = msg.sender;
-
-        // Set the constructor parameters
-        s_phasePeriod = _phasePeriod;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -117,8 +104,7 @@ contract DACFactory {
      * @notice Submits a project to the DAC process
      * @param _collaborators The addresses of the collaborators (including the initiator)
      * @param _shares The shares of each collaborator (in the same order as the collaborators array)
-     * @param _target The hardcap of the project in wei (can be left to 0 if there is no hardcap)
-     * @param _timeSpan The timespan of the payment process in seconds
+     * @param _paymentInterval The interval between each payment in seconds
      * @param _name The name of the project
      * @param _description A short description of the project
      * @dev Note the following requirements:
@@ -129,11 +115,11 @@ contract DACFactory {
      * - The description is optional
      * @dev This will create a child contract for the project, with the current set interval between each phase
      */
+
     function submitProject(
         address[] memory _collaborators,
         uint256[] memory _shares,
-        uint256 _target,
-        uint256 _timeSpan,
+        uint256 _paymentInterval,
         string memory _name,
         string memory _description
     ) external {
@@ -158,24 +144,16 @@ contract DACFactory {
         if (totalShares != 100)
             revert DACFactory__submitProject__INVALID_SHARES();
 
-        // It should have a target time span of at least 30 days
-        if (_timeSpan < 30 days)
-            revert DACFactory__submitProject__INVALID_TIMESPAN();
-
         // It should have a name of at least 2 characters and at most 50 characters
         if (bytes(_name).length < 2 || bytes(_name).length > 50)
             revert DACFactory__submitProject__INVALID_NAME();
-
-        uint256 phasePeriod = s_phasePeriod;
 
         // Create a child contract for the project
         DACProject projectContract = new DACProject(
             _collaborators,
             _shares,
             msg.sender,
-            _target,
-            _timeSpan,
-            phasePeriod,
+            _paymentInterval,
             _name,
             _description
         );
@@ -185,10 +163,8 @@ contract DACFactory {
             _shares,
             address(projectContract),
             msg.sender,
-            _target,
-            _timeSpan,
+            _paymentInterval,
             block.timestamp,
-            phasePeriod,
             _name,
             _description
         );
@@ -202,15 +178,6 @@ contract DACFactory {
     /* -------------------------------------------------------------------------- */
     /*                                   SETTERS                                  */
     /* -------------------------------------------------------------------------- */
-
-    /**
-     * @notice Sets the interval between each phase in seconds
-     * @param _phasePeriod The period for each phase in seconds
-     */
-
-    function setPhasePeriod(uint256 _phasePeriod) external onlyOwner {
-        s_phasePeriod = _phasePeriod;
-    }
 
     /* -------------------------------------------------------------------------- */
     /*                                   GETTERS                                  */
@@ -235,15 +202,6 @@ contract DACFactory {
         uint256 _index
     ) external view returns (Project memory) {
         return s_projects[_index];
-    }
-
-    /**
-     * @notice Returns the current period for each phase
-     * @return uint256 The period for each phase in seconds
-     */
-
-    function getPhasePeriod() external view returns (uint256) {
-        return s_phasePeriod;
     }
 
     /**
