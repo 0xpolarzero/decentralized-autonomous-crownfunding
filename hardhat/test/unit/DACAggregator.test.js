@@ -138,7 +138,7 @@ const {
           );
         });
 
-        it('Should submit a project successfully and add it to the mapping', async () => {
+        it('Should submit a project successfully and add it to the array', async () => {
           // Submit the project
           await dacFactoryContract.submitProject(
             ...Object.values(submitProjectArgs),
@@ -161,11 +161,6 @@ const {
           );
 
           // Check the values in the project
-          assert.equal(
-            project.initiator,
-            deployer.address,
-            'The initiator should be the deployer',
-          );
           assert.deepEqual(
             project.collaborators,
             submitProjectArgs.collaborators,
@@ -175,6 +170,11 @@ const {
             project.shares.map((share) => Number(share)),
             submitProjectArgs.shares,
             'The shares should be the ones submitted',
+          );
+          assert.equal(
+            project.initiator,
+            deployer.address,
+            'The initiator should be the deployer',
           );
           assert.equal(
             Number(project.target),
@@ -196,12 +196,66 @@ const {
             submitProjectArgs.description,
             'The description should be the one submitted',
           );
+
+          // Check that the address of the child contract points to the right contract
+          const childContract = await ethers.getContractAt(
+            'DACProject',
+            project.projectContract,
+          );
+          assert.equal(
+            await childContract.getName(),
+            submitProjectArgs.name,
+            'The name of the child contract should be the one submitted',
+          );
         });
 
-        // ! also create a child contract, upkeep subscription but maybe these checks in the child contract
-
         it('Should emit an event with the correct parameters', async () => {
-          //
+          // Submit the project
+          const tx = await dacFactoryContract.submitProject(
+            ...Object.values(submitProjectArgs),
+          );
+          const txReceipt = await tx.wait(1);
+
+          // Test the event parameters
+          const event = txReceipt.events[0].args[0];
+          assert.deepEqual(
+            event.collaborators,
+            submitProjectArgs.collaborators,
+            'The collaborators should be the ones submitted',
+          );
+          assert.deepEqual(
+            event.shares.map((share) => Number(share)),
+            submitProjectArgs.shares,
+            'The shares should be the ones submitted',
+          );
+          assert.equal(
+            event.initiator,
+            deployer.address,
+            'The initiator should be the deployer',
+          );
+          assert.equal(
+            Number(event.target),
+            submitProjectArgs.target,
+            'The target should be the one submitted',
+          );
+          assert.equal(
+            Number(event.timeSpan),
+            submitProjectArgs.timeSpan,
+            'The timeSpan should be the one submitted',
+          );
+          assert.equal(
+            event.name,
+            submitProjectArgs.name,
+            'The name should be the one submitted',
+          );
+          assert.equal(
+            event.description,
+            submitProjectArgs.description,
+            'The description should be the one submitted',
+          );
+
+          // We can't really test the address of the child contract because the only other way
+          // to grab it is to call`getProjectAtIndex(0)`, which is already tested right above
         });
       });
     });

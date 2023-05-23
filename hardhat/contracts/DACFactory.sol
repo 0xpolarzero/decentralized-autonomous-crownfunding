@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
+import "./DACProject.sol";
+
 /**
- * @title DAC - Decentralized Autonomous Crowdfunding
+ * @title DAC (Decentralized Autonomous Crowdfunding) Factory
  * @author polarzero
  * @notice ...
  * @dev ...
@@ -38,17 +40,7 @@ contract DACFactory {
     /// @dev Emitted when a project is submitted to the DAC process
     /// @dev See the struct `Project` for more details about the parameters
     /// @dev See the function `submitProject()` for more details about the process
-    event DACFactory__ProjectSubmitted(
-        address[] collaborators,
-        uint256[] shares,
-        address initiator,
-        uint256 target,
-        uint256 timeSpan,
-        uint256 createdAt,
-        uint256 phasePeriod,
-        string name,
-        string description
-    );
+    event DACFactory__ProjectSubmitted(Project project);
 
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
@@ -63,6 +55,7 @@ contract DACFactory {
     /// @dev A project that was submitted to the DAC process
     /// @param collaborators The addresses of the collaborators (including the initiator)
     /// @param shares The shares of each collaborator (in the same order as the collaborators array)
+    /// @param projectContract The address of the child contract for this project
     /// @param initiator The address of the initiator
     /// @param target The hardcap of the project in wei (can be left to 0 if there is no hardcap)
     /// @param timeSpan The timespan of the payment process in seconds
@@ -74,6 +67,7 @@ contract DACFactory {
     struct Project {
         address[] collaborators;
         uint256[] shares;
+        address projectContract;
         address initiator;
         uint256 target;
         uint256 timeSpan;
@@ -174,50 +168,22 @@ contract DACFactory {
 
         uint256 phasePeriod = s_phasePeriod;
 
-        // Add it to the projects array
-        s_projects.push(
-            Project(
-                _collaborators,
-                _shares,
-                msg.sender,
-                _target,
-                _timeSpan,
-                block.timestamp,
-                phasePeriod,
-                _name,
-                _description
-            )
-        );
-
         // Create a child contract for the project
-        PromiseContract promiseContract = new PromiseContract(
-            msg.sender,
-            _promiseName,
-            _ipfsCid,
-            _arweaveId,
-            _encryptedProof,
-            _partyNames,
-            _partyTwitterHandles,
-            _partyAddresses
-        );
-        s_promiseContracts[msg.sender].push(promiseContract);
-
-        emit PromiseContractCreated(
-            msg.sender,
-            address(promiseContract),
-            _promiseName,
-            _ipfsCid,
-            _arweaveId,
-            _encryptedProof,
-            _partyNames,
-            _partyTwitterHandles,
-            _partyAddresses
-        );
-
-        // Emit an event
-        emit DACFactory__ProjectSubmitted(
+        DACProject projectContract = new DACProject(
             _collaborators,
             _shares,
+            msg.sender,
+            _target,
+            _timeSpan,
+            phasePeriod,
+            _name,
+            _description
+        );
+
+        Project memory project = Project(
+            _collaborators,
+            _shares,
+            address(projectContract),
             msg.sender,
             _target,
             _timeSpan,
@@ -226,6 +192,11 @@ contract DACFactory {
             _name,
             _description
         );
+
+        // Add it to the projects array
+        s_projects.push(project);
+        // Emit an event
+        emit DACFactory__ProjectSubmitted(project);
     }
 
     /* -------------------------------------------------------------------------- */
