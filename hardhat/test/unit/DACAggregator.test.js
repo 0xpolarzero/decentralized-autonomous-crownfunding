@@ -7,10 +7,10 @@ const {
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe('DACAggregator unit tests', function () {
+  : describe('DACFactory unit tests', function () {
       let deployer;
       let user;
-      let dacAggregatorContract;
+      let dacFactoryContract;
       let submitProjectArgs = {};
 
       beforeEach(async () => {
@@ -19,10 +19,7 @@ const {
         user = accounts[1];
         await deployments.fixture(['all']);
 
-        dacAggregatorContract = await ethers.getContract(
-          'DACAggregator',
-          deployer,
-        );
+        dacFactoryContract = await ethers.getContract('DACFactory', deployer);
 
         submitProjectArgs = {
           collaborators: [deployer.address, user.address], // collaborators
@@ -41,12 +38,12 @@ const {
       describe('constructor', function () {
         it('Should initialize the variables with the right value', async () => {
           assert.equal(
-            await dacAggregatorContract.getOwner(),
+            await dacFactoryContract.getOwner(),
             deployer.address,
             'Should initialize the owner with the deployer address',
           );
           assert.equal(
-            await dacAggregatorContract.getPhasePeriod(),
+            await dacFactoryContract.getPhasePeriod(),
             PHASE_PERIOD,
             'Should initialize the phase period with the right value',
           );
@@ -71,15 +68,15 @@ const {
           };
 
           await expect(
-            dacAggregatorContract.submitProject(...Object.values(args)),
+            dacFactoryContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_LENGTH()',
+            'DACFactory__submitProject__INVALID_LENGTH()',
             'Should revert if there are more shares than collaborators',
           );
           await expect(
-            dacAggregatorContract.submitProject(...Object.values(args2)),
+            dacFactoryContract.submitProject(...Object.values(args2)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_LENGTH()',
+            'DACFactory__submitProject__INVALID_LENGTH()',
             'Should revert if there are more collaborators than shares',
           );
         });
@@ -92,9 +89,9 @@ const {
           };
 
           await expect(
-            dacAggregatorContract.submitProject(...Object.values(args)),
+            dacFactoryContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR()',
+            'DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR()',
             'Should revert if the called (initiator) is not included in collaborators',
           );
         });
@@ -106,9 +103,9 @@ const {
           };
 
           await expect(
-            dacAggregatorContract.submitProject(...Object.values(args)),
+            dacFactoryContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_SHARES()',
+            'DACFactory__submitProject__INVALID_SHARES()',
             'Should revert if the total shares is not 100%',
           );
         });
@@ -120,9 +117,9 @@ const {
           };
 
           await expect(
-            dacAggregatorContract.submitProject(...Object.values(args)),
+            dacFactoryContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_TIMESPAN()',
+            'DACFactory__submitProject__INVALID_TIMESPAN()',
             'Should revert if the timeSpan is not > 30 days',
           );
         });
@@ -134,22 +131,22 @@ const {
           };
 
           await expect(
-            dacAggregatorContract.submitProject(...Object.values(args)),
+            dacFactoryContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_NAME()',
+            'DACFactory__submitProject__INVALID_NAME()',
             'Should revert if the name is not between 2 and 50 characters',
           );
         });
 
         it('Should submit a project successfully and add it to the mapping', async () => {
           // Submit the project
-          await dacAggregatorContract.submitProject(
+          await dacFactoryContract.submitProject(
             ...Object.values(submitProjectArgs),
           );
 
           // Grab the projects and this specifig one
-          const projects = await dacAggregatorContract.getProjects();
-          const project = await dacAggregatorContract.getProjectAtIndex(0);
+          const projects = await dacFactoryContract.getProjects();
+          const project = await dacFactoryContract.getProjectAtIndex(0);
 
           // Check the project is added to the array
           assert.equal(

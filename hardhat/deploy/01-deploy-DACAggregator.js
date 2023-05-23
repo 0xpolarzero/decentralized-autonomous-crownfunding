@@ -8,7 +8,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const args = [PHASE_PERIOD];
 
-  const dacAggregator = await deploy('DACAggregator', {
+  const dacFactory = await deploy('DACFactory', {
     from: deployer,
     args,
     log: true,
@@ -20,8 +20,8 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     process.env.ARBISCAN_API_KEY
   ) {
     console.log('Verifying contract...');
-    await verify(dacAggregator.address, args);
+    await verify(dacFactory.address, args);
   }
 };
 
-module.exports.tags = ['all', 'DACAggregator', 'main'];
+module.exports.tags = ['all', 'DACFactory', 'main'];

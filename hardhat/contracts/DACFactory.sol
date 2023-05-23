@@ -8,28 +8,28 @@ pragma solidity ^0.8.7;
  * @dev ...
  */
 
-contract DACAggregator {
+contract DACFactory {
     /* -------------------------------------------------------------------------- */
     /*                                CUSTOM ERRORS                               */
     /* -------------------------------------------------------------------------- */
 
     /// @dev This function can only be called by the owner of the contract
-    error DACAggregator__NOT_OWNER();
+    error DACFactory__NOT_OWNER();
 
     /**
      * @dev submitProject()
      */
 
     /// @dev The length of the collaborators and shares arrays should be the same
-    error DACAggregator__submitProject__INVALID_LENGTH();
+    error DACFactory__submitProject__INVALID_LENGTH();
     /// @dev The collaborators array should include the initiator
-    error DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR();
+    error DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR();
     /// @dev The total shares should be 100
-    error DACAggregator__submitProject__INVALID_SHARES();
+    error DACFactory__submitProject__INVALID_SHARES();
     /// @dev The timespan should be at least 30 days
-    error DACAggregator__submitProject__INVALID_TIMESPAN();
+    error DACFactory__submitProject__INVALID_TIMESPAN();
     /// @dev The name should be at least 2 characters and at most 50 characters
-    error DACAggregator__submitProject__INVALID_NAME();
+    error DACFactory__submitProject__INVALID_NAME();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -38,7 +38,7 @@ contract DACAggregator {
     /// @dev Emitted when a project is submitted to the DAC process
     /// @dev See the struct `Project` for more details about the parameters
     /// @dev See the function `submitProject()` for more details about the process
-    event DACAggregator__ProjectSubmitted(
+    event DACFactory__ProjectSubmitted(
         address[] collaborators,
         uint256[] shares,
         address initiator,
@@ -95,7 +95,7 @@ contract DACAggregator {
      */
 
     modifier onlyOwner() {
-        if (msg.sender != i_owner) revert DACAggregator__NOT_OWNER();
+        if (msg.sender != i_owner) revert DACFactory__NOT_OWNER();
         _;
     }
 
@@ -145,7 +145,7 @@ contract DACAggregator {
     ) external {
         // It should have a share for each collaborator
         if (_collaborators.length != _shares.length)
-            revert DACAggregator__submitProject__INVALID_LENGTH();
+            revert DACFactory__submitProject__INVALID_LENGTH();
 
         uint256 totalShares = 0;
         bool includesInitiator = false;
@@ -159,18 +159,18 @@ contract DACAggregator {
         }
         // It should include the initiator
         if (!includesInitiator)
-            revert DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR();
+            revert DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR();
         // The total shares should be 100
         if (totalShares != 100)
-            revert DACAggregator__submitProject__INVALID_SHARES();
+            revert DACFactory__submitProject__INVALID_SHARES();
 
         // It should have a target time span of at least 30 days
         if (_timeSpan < 30 days)
-            revert DACAggregator__submitProject__INVALID_TIMESPAN();
+            revert DACFactory__submitProject__INVALID_TIMESPAN();
 
         // It should have a name of at least 2 characters and at most 50 characters
         if (bytes(_name).length < 2 || bytes(_name).length > 50)
-            revert DACAggregator__submitProject__INVALID_NAME();
+            revert DACFactory__submitProject__INVALID_NAME();
 
         uint256 phasePeriod = s_phasePeriod;
 
@@ -190,10 +190,32 @@ contract DACAggregator {
         );
 
         // Create a child contract for the project
-        // ...
+        PromiseContract promiseContract = new PromiseContract(
+            msg.sender,
+            _promiseName,
+            _ipfsCid,
+            _arweaveId,
+            _encryptedProof,
+            _partyNames,
+            _partyTwitterHandles,
+            _partyAddresses
+        );
+        s_promiseContracts[msg.sender].push(promiseContract);
+
+        emit PromiseContractCreated(
+            msg.sender,
+            address(promiseContract),
+            _promiseName,
+            _ipfsCid,
+            _arweaveId,
+            _encryptedProof,
+            _partyNames,
+            _partyTwitterHandles,
+            _partyAddresses
+        );
 
         // Emit an event
-        emit DACAggregator__ProjectSubmitted(
+        emit DACFactory__ProjectSubmitted(
             _collaborators,
             _shares,
             msg.sender,
