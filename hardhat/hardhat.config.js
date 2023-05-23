@@ -11,7 +11,7 @@ require('dotenv').config();
  */
 
 const POLYGON_MAINNET_RPC_URL = process.env.POLYGON_MAINNET_RPC_URL || '';
-const POLYGON_MATIC_RPC_URL = process.env.POLYGON_MATIC_RPC_URL || '';
+const POLYGON_MUMBAI_RPC_URL = process.env.POLYGON_MUMBAI_RPC_URL || '';
 const PRIVATE_KEY_PROD = process.env.PRIVATE_KEY_PROD || '';
 const PRIVATE_KEY_TEST_A = process.env.PRIVATE_KEY_TEST_A || '';
 const PRIVATE_KEY_TEST_B = process.env.PRIVATE_KEY_TEST_B || '';
@@ -37,13 +37,13 @@ module.exports = {
       chainId: 31337,
     },
     polygon: {
-      url: POLYGON_RPC_URL,
+      url: POLYGON_MAINNET_RPC_URL,
       accounts: [PRIVATE_KEY_PROD],
       chainId: 137,
       blockConfirmations: 5,
     },
     mumbai: {
-      url: MUMBAI_RPC_URL,
+      url: POLYGON_MUMBAI_RPC_URL,
       accounts: [PRIVATE_KEY_TEST_A, PRIVATE_KEY_TEST_B],
       chainId: 80001,
       blockConfirmations: 5,
