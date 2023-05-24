@@ -156,6 +156,17 @@ contract DACProject {
     /* -------------------------------------------------------------------------- */
 
     /**
+     * @notice Know if an address is a collaborator
+     * @param _collaborator The address to check
+     */
+
+    function isCollaborator(
+        address _collaborator
+    ) external view returns (bool) {
+        return s_collaborators[_collaborator].share > 0;
+    }
+
+    /**
      * @notice Get the addresses of the collaborators
      * @return array The addresses of the collaborators
      */
