@@ -1,171 +1,29 @@
-Don't need to write the claim function in the bot
-commit 1 on day 1
-commit 2 on day 1
-commit 3 on day 1
-commit 4 on day 1
-commit 1 on day 2
-commit 1 on day 3
-commit 2 on day 3
-commit 3 on day 3
-commit 4 on day 3
-commit 1 on day 4
-commit 2 on day 4
-commit 1 on day 5
-commit 2 on day 5
-commit 1 on day 6
-commit 2 on day 6
-commit 3 on day 6
-commit 4 on day 6
-commit 5 on day 6
-commit 1 on day 7
-commit 2 on day 7
-commit 3 on day 7
-commit 4 on day 7
-commit 1 on day 8
-commit 2 on day 8
-commit 3 on day 8
-commit 4 on day 8
-commit 5 on day 8
-commit 1 on day 9
-commit 1 on day 10
-commit 2 on day 10
-commit 3 on day 10
-commit 1 on day 11
-commit 2 on day 11
-commit 1 on day 12
-commit 2 on day 12
-commit 3 on day 12
-commit 1 on day 13
-commit 2 on day 13
-commit 3 on day 13
-commit 4 on day 13
-commit 1 on day 14
-commit 2 on day 14
-commit 3 on day 14
-commit 4 on day 14
-commit 5 on day 14
-commit 1 on day 15
-commit 2 on day 15
-commit 1 on day 16
-commit 2 on day 16
-commit 3 on day 16
-commit 4 on day 16
-commit 1 on day 18
-commit 2 on day 18
-commit 1 on day 21
-commit 2 on day 21
-commit 3 on day 21
-commit 4 on day 21
-commit 1 on day 22
-commit 2 on day 22
-commit 1 on day 23
-commit 2 on day 23
-commit 1 on day 24
-commit 2 on day 24
-commit 1 on day 25
-commit 2 on day 25
-commit 3 on day 25
-commit 4 on day 25
-commit 5 on day 25
-commit 1 on day 26
-commit 2 on day 26
-commit 1 on day 27
-commit 2 on day 27
-commit 3 on day 27
-commit 1 on day 28
-commit 2 on day 28
-commit 3 on day 28
-commit 4 on day 28
-commit 5 on day 28
-commit 1 on day 29
-commit 2 on day 29
-commit 3 on day 29
-commit 4 on day 29
-commit 1 on day 30
-commit 2 on day 30
-commit 3 on day 30
-commit 1 on day 30
-commit 2 on day 30
-commit 1 on day 29
-commit 2 on day 29
-commit 3 on day 29
-commit 4 on day 29
-commit 5 on day 29
-commit 1 on day 28
-commit 2 on day 28
-commit 3 on day 28
-commit 4 on day 28
-commit 1 on day 27
-commit 2 on day 27
-commit 3 on day 27
-commit 4 on day 27
-commit 5 on day 27
-commit 1 on day 26
-commit 2 on day 26
-commit 3 on day 26
-commit 4 on day 26
-commit 5 on day 26
-commit 1 on day 25
-commit 1 on day 24
-commit 2 on day 24
-commit 3 on day 24
-commit 4 on day 24
-commit 5 on day 24
-commit 1 on day 23
-commit 2 on day 23
-commit 3 on day 23
-commit 4 on day 23
-commit 1 on day 22
-commit 1 on day 21
-commit 2 on day 21
-commit 3 on day 21
-commit 4 on day 21
-commit 5 on day 21
-commit 1 on day 18
-commit 2 on day 18
-commit 3 on day 18
-commit 1 on day 16
-commit 2 on day 16
-commit 1 on day 13
-commit 2 on day 13
-commit 3 on day 13
-commit 1 on day 12
-commit 2 on day 12
-commit 3 on day 12
-commit 4 on day 12
-commit 1 on day 11
-commit 1 on day 10
-commit 2 on day 10
-commit 3 on day 10
-commit 4 on day 10
-commit 1 on day 9
-commit 1 on day 8
-commit 2 on day 8
-commit 3 on day 8
-commit 1 on day 7
-commit 2 on day 7
-commit 3 on day 7
-commit 1 on day 6
-commit 2 on day 6
-commit 3 on day 6
-commit 4 on day 6
-commit 1 on day 5
-commit 2 on day 5
-commit 3 on day 5
-commit 4 on day 5
-commit 1 on day 4
-commit 2 on day 4
-commit 1 on day 3
-commit 2 on day 3
-commit 3 on day 3
-commit 4 on day 3
-commit 5 on day 3
-commit 1 on day 2
-commit 2 on day 2
-commit 3 on day 2
-commit 4 on day 2
-commit 1 on day 1
-commit 2 on day 1
-commit 3 on day 1
-commit 4 on day 1
-commit 5 on day 1
+## Functions (factory)
+
+- Create a contributor account with an upkeep that will send contributions to projects once a week
+
+  - create an account and keep the address of the owner + the address of the contributor contract in a mapping
+  - don't allow to create multiple accounts for the same address
+
+- Submit a project
+
+## Functions (contributor account)
+
+- deposit and withdraw link
+- check and perform upkeep
+
+  - check if there is enough for all contributions (separate function) if yes upkeep
+
+- check if enough for all contributions (to display in the ui)
+
+- contribute to a project (with funds and a timespan)
+
+  - emit an event so we know for the projects who is contributing and for how long/much
+
+- cancel a contribution (and withdraw funds of this contribution)
+
+  - emit an event so we know for the projects who is contributing and for how long/much
+
+## Functions (project)
+
+need a way to know who is contributing
