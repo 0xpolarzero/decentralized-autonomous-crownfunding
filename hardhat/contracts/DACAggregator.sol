@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@chainlink/contracts/src/v0.8/interfaces/LinkTokenInterface.sol";
 import "./DACProject.sol";
+import "./DACContributorAccount.sol";
 
 /**
  * @title DAC (Decentralized Autonomous Crowdfunding) Factory
@@ -12,8 +12,6 @@ import "./DACProject.sol";
  */
 
 contract DACAggregator {
-    LinkTokenInterface internal immutable LINK;
-
     /* -------------------------------------------------------------------------- */
     /*                                CUSTOM ERRORS                               */
     /* -------------------------------------------------------------------------- */
@@ -36,6 +34,22 @@ contract DACAggregator {
     /// @dev The name should be at least 2 characters and at most 50 characters
     error DACAggregator__submitProject__INVALID_NAME();
 
+    /**
+     * @dev createContributorAccount()
+     */
+
+    /// @dev The contributor account already exists
+    error DACAggregator__createContributorAccount__ALREADY_EXISTS();
+
+    /**
+     * @dev pingProject()
+     */
+
+    /// @dev The project doesn't exist
+    error DACAggregator__pingProject__DOES_NOT_EXIST();
+    /// @dev The caller is not a collaborator of the project
+    error DACAggregator__pingProject__NOT_COLLABORATOR();
+
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
     /* -------------------------------------------------------------------------- */
@@ -45,6 +59,25 @@ contract DACAggregator {
     /// @dev See the function `submitProject()` for more details about the process
     event DACAggregator__ProjectSubmitted(Project project);
 
+    /// @dev Emitted when a contributor account is created
+    /// @dev See the struct `ContributorAccount` for more details about the parameters
+    /// @dev See the function `createContributorAccount()` for more details about the process
+    event DACAggregator__ContributorAccountCreated(
+        ContributorAccount contributorAccount
+    );
+
+    /// @dev Emitted when a project is updated (pinged by a collaborator)
+    event DACAggregator__ProjectPinged(
+        address projectAddress,
+        address collaborator
+    );
+
+    /// @dev Emitted when the maximum amount of contributions is updated
+    event DACAggregator__MaxContributionsUpdated(uint256 maxContributions);
+
+    /// @dev Emitted when the maximum gas limit for upkeep calls is updated
+    event DACAggregator__UpkeepGasLimitUpdated(uint32 upkeepGasLimit);
+
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
     /* -------------------------------------------------------------------------- */
@@ -52,10 +85,26 @@ contract DACAggregator {
     /// @dev The address of the owner (deployer) of this contract
     address private immutable i_owner;
 
+    /// @dev Chainlink addresses: LINK token
+    address private immutable i_linkTokenAddress;
+    /// @dev Chainlink addresses: Keeper Registrar
+    address private immutable i_keeperRegistrarAddress;
+    /// @dev Chainlink addresses: Keeper Registry
+    address private immutable i_keeperRegistryAddress;
+
+    /// @dev The maximum amount of contributions for a contributor account
+    uint256 private s_maxContributions;
+    /// @dev The maximum gas limit for upkeep calls
+    uint32 private s_upkeepGasLimit;
+
     /// @dev The array of projects
-    Project[] private s_projects;
+    // Project[] private s_projects;
     /// @dev The array of contributor accounts
-    address[] private s_contributors;
+    // ContributorAccount[] private s_contributors;
+    /// @dev The mapping of project contract addresses to their project information
+    mapping(address => Project) private s_projects;
+    /// @dev The mapping of contributor addresses to their account (contract) address
+    mapping(address => address) private s_contributorAccounts;
 
     /// @dev A project that was submitted to the DAC process
     /// @param collaborators The addresses of the collaborators (including the initiator)
@@ -72,8 +121,18 @@ contract DACAggregator {
         address projectContract;
         address initiator;
         uint256 createdAt;
+        uint256 lastActivityAt;
         string name;
         string description;
+    }
+
+    /// @dev A contributor account
+    /// @param address The address of the contributor
+    /// @param accountContract The address of the child contract for this account
+    /// @dev See the `createContributorAccount()` function for more details
+    struct ContributorAccount {
+        address contributor;
+        address accountContract;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -95,15 +154,31 @@ contract DACAggregator {
 
     /**
      * @notice The constructor of the DAC aggregator contract
-     * @param _linkToken The address of the LINK token
+     * @param _linkTokenAddress The address of the LINK token
+     * @param _keeperRegistrarAddress The address of the Keeper Registrar
+     * @param _keeperRegistryAddress The address of the Keeper Registry
+     * @param _maxContributions The maximum amount of contributions for a contributor account
+     * @param _upkeepGasLimit The maximum gas limit for upkeep calls
      */
 
-    constructor(address _linkToken) {
+    constructor(
+        address _linkTokenAddress,
+        address _keeperRegistrarAddress,
+        address _keeperRegistryAddress,
+        uint256 _maxContributions,
+        uint32 _upkeepGasLimit
+    ) {
         // Set the deployer
         i_owner = msg.sender;
 
-        // Set the LINK token
-        LINK = LinkTokenInterface(_linkToken);
+        // Set the Chainlink addresses
+        i_linkTokenAddress = _linkTokenAddress;
+        i_keeperRegistrarAddress = _keeperRegistrarAddress;
+        i_keeperRegistryAddress = _keeperRegistryAddress;
+
+        // Set the storage variables
+        s_maxContributions = _maxContributions;
+        s_upkeepGasLimit = _upkeepGasLimit;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -175,28 +250,124 @@ contract DACAggregator {
             _description
         );
 
-        // Add it to the projects array
-        s_projects.push(project);
+        // Add it to the projects array and mapping
+        // s_projects.push(project);
+        s_projects[address(projectContract)] = project;
         // Emit an event
         emit DACAggregator__ProjectSubmitted(project);
+    }
+
+    /**
+     * @notice Create a contributor wallet
+     * @dev This will create a child contract for the contributor, including a Chainlink upkeep
+     * @dev This is kind of a smart contract wallet
+     * @dev For more information, see the `DACContributorAccount` contract
+     */
+
+    function createContributorAccount() external {
+        // It should not have a contributor account already
+        if (s_contributorAccounts[msg.sender] != address(0))
+            revert DACAggregator__createContributorAccount__ALREADY_EXISTS();
+
+        // Create a child contract for the contributor
+        DACContributorAccount contributorContract = new DACContributorAccount(
+            msg.sender,
+            i_linkTokenAddress,
+            i_keeperRegistrarAddress,
+            i_keeperRegistryAddress,
+            s_maxContributions,
+            s_upkeepGasLimit
+        );
+
+        // Add it to the contributors array and mapping
+        s_contributorAccounts[msg.sender] = address(contributorContract);
+        // s_contributorAccountsArray.push(
+        //     ContributorAccount(msg.sender, address(contributorContract))
+        // );
+        // Emit an event
+        emit DACAggregator__ContributorAccountCreated(
+            msg.sender,
+            address(contributorContract)
+        );
+    }
+
+    /**
+     * @notice Ping a project as a collaborator
+     * @param _projectAddress The address of the project
+     * @dev This will update the project's last activity timestamp
+     * @dev It should be done by any of the collaborators at least once every 30 days so it can
+     * keep receiving contributions
+     */
+
+    function pingProject(address _projectAddress) external {
+        // It should be an existing project
+        if (s_projects[_projectAddress].initiator == address(0))
+            revert DACAggregator__pingProject__DOES_NOT_EXIST();
+
+        // It should be a collaborator
+        if (!DACProject(_projectAddress).isCollaborator(msg.sender))
+            revert DACAggregator__pingProject__NOT_A_COLLABORATOR();
+
+        // Update the project's last activity timestamp
+        s_projects[_projectAddress].lastActivityTimestamp = block.timestamp;
+        // Emit an event
+        emit DACAggregator__ProjectPinged(_projectAddress, msg.sender);
     }
 
     /* -------------------------------------------------------------------------- */
     /*                                   SETTERS                                  */
     /* -------------------------------------------------------------------------- */
 
+    /**
+     * @notice Update the maximum amount of contributions for a contributor account
+     * @param _maxContributions The new maximum amount of contributions
+     * @dev This will only affect new contributor accounts
+     */
+
+    function setMaxContributions(uint256 _maxContributions) external {
+        s_maxContributions = _maxContributions;
+        emit DACAggregator__MaxContributionsUpdated(_maxContributions);
+    }
+
+    /**
+     * @notice Update the gas limit for an upkeep call
+     * @param _gasLimit The new gas limit
+     * @dev This will only affect new contributor accounts
+     */
+
+    function setUpkeepGasLimit(uint32 _gasLimit) external {
+        s_upkeepGasLimit = _gasLimit;
+        emit DACAggregator__UpkeepGasLimitUpdated(_gasLimit);
+    }
+
     /* -------------------------------------------------------------------------- */
     /*                                   GETTERS                                  */
     /* -------------------------------------------------------------------------- */
+
+    /**
+     * @notice Know if a project is active
+     * @param _projectAddress The address of the project
+     * @return bool Whether the project is active or not
+     * @dev A project is active if it has been pinged by a collaborator during the last 30 days
+     */
+
+    function isProjectActive(
+        address _projectAddress
+    ) external view returns (bool) {
+        return
+            block.timestamp -
+                s_projects[_projectAddress].lastActivityTimestamp <
+            30 days;
+    }
 
     /**
      * @notice Returns all the projects submitted to the DAC
      * @return struct The array of projects
      */
 
-    function getProjects() external view returns (Project[] memory) {
-        return s_projects;
-    }
+    // function getProjects() external view returns (Project[] memory) {
+    //     return s_projects;
+    // }
 
     /**
      * @notice Returns a specific project
@@ -204,19 +375,35 @@ contract DACAggregator {
      * @return struct The project
      */
 
-    function getProjectAtIndex(
-        uint256 _index
-    ) external view returns (Project memory) {
-        return s_projects[_index];
-    }
+    // function getProjectAtIndex(
+    //     uint256 _index
+    // ) external view returns (Project memory) {
+    //     return s_projects[_index];
+    // }
 
     /**
      * @notice Returns all the contributors
      * @return address The array of contributors
      */
 
-    function getContributors() external view returns (address[] memory) {
-        return s_contributors;
+    // function getContributors()
+    //     external
+    //     view
+    //     returns (ContributorAccount[] memory)
+    // {
+    //     return s_contributors;
+    // }
+
+    /**
+     * @notice Returns a specific contributor
+     * @param _contributor The address of the contributor
+     * @return address The address of the contract of the contributor's account
+     */
+
+    function getContributorAccount(
+        address _contributor
+    ) external view returns (address) {
+        return s_contributorAccounts[_contributor];
     }
 
     /**
@@ -226,5 +413,50 @@ contract DACAggregator {
 
     function getOwner() external view returns (address) {
         return i_owner;
+    }
+
+    /**
+     * @notice Returns the address of the LINK token
+     * @return address The address of the LINK token
+     */
+
+    function getLinkTokenAddress() external view returns (address) {
+        return i_linkTokenAddress;
+    }
+
+    /**
+     * @notice Returns the address of the Keeper Registrar
+     * @return address The address of the Keeper Registrar
+     */
+
+    function getKeeperRegistrarAddress() external view returns (address) {
+        return i_keeperRegistrarAddress;
+    }
+
+    /**
+     * @notice Returns the address of the Keeper Registry
+     * @return address The address of the Keeper Registry
+     */
+
+    function getKeeperRegistryAddress() external view returns (address) {
+        return i_keeperRegistryAddress;
+    }
+
+    /**
+     * @notice Returns the maximum amount of contributions for a contributor account
+     * @return uint256 The maximum amount of contributions
+     */
+
+    function getMaximumContributions() external view returns (uint256) {
+        return i_maximumContributions;
+    }
+
+    /**
+     * @notice Returns the gas limit for an upkeep call
+     * @return uint32 The gas limit
+     */
+
+    function getGasLimit() external view returns (uint32) {
+        return i_gasLimit;
     }
 }
