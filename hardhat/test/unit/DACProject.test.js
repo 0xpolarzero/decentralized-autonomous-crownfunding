@@ -2,13 +2,12 @@ const { deployments, network, ethers } = require('hardhat');
 const { assert, expect } = require('chai');
 const {
   developmentChains,
-  PHASE_PERIOD,
   PLACEHOLDER_ADDRESS,
 } = require('../../helper-hardhat-config');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe('DACProject unit tests', function () {
+  : describe.only('DACProject unit tests', function () {
       let deployer; // initiator of the project
       let user; // not a collaborator in the project
       let dacProjectContract;
@@ -56,20 +55,25 @@ const {
 
           // Collaborators
           assert.deepEqual(
-            await dacProjectContract.getCollaborators(),
+            await dacProjectContract.getCollaboratorsAddresses(),
             submitProjectArgs.collaborators,
             'Should initialize the collaborators with the right value',
           );
-          // Shares
+          // Collaborator information
           for (let i = 0; i < submitProjectArgs.shares.length; i++) {
-            assert.equal(
-              Number(
-                await dacProjectContract.getShare(
-                  submitProjectArgs.collaborators[i],
-                ),
-              ),
+            const collaborator = await dacProjectContract.getCollaborator(
+              submitProjectArgs.collaborators[i],
+            );
+
+            assert.deepEqual(
+              collaborator.share,
               submitProjectArgs.shares[i],
               'Should initialize the shares with the right value',
+            );
+            assert.equal(
+              Number(collaborator.totalWithdrawn),
+              0,
+              'Should initialize the total withdrawn with the right value',
             );
           }
           // Initiator
@@ -109,6 +113,22 @@ const {
             true,
             'Should initialize the active phase with the right value',
           );
+          // Last time a collaborator manifested themselves
+          assert.equal(
+            Number(
+              await dacProjectContract.getLastCollaboratorCheckTimestamp(),
+            ),
+            (await creationTxReceipt.events[0].getBlock()).timestamp,
+            'Should initialize the last time a collaborator manifested themselves with the right value',
+          );
+          // Last time a payment was made
+          assert.equal(
+            Number(await dacProjectContract.getLastPaymentTimestamp()),
+            (await creationTxReceipt.events[0].getBlock()).timestamp,
+            'Should initialize the last time a payment was made with the right value',
+          );
         });
       });
+
+      // ...
     });

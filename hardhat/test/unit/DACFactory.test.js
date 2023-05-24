@@ -24,7 +24,6 @@ const {
         submitProjectArgs = {
           collaborators: [deployer.address, user.address], // collaborators
           shares: [70, 30], // shares of 70% and 30%
-          paymentInterval: 7 * 24 * 60 * 60, // payment interval of 7 days
           name: 'Project 1', // project name
           description: 'Project 1 description', // project description
         };
@@ -157,11 +156,6 @@ const {
             'The initiator should be the deployer',
           );
           assert.equal(
-            Number(project.paymentInterval),
-            submitProjectArgs.paymentInterval,
-            'The paymentInterval should be the one submitted',
-          );
-          assert.equal(
             project.name,
             submitProjectArgs.name,
             'The name should be the one submitted',
@@ -207,11 +201,6 @@ const {
             event.initiator,
             deployer.address,
             'The initiator should be the deployer',
-          );
-          assert.equal(
-            Number(event.paymentInterval),
-            submitProjectArgs.paymentInterval,
-            'The paymentInterval should be the one submitted',
           );
           assert.equal(
             event.name,
