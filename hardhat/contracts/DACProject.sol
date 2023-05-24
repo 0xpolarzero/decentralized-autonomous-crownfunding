@@ -5,9 +5,6 @@ pragma solidity ^0.8.7;
  * @title DAC (Decentralized Autonomous Crowdfunding) Project
  * @author polarzero
  * @notice ...
- * @dev Note on the prefixes for variables: here we keep the `i_` prefix for some variables
- * that cannot be marked as immutable in Solidity. This means they are assigned only once in
- * the constructor, and won't/can't be changed afterwards.
  */
 
 contract DACProject {
@@ -19,6 +16,8 @@ contract DACProject {
     error DACProject__NOT_INITIATOR();
     /// @dev This function can only be called by the collaborators of the project
     error DACProject__NOT_COLLABORATOR();
+    /// @dev This function can only be called when the project is active
+    error DACProject__NOT_ACTIVE();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -32,30 +31,52 @@ contract DACProject {
      * @dev Initialized at contract creation and can't be changed afterwards
      */
 
-    /// @dev The addresses of the collaborators (including the initiator)
-    address[] private i_collaborators;
     /// @dev The address of the initiator of this project
     address private immutable i_initiator;
-    /// @dev The interval between each payment in seconds
-    uint256 private immutable i_paymentInterval;
     /// @dev The creation date of this project
     uint256 private immutable i_createdAt;
     /// @dev The name of the project
-    string private i_name;
+    string private s_name;
     /// @dev A short description of the project
-    string private i_description;
-
-    /// @dev The share of each collaborator
-    mapping(address => uint256) private i_shares;
+    string private s_description;
 
     /**
      * @dev Can be updated
      */
 
     /// @dev The state of this project
-    /// One of the founders should manifest themselves at least once every 30 days
+    /// One of the collaborators should manifest themselves at least once every 30 days
     /// Otherwise, the project will be considered as abandoned and the funds will be sent back to the contributors
     bool private s_active;
+    /// @dev The last time a collaborator has manifested themselves
+    uint256 private s_lastCollaboratorCheckTimestamp;
+    /// @dev The last time the collaborators received their payment
+    uint256 private s_lastPaymentTimestamp;
+
+    /// @dev The status and infos of a collaborator
+    /// @param shares The share of contributions of the collaborator
+    /// @param totalWithdrawn The total amount of funds withdrawn by the collaborator
+    struct Collaborator {
+        uint256 share;
+        uint256 totalWithdrawn;
+    }
+
+    /// @dev The status and infos of a contributor
+    /// @param amount The amount of funds contributed by the contributor
+    /// @param endTimestamp The timestamp of the end of the contributor's subscription
+    struct Contributor {
+        uint256 amount;
+        uint256 endTimestamp;
+    }
+
+    /// @dev The addresses of the collaborators
+    address[] private s_collaboratorsAddresses;
+    /// @dev The addresses of the contributors
+    address[] private s_contributorsAddresses;
+    /// @dev The status and infos of the collaborators (share & total withdrawn)
+    mapping(address => Collaborator) private s_collaborators;
+    /// @dev The status and infos of the contributors (amount & end of subscription timestamp)
+    mapping(address => Contributor) private s_contributors;
 
     /* -------------------------------------------------------------------------- */
     /*                                  MODIFIERS                                 */
@@ -75,7 +96,18 @@ contract DACProject {
      */
 
     modifier onlyCollaborators() {
-        if (i_shares[msg.sender] == 0) revert DACProject__NOT_COLLABORATOR();
+        if (s_collaborators[msg.sender].share == 0)
+            revert DACProject__NOT_COLLABORATOR();
+        _;
+    }
+
+    /**
+     * @notice Restricts the access to when the project is active (not abandoned)
+     * @dev One of the collaborators should manifest themselves at least once every 30 days
+     */
+
+    modifier stillActive() {
+        if (!s_active) revert DACProject__NOT_ACTIVE();
         _;
     }
 
@@ -88,7 +120,6 @@ contract DACProject {
      * @param _collaborators The addresses of the collaborators (including the initiator)
      * @param _shares The shares of each collaborator (in the same order as the collaborators array)
      * @param _initiator The address of the initiator
-     * @param _paymentInterval The interval between each payment in seconds
      * @param _name The name of the project
      * @param _description A short description of the project
      * @dev All verifications have been done already in the factory contract, so we don't need to check them again
@@ -98,24 +129,28 @@ contract DACProject {
         address[] memory _collaborators,
         uint256[] memory _shares,
         address _initiator,
-        uint256 _paymentInterval,
         string memory _name,
         string memory _description
     ) {
         // Initialize immutable variables
-        i_collaborators = _collaborators;
         i_initiator = _initiator;
-        i_paymentInterval = _paymentInterval;
-        i_name = _name;
-        i_description = _description;
+        // (not marked immutable but can't be changed afterwards)
+        s_name = _name;
+        s_description = _description;
         i_createdAt = block.timestamp;
 
+        // Initialize collaborators
         for (uint256 i = 0; i < _collaborators.length; i++) {
-            i_shares[_collaborators[i]] = _shares[i];
+            // Add their address to the array
+            s_collaboratorsAddresses.push(_collaborators[i]);
+            // Initialize their share
+            s_collaborators[_collaborators[i]] = Collaborator(_shares[i], 0);
         }
 
         // Initialize state variables
         s_active = true;
+        s_lastCollaboratorCheckTimestamp = block.timestamp;
+        s_lastPaymentTimestamp = block.timestamp;
 
         // Register a new Chainlink Upkeep
     }
@@ -137,18 +172,49 @@ contract DACProject {
      * @return array The addresses of the collaborators
      */
 
-    function getCollaborators() external view returns (address[] memory) {
-        return i_collaborators;
+    function getCollaboratorsAddresses()
+        external
+        view
+        returns (address[] memory)
+    {
+        return s_collaboratorsAddresses;
     }
 
     /**
-     * @notice Get the shares of a specific collaborator
+     * @notice Get the informations of a specific collaborator
      * @param _collaborator The address of the collaborator
-     * @return uint256 The share of the collaborator
+     * @return struct The share of the collaborator and the total amount already withdrawn
      */
 
-    function getShare(address _collaborator) external view returns (uint256) {
-        return i_shares[_collaborator];
+    function getCollaborator(
+        address _collaborator
+    ) external view returns (Collaborator memory) {
+        return s_collaborators[_collaborator];
+    }
+
+    /**
+     * @notice Get the addresses of the contributors
+     * @return array The addresses of the contributors
+     */
+
+    function getContributorsAddresses()
+        external
+        view
+        returns (address[] memory)
+    {
+        return s_contributorsAddresses;
+    }
+
+    /**
+     * @notice Get the informations of a specific contributor
+     * @param _contributor The address of the contributor
+     * @return struct The amount contributed by the contributor and the end of subscription timestamp
+     */
+
+    function getContributor(
+        address _contributor
+    ) external view returns (Contributor memory) {
+        return s_contributors[_contributor];
     }
 
     /**
@@ -158,15 +224,6 @@ contract DACProject {
 
     function getInitiator() external view returns (address) {
         return i_initiator;
-    }
-
-    /**
-     * @notice Get the interval between each payment in seconds
-     * @return uint256 The interval between each payment in seconds
-     */
-
-    function getPaymentInterval() external view returns (uint256) {
-        return i_paymentInterval;
     }
 
     /**
@@ -184,7 +241,7 @@ contract DACProject {
      */
 
     function getName() external view returns (string memory) {
-        return i_name;
+        return s_name;
     }
 
     /**
@@ -193,7 +250,7 @@ contract DACProject {
      */
 
     function getDescription() external view returns (string memory) {
-        return i_description;
+        return s_description;
     }
 
     /**
@@ -203,5 +260,27 @@ contract DACProject {
 
     function isActive() external view returns (bool) {
         return s_active;
+    }
+
+    /**
+     * @notice Get the last time a collaborator has manifested themselves
+     * @return uint256 The last time a collaborator has manifested themselves
+     */
+
+    function getLastCollaboratorCheckTimestamp()
+        external
+        view
+        returns (uint256)
+    {
+        return s_lastCollaboratorCheckTimestamp;
+    }
+
+    /**
+     * @notice Get the last time the collaborators received their payment
+     * @return uint256 The last time the collaborators received their payment
+     */
+
+    function getLastPaymentTimestamp() external view returns (uint256) {
+        return s_lastPaymentTimestamp;
     }
 }
