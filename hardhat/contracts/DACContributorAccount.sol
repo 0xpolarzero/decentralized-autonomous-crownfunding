@@ -2,6 +2,7 @@
 pragma solidity ^0.8.7;
 
 import "./ChainlinkManager.sol";
+import "./DACAggregatorInterface.sol";
 
 /**
  * @title DAC (Decentralized Autonomous Crowdfunding) Contributor account
@@ -13,6 +14,7 @@ contract DACContributorAccount {
     LinkTokenInterface internal immutable LINK;
     KeeperRegistrarInterface internal immutable REGISTRAR;
     KeeperRegistryInterface internal immutable REGISTRY;
+    DACAggregatorInterface internal immutable DAC_AGGREGATOR;
 
     /* -------------------------------------------------------------------------- */
     /*                                CUSTOM ERRORS                               */
@@ -117,7 +119,7 @@ contract DACContributorAccount {
         address _registrar,
         address _registry,
         uint256 _maxContributions,
-        uint256 _upkeepGasLimit
+        uint32 _upkeepGasLimit
     ) {
         // Initialize the owner and the creation date
         i_owner = _owner;
@@ -131,6 +133,9 @@ contract DACContributorAccount {
         LINK = LinkTokenInterface(_linkToken);
         REGISTRAR = KeeperRegistrarInterface(_registrar);
         REGISTRY = KeeperRegistryInterface(_registry);
+
+        // Initialize the DAC Aggregator
+        DAC_AGGREGATOR = DACAggregatorInterface(msg.sender);
 
         // Register a new Chainlink Upkeep
         i_upkeepId = REGISTRAR.registerUpkeep(
@@ -357,7 +362,7 @@ contract DACContributorAccount {
             ContributionMinimal[]
                 memory contributionsToSend = calculateContributions();
 
-            // If at least one project is still active
+            // If at least one contribution to a project is still active
             if (contributionsToSend.length > 0) {
                 // Encode the array to bytes
                 bytes memory data = abi.encode(contributionsToSend);
@@ -558,11 +563,6 @@ contract DACContributorAccount {
     function isProjectStillActive(
         address _projectContract
     ) internal view returns (bool) {
-        (bool success, bytes memory data) = _projectContract.staticcall(
-            abi.encodeWithSignature("isActive()")
-        );
-        if (!success) revert DACContributorAccount__CALL_FAILED();
-
-        return abi.decode(data, (bool));
+        return DAC_AGGREGATOR.isProjectActive(_projectContract);
     }
 }
