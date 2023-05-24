@@ -16,8 +16,6 @@ contract DACProject {
     error DACProject__NOT_INITIATOR();
     /// @dev This function can only be called by the collaborators of the project
     error DACProject__NOT_COLLABORATOR();
-    /// @dev This function can only be called when the project is active
-    error DACProject__NOT_ACTIVE();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -44,10 +42,6 @@ contract DACProject {
      * @dev Can be updated
      */
 
-    /// @dev The state of this project
-    /// One of the collaborators should manifest themselves at least once every 30 days
-    /// Otherwise, the project will be considered as abandoned and the funds will be sent back to the contributors
-    bool private s_active;
     /// @dev The last time a collaborator has manifested themselves
     uint256 private s_lastCollaboratorCheckTimestamp;
     /// @dev The last time the collaborators received their payment
@@ -101,16 +95,6 @@ contract DACProject {
         _;
     }
 
-    /**
-     * @notice Restricts the access to when the project is active (not abandoned)
-     * @dev One of the collaborators should manifest themselves at least once every 30 days
-     */
-
-    modifier stillActive() {
-        if (!s_active) revert DACProject__NOT_ACTIVE();
-        _;
-    }
-
     /* -------------------------------------------------------------------------- */
     /*                                 CONSTRUCTOR                                */
     /* -------------------------------------------------------------------------- */
@@ -148,7 +132,6 @@ contract DACProject {
         }
 
         // Initialize state variables
-        s_active = true;
         s_lastCollaboratorCheckTimestamp = block.timestamp;
         s_lastPaymentTimestamp = block.timestamp;
 
@@ -158,6 +141,11 @@ contract DACProject {
     /* -------------------------------------------------------------------------- */
     /*                                  FUNCTIONS                                 */
     /* -------------------------------------------------------------------------- */
+
+    function triggerPayment() public {
+        // Should be triggered by the Chainlink Upkeep, if funded with enough LINK
+        // If it was not able to do it for a week, collaborators can trigger it manually
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                                   SETTERS                                  */
@@ -251,15 +239,6 @@ contract DACProject {
 
     function getDescription() external view returns (string memory) {
         return s_description;
-    }
-
-    /**
-     * @notice Get the state of the project
-     * @return bool The state of the project
-     */
-
-    function isActive() external view returns (bool) {
-        return s_active;
     }
 
     /**
