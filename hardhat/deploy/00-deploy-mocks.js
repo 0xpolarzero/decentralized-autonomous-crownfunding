@@ -8,7 +8,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   if (!developmentChains.includes(network.name)) return;
 
   console.log('Local network, deploying mocks...');
-  // ...
+  // Deploy LINK token
+  const linkToken = await deploy('LinkToken', {
+    from: deployer,
+    args: [],
+    log: true,
+    waitConfirmations: 1,
+  });
+  mocks.LINK_TOKEN = linkToken.address;
+
   console.log('Mocks deployed!');
 };
 

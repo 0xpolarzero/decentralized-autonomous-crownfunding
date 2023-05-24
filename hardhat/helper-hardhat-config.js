@@ -4,6 +4,11 @@ const VERIFICATION_BLOCK_CONFIRMATIONS = 5;
 // A placeholder address to add as a collaborator in tests
 const PLACEHOLDER_ADDRESS = '0x1dc6312512383A6f1b4F964f60D4e6D367D3200F';
 
+// The interval between each upkeep in the factory contract
+const UPKEEP_INTERVAL = 7 * 24 * 60 * 60; // 7 days
+// The minimum amount of LINK for a project to hold (otherwise it will be topped up)
+const MINIMUM_LINK_AMOUNT = 0.1 * 10 ** 18; // 0.1 LINK
+
 // Addresses of the LINK token, Automation registry and registrar contracts
 const chainlink = {
   polygon: {
@@ -18,8 +23,16 @@ const chainlink = {
   },
 };
 
+const mocks = {
+  LINK_TOKEN: '',
+};
+
 module.exports = {
   developmentChains,
   VERIFICATION_BLOCK_CONFIRMATIONS,
   PLACEHOLDER_ADDRESS,
+  UPKEEP_INTERVAL,
+  MINIMUM_LINK_AMOUNT,
+  chainlink,
+  mocks,
 };
