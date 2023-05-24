@@ -7,10 +7,10 @@ const {
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe('DACFactory unit tests', function () {
+  : describe('DACAggregator unit tests', function () {
       let deployer;
       let user;
-      let dacFactoryContract;
+      let dacAggregatorContract;
       let submitProjectArgs = {};
 
       beforeEach(async () => {
@@ -19,7 +19,10 @@ const {
         user = accounts[1];
         await deployments.fixture(['all']);
 
-        dacFactoryContract = await ethers.getContract('DACFactory', deployer);
+        dacAggregatorContract = await ethers.getContract(
+          'DACAggregator',
+          deployer,
+        );
 
         submitProjectArgs = {
           collaborators: [deployer.address, user.address], // collaborators
@@ -36,7 +39,7 @@ const {
       describe('constructor', function () {
         it('Should initialize the variables with the right value', async () => {
           assert.equal(
-            await dacFactoryContract.getOwner(),
+            await dacAggregatorContract.getOwner(),
             deployer.address,
             'Should initialize the owner with the deployer address',
           );
@@ -61,15 +64,15 @@ const {
           };
 
           await expect(
-            dacFactoryContract.submitProject(...Object.values(args)),
+            dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACFactory__submitProject__INVALID_LENGTH()',
+            'DACAggregator__submitProject__INVALID_LENGTH()',
             'Should revert if there are more shares than collaborators',
           );
           await expect(
-            dacFactoryContract.submitProject(...Object.values(args2)),
+            dacAggregatorContract.submitProject(...Object.values(args2)),
           ).to.be.revertedWith(
-            'DACFactory__submitProject__INVALID_LENGTH()',
+            'DACAggregator__submitProject__INVALID_LENGTH()',
             'Should revert if there are more collaborators than shares',
           );
         });
@@ -82,9 +85,9 @@ const {
           };
 
           await expect(
-            dacFactoryContract.submitProject(...Object.values(args)),
+            dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR()',
+            'DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR()',
             'Should revert if the called (initiator) is not included in collaborators',
           );
         });
@@ -96,9 +99,9 @@ const {
           };
 
           await expect(
-            dacFactoryContract.submitProject(...Object.values(args)),
+            dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACFactory__submitProject__INVALID_SHARES()',
+            'DACAggregator__submitProject__INVALID_SHARES()',
             'Should revert if the total shares is not 100%',
           );
         });
@@ -110,22 +113,22 @@ const {
           };
 
           await expect(
-            dacFactoryContract.submitProject(...Object.values(args)),
+            dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACFactory__submitProject__INVALID_NAME()',
+            'DACAggregator__submitProject__INVALID_NAME()',
             'Should revert if the name is not between 2 and 50 characters',
           );
         });
 
         it('Should submit a project successfully and add it to the array', async () => {
           // Submit the project
-          await dacFactoryContract.submitProject(
+          await dacAggregatorContract.submitProject(
             ...Object.values(submitProjectArgs),
           );
 
           // Grab the projects and this specifig one
-          const projects = await dacFactoryContract.getProjects();
-          const project = await dacFactoryContract.getProjectAtIndex(0);
+          const projects = await dacAggregatorContract.getProjects();
+          const project = await dacAggregatorContract.getProjectAtIndex(0);
 
           // Check the project is added to the array
           assert.equal(
@@ -180,7 +183,7 @@ const {
 
         it('Should emit an event with the correct parameters', async () => {
           // Submit the project
-          const tx = await dacFactoryContract.submitProject(
+          const tx = await dacAggregatorContract.submitProject(
             ...Object.values(submitProjectArgs),
           );
           const txReceipt = await tx.wait(1);

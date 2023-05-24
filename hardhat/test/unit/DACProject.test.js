@@ -20,8 +20,8 @@ const {
         await deployments.fixture(['all']);
 
         // Create a project using the factory
-        const dacFactoryContract = await ethers.getContract(
-          'DACFactory',
+        const dacAggregatorContract = await ethers.getContract(
+          'DACAggregator',
           deployer,
         );
         const submitProjectArgs = {
@@ -31,7 +31,7 @@ const {
           name: 'Project 1', // project name
           description: 'Project 1 description', // project description
         };
-        const tx = await dacFactoryContract.submitProject(
+        const tx = await dacAggregatorContract.submitProject(
           ...Object.values(submitProjectArgs),
         );
         creationTxReceipt = await tx.wait(1);

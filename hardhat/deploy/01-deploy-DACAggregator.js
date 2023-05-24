@@ -20,7 +20,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     MINIMUM_LINK_AMOUNT,
   ];
 
-  const dacFactory = await deploy('DACFactory', {
+  const dacAggregator = await deploy('DACAggregator', {
     from: deployer,
     args,
     log: true,
@@ -32,8 +32,8 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     process.env.ARBISCAN_API_KEY
   ) {
     console.log('Verifying contract...');
-    await verify(dacFactory.address, args);
+    await verify(dacAggregator.address, args);
   }
 };
 
-module.exports.tags = ['all', 'DACFactory', 'main'];
+module.exports.tags = ['all', 'DACAggregator', 'main'];

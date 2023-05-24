@@ -11,7 +11,7 @@ import "./DACProject.sol";
  * @dev ...
  */
 
-contract DACFactory {
+contract DACAggregator {
     LinkTokenInterface internal immutable LINK;
 
     /* -------------------------------------------------------------------------- */
@@ -19,22 +19,22 @@ contract DACFactory {
     /* -------------------------------------------------------------------------- */
 
     /// @dev This function can only be called by the owner of the contract
-    error DACFactory__NOT_OWNER();
+    error DACAggregator__NOT_OWNER();
     /// @dev The transfer failed
-    error DACFactory__TRANSFER_FAILED();
+    error DACAggregator__TRANSFER_FAILED();
 
     /**
      * @dev submitProject()
      */
 
     /// @dev The length of the collaborators and shares arrays should be the same
-    error DACFactory__submitProject__INVALID_LENGTH();
+    error DACAggregator__submitProject__INVALID_LENGTH();
     /// @dev The collaborators array should include the initiator
-    error DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR();
+    error DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR();
     /// @dev The total shares should be 100
-    error DACFactory__submitProject__INVALID_SHARES();
+    error DACAggregator__submitProject__INVALID_SHARES();
     /// @dev The name should be at least 2 characters and at most 50 characters
-    error DACFactory__submitProject__INVALID_NAME();
+    error DACAggregator__submitProject__INVALID_NAME();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -43,7 +43,7 @@ contract DACFactory {
     /// @dev Emitted when a project is submitted to the DAC process
     /// @dev See the struct `Project` for more details about the parameters
     /// @dev See the function `submitProject()` for more details about the process
-    event DACFactory__ProjectSubmitted(Project project);
+    event DACAggregator__ProjectSubmitted(Project project);
 
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
@@ -85,7 +85,7 @@ contract DACFactory {
      */
 
     modifier onlyOwner() {
-        if (msg.sender != i_owner) revert DACFactory__NOT_OWNER();
+        if (msg.sender != i_owner) revert DACAggregator__NOT_OWNER();
         _;
     }
 
@@ -133,7 +133,7 @@ contract DACFactory {
     ) external {
         // It should have a share for each collaborator
         if (_collaborators.length != _shares.length)
-            revert DACFactory__submitProject__INVALID_LENGTH();
+            revert DACAggregator__submitProject__INVALID_LENGTH();
 
         uint256 totalShares = 0;
         bool includesInitiator = false;
@@ -147,14 +147,14 @@ contract DACFactory {
         }
         // It should include the initiator
         if (!includesInitiator)
-            revert DACFactory__submitProject__DOES_NOT_INCLUDE_INITIATOR();
+            revert DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR();
         // The total shares should be 100
         if (totalShares != 100)
-            revert DACFactory__submitProject__INVALID_SHARES();
+            revert DACAggregator__submitProject__INVALID_SHARES();
 
         // It should have a name of at least 2 characters and at most 50 characters
         if (bytes(_name).length < 2 || bytes(_name).length > 50)
-            revert DACFactory__submitProject__INVALID_NAME();
+            revert DACAggregator__submitProject__INVALID_NAME();
 
         // Create a child contract for the project
         DACProject projectContract = new DACProject(
@@ -178,7 +178,7 @@ contract DACFactory {
         // Add it to the projects array
         s_projects.push(project);
         // Emit an event
-        emit DACFactory__ProjectSubmitted(project);
+        emit DACAggregator__ProjectSubmitted(project);
     }
 
     /* -------------------------------------------------------------------------- */
