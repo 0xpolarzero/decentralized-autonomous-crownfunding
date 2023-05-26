@@ -24,6 +24,11 @@ contract DACContributorAccount {
     error DACContributorAccount__NOT_OWNER();
     /// @dev The transfer failed
     error DACContributorAccount__TRANSFER_FAILED();
+
+    /**
+     * @dev Contributions
+     */
+
     /// @dev The call to an external contract failed
     error DACContributorAccount__CALL_FAILED();
     /// @dev The contribution is not active anymore
@@ -36,6 +41,13 @@ contract DACContributorAccount {
     error DACContributorAccount__TOO_MANY_CONTRIBUTIONS();
     /// @dev The timestamp is in the past
     error DACContributorAccount__INVALID_TIMESTAMP();
+
+    /**
+     * @dev Upkeep
+     */
+
+    /// @dev An upkeep is already registered
+    error DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -52,14 +64,18 @@ contract DACContributorAccount {
     /// @dev The maximum amount of contributions that can be stored in the account
     // This prevents the upkeeps from failing if the load were to be too high
     uint256 private immutable i_maxContributions;
-    /// @dev The ID of the Chainlink Upkeep
-    uint256 private i_upkeepId;
 
+    /// @dev The ID of the Chainlink Upkeep
+    uint256 private s_upkeepId;
+    /// @dev The gas limit of the Chainlink Upkeep
+    uint32 private s_upkeepGasLimit;
     /// @dev The last time the contributions were sent to the supported projects though the upkeep
     uint256 private s_lastUpkeep;
     /// @dev The interval between each payment
     // The owner of the account can change this value, knowing that a smaller value will require more LINK
     uint256 private s_upkeepInterval;
+    /// @dev Whether an upkeep is registered or not
+    bool private s_upkeepRegistered;
 
     /// @dev The projects the account is contributing to
     Contribution[] private s_contributions;
@@ -128,6 +144,7 @@ contract DACContributorAccount {
 
         // Initialize storage variables
         s_lastUpkeep = block.timestamp;
+        s_upkeepGasLimit = _upkeepGasLimit;
 
         // Initialize the Chainlink variables
         LINK = LinkTokenInterface(_linkToken);
@@ -138,17 +155,7 @@ contract DACContributorAccount {
         DAC_AGGREGATOR = DACAggregatorInterface(msg.sender);
 
         // Register a new Chainlink Upkeep
-        i_upkeepId = REGISTRAR.registerUpkeep(
-            RegistrationParams({
-                name: "DACContributorAccount",
-                upkeepContract: address(this),
-                gasLimit: _upkeepGasLimit,
-                adminAddress: _owner,
-                checkData: "0x",
-                offchainConfig: "0x",
-                amount: 0
-            })
-        );
+        registerNewUpkeep();
     }
 
     /* -------------------------------------------------------------------------- */
@@ -286,15 +293,6 @@ contract DACContributorAccount {
     }
 
     /**
-     * @notice Withdraw LINK tokens from this contract
-     */
-
-    function withdrawLink() external onlyOwner {
-        bool success = LINK.transfer(msg.sender, LINK.balanceOf(address(this)));
-        if (!success) revert DACContributorAccount__TRANSFER_FAILED();
-    }
-
-    /**
      * @notice Trigger the payment of all the contributions manually
      * @dev This can be called by the owner of the account if the Chainlink Upkeeps failed,
      * or just if they want to trigger the payment manually at any time
@@ -339,12 +337,77 @@ contract DACContributorAccount {
     /* -------------------------------------------------------------------------- */
 
     /**
-     * @notice Fund the upkeep of the account
+     * @notice Register a new Chainlink Upkeep
      */
 
-    function fundUpkeep() external onlyOwner {
-        // Add funds to the Chainlink Upkeep
-        REGISTRY.addFunds(i_upkeepId, LINK.balanceOf(address(this)));
+    function registerNewUpkeep() public onlyOwner {
+        if (s_upkeepRegistered)
+            revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
+
+        // Register the Chainlink Upkeep
+        s_upkeepId = REGISTRAR.registerUpkeep(
+            RegistrationParams({
+                name: "DACContributorAccount",
+                upkeepContract: address(this),
+                gasLimit: s_upkeepGasLimit,
+                adminAddress: i_owner,
+                checkData: "0x",
+                offchainConfig: "0x",
+                amount: 0
+            })
+        );
+
+        // Set the upkeep as registered
+        s_upkeepRegistered = true;
+    }
+
+    /**
+     * @notice Fund the upkeep of the account after a transfer of LINK tokens
+     * @param _sender The sender of the LINK tokens (most probably the owner of the account)
+     * @param _amount The amount of LINK tokens sent
+     * @param _data The data sent with the transfer
+     * @dev This function is called by the LINK token contract after being called with the `transferAndCall` function
+     * @dev The recommended process for funding the upkeep is therefore to:
+     * - let the user approve the spending of LINK tokens to the LINK contract
+     * - call the `transferAndCall` function of the LINK contract with the amount approved (using the address of this account
+     * as the receiver)
+     */
+    function onTokenTransfer(
+        address _sender,
+        uint256 _amount,
+        bytes _data
+    ) external override {
+        // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
+        // because in any case we want any LINK funds here to be used for the upkeep
+        // Fund the upkeep
+        REGISTRY.addFunds(s_upkeepId, LINK.balanceOf(address(this)));
+    }
+
+    /**
+     * @notice Cancel the registration of the Chainlink Upkeep
+     * @dev This will cancel the upkeep but it won't withdraw the funds
+     */
+
+    function cancelUpkeep() external onlyOwner {
+        // Cancel the Chainlink Upkeep
+        REGISTRAR.cancelUpkeep(s_upkeepId);
+        // Set the upkeep as not registered
+        s_upkeepRegistered = false;
+    }
+
+    /**
+     * @notice Withdraw the funds from the Chainlink Upkeep
+     * @dev The upkeep needs to be canceled first, and the funds can be withdrawn
+     * only after 50 blocks
+     * @dev It will send the funds to the owner of the account
+     * @dev The frontend should carefully let the owner cancel the upkeep and withdraw the funds, before
+     * allowing them to create a new upkeep, or they would lose the ID ; even though it could still be grabbed
+     * from the registry/events to withdraw the funds later
+     */
+
+    function withdrawUpkeepFunds() external onlyOwner {
+        // Withdraw the funds from the Chainlink Upkeep
+        REGISTRY.withdrawFunds(s_upkeepId, i_owner);
     }
 
     /**
@@ -455,6 +518,15 @@ contract DACContributorAccount {
 
     function getContributions() external view returns (Contribution[] memory) {
         return s_contributions;
+    }
+
+    /**
+     * @notice Get the Chainlink Upkeep ID
+     * @return uint256 The Chainlink Upkeep ID
+     */
+
+    function getUpkeepId() external view returns (uint256) {
+        return s_upkeepId;
     }
 
     /**

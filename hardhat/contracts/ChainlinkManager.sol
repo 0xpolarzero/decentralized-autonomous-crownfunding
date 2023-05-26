@@ -23,4 +23,8 @@ interface KeeperRegistrarInterface {
 
 interface KeeperRegistryInterface {
     function addFunds(uint256 id, uint96 amount) external;
+
+    function withdrawFunds(uint256 id, address to) external;
+
+    function cancelUpkeep(uint256 id) external;
 }
