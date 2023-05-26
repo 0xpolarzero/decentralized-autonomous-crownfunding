@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@openzeppelin/contracts": "^4.8.2",
     "babel-eslint": "^10.1.0",
     "dotenv": "^10.0.0"

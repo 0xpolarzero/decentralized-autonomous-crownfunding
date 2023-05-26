@@ -54,6 +54,8 @@ contract MockDACAggregator {
     error DACAggregator__DOES_NOT_EXIST();
     /// @dev The caller is not a collaborator of the project
     error DACAggregator__NOT_COLLABORATOR();
+    /// @dev The project is now inactive (30 days after the last ping)
+    error DACAggregator__EXPIRED();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -125,11 +127,11 @@ contract MockDACAggregator {
     /// @dev The array of projects
     // Project[] private s_projects;
     /// @dev The array of contributor accounts
-    // ContributorAccount[] private s_contributors;
+    // ContributorAccount[] private s_contributorAccounts;
     /// @dev The mapping of project contract addresses to their project information
     mapping(address => Project) private s_projects;
     /// @dev The mapping of contributor addresses to their account (contract) address
-    mapping(address => address) private s_contributors;
+    mapping(address => address) private s_contributorAccounts;
 
     /// @dev A project that was submitted to the DAC process
     /// @param collaborators The addresses of the collaborators (including the initiator)
@@ -291,7 +293,7 @@ contract MockDACAggregator {
 
     function createContributorAccount(uint256 _paymentInterval) external {
         // It should not have a contributor account already
-        if (s_contributors[msg.sender] != address(0))
+        if (s_contributorAccounts[msg.sender] != address(0))
             revert DACAggregator__ALREADY_EXISTS();
 
         // It should be at least 1 day and at most 30 days
@@ -311,7 +313,7 @@ contract MockDACAggregator {
             );
 
         // Add it to the contributors array and mapping
-        s_contributors[msg.sender] = address(contributorContract);
+        s_contributorAccounts[msg.sender] = address(contributorContract);
 
         emit DACAggregator__ContributorAccountCreated(
             msg.sender,
@@ -336,6 +338,12 @@ contract MockDACAggregator {
         if (!DACProject(_projectAddress).isCollaborator(msg.sender))
             revert DACAggregator__NOT_COLLABORATOR();
 
+        // It should not be too late to ping the project (after 30 days of inactivity)
+        if (
+            block.timestamp >
+            s_projects[_projectAddress].lastActivityAt + 30 days
+        ) revert DACAggregator__EXPIRED();
+
         // Update the project's last activity timestamp
         s_projects[_projectAddress].lastActivityAt = block.timestamp;
         // Emit an event
@@ -352,7 +360,7 @@ contract MockDACAggregator {
      * @dev This will only affect new contributor accounts
      */
 
-    function setMaxContributions(uint256 _maxContributions) external {
+    function setMaxContributions(uint256 _maxContributions) external onlyOwner {
         s_maxContributions = _maxContributions;
         emit DACAggregator__MaxContributionsUpdated(_maxContributions);
     }
@@ -389,15 +397,15 @@ contract MockDACAggregator {
     }
 
     /**
-     * @notice Returns a specific contributor
+     * @notice Returns a specific contributor's account contract address
      * @param _contributor The address of the contributor
      * @return address The address of the contract of the contributor's account
      */
 
-    function getContributor(
+    function getContributorAccount(
         address _contributor
     ) external view returns (address) {
-        return s_contributors[_contributor];
+        return s_contributorAccounts[_contributor];
     }
 
     /**
@@ -414,7 +422,7 @@ contract MockDACAggregator {
      * @return uint256 The maximum amount of contributions
      */
 
-    function getMaximumContributions() external view returns (uint256) {
+    function getMaxContributions() external view returns (uint256) {
         return s_maxContributions;
     }
 

@@ -1,10 +1,7 @@
 const { deployments, network, ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const {
-  developmentChains,
-  chainlink,
-  MAX_CONTRIBUTIONS,
-} = require('../../helper-hardhat-config');
+const { developmentChains, chainlink } = require('../../helper-hardhat-config');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 !developmentChains.includes(network.name)
   ? describe.skip
@@ -16,12 +13,13 @@ const {
 
       beforeEach(async () => {
         const accounts = await ethers.getSigners();
-        deployer = accounts[0];
-        user = accounts[1];
+        deployer = accounts[0]; // initiator and collaborator
+        user = accounts[1]; // collaborator
+        notUser = accounts[2]; // not collaborator
         await deployments.fixture(['all']);
 
         dacAggregatorContract = await ethers.getContract(
-          'DACAggregator',
+          'MockDACAggregator',
           deployer,
         );
 
@@ -45,8 +43,8 @@ const {
             'Should initialize the owner with the deployer address',
           );
           assert.equal(
-            await dacAggregatorContract.getMaxContributions,
-            MAX_CONTRIBUTIONS,
+            Number(await dacAggregatorContract.getMaxContributions()),
+            chainlink[network.name].MAX_CONTRIBUTIONS,
             'Should initialize the max contributions with the right value',
           );
           // Chainlink
@@ -253,35 +251,6 @@ const {
         /* -------------------------------------------------------------------------- */
 
         describe('createContributorAccount', function () {
-          //   function createContributorAccount(uint256 _paymentInterval) external {
-          //     // It should not have a contributor account already
-          //     if (s_contributors[msg.sender] != address(0))
-          //         revert DACAggregator__ALREADY_EXISTS();
-
-          //     // It should be at least 1 day and at most 30 days
-          //     if (_paymentInterval < 1 days || _paymentInterval > 30 days)
-          //         revert DACAggregator__INVALID_PAYMENT_INTERVAL();
-
-          //     // Create a child contract for the contributor
-          //     DACContributorAccount contributorContract = new DACContributorAccount(
-          //         msg.sender,
-          //         i_linkTokenAddress,
-          //         i_keeperRegistrarAddress,
-          //         i_keeperRegistryAddress,
-          //         _paymentInterval,
-          //         s_maxContributions,
-          //         s_upkeepGasLimit
-          //     );
-
-          //     // Add it to the contributors array and mapping
-          //     s_contributors[msg.sender] = address(contributorContract);
-
-          //     emit DACAggregator__ContributorAccountCreated(
-          //         msg.sender,
-          //         address(contributorContract)
-          //     );
-          // }
-
           it('Should revert if the caller already has a contributor account', async () => {
             await dacAggregatorContract.createContributorAccount(86400); // 1 day
             await expect(
@@ -291,6 +260,272 @@ const {
               'Should revert if the caller already has a contributor account',
             );
           });
+
+          it('Should revert if the payment interval is invalid', async () => {
+            await expect(
+              dacAggregatorContract.createContributorAccount(86399), // 1 second less than 1 day
+            ).to.be.revertedWith(
+              'DACAggregator__INVALID_PAYMENT_INTERVAL()',
+              'Should revert if the payment interval is less than 1 day',
+            );
+
+            await expect(
+              dacAggregatorContract.createContributorAccount(2592001), // 1 second more than 30 days
+            ).to.be.revertedWith(
+              'DACAggregator__INVALID_PAYMENT_INTERVAL()',
+              'Should revert if the payment interval is more than 30 days',
+            );
+          });
+
+          it('Should create a contributor account successfully', async () => {
+            const tx = await dacAggregatorContract.createContributorAccount(
+              86400, // 1 day
+            );
+            const txReceipt = await tx.wait(1);
+
+            // Get the address of the child contract
+            const emittedAddress = txReceipt.events.filter(
+              (e) => e.event === 'DACAggregator__ContributorAccountCreated',
+            )[0].args.contributorAccountContract;
+
+            // Check that it was added to the mapping
+            const retrievedAddress =
+              await dacAggregatorContract.getContributorAccount(
+                deployer.address,
+              );
+
+            assert.equal(
+              emittedAddress,
+              retrievedAddress,
+              'The contributor contract address should be the one returned by the event',
+            );
+
+            // Quickly check that the contract is indeed deployed
+            const childContract = await ethers.getContractAt(
+              'MockDACContributorAccount',
+              emittedAddress,
+            );
+
+            assert.equal(
+              await childContract.getOwner(),
+              deployer.address,
+              'The owner of the child contract should be the caller of the function',
+            );
+          });
+
+          it('Should emit an event with the correct parameters', async () => {
+            const tx = await dacAggregatorContract.createContributorAccount(
+              86400, // 1 day
+            );
+            const txReceipt = await tx.wait(1);
+            const event = txReceipt.events[0].args;
+
+            assert.equal(
+              event.owner,
+              deployer.address,
+              'The contributor should be the caller of the function',
+            );
+            assert.equal(
+              event.contributorAccountContract,
+              await dacAggregatorContract.getContributorAccount(
+                deployer.address,
+              ),
+              'The contributor account contract should be the one returned by the function',
+            );
+          });
+        });
+      });
+
+      /* -------------------------------------------------------------------------- */
+      /*                                 pingProject                                */
+      /* -------------------------------------------------------------------------- */
+
+      describe('pingProject', function () {
+        let projectAddress;
+
+        beforeEach(async () => {
+          // Deploy a new project
+          const tx = await dacAggregatorContract.submitProject(
+            ...Object.values(submitProjectArgs),
+          );
+          const txReceipt = await tx.wait(1);
+
+          projectAddress = txReceipt.events.filter(
+            (e) => e.event === 'DACAggregator__ProjectSubmitted',
+          )[0].args[0].projectContract;
+        });
+
+        it('Should revert if the project does not exist', async () => {
+          await expect(
+            dacAggregatorContract.pingProject(ethers.constants.AddressZero),
+          ).to.be.revertedWith(
+            'DACAggregator__DOES_NOT_EXIST()',
+            'Should revert if the project does not exist',
+          );
+        });
+
+        it('Should revert if the caller is not a collaborator', async () => {
+          await expect(
+            dacAggregatorContract.connect(notUser).pingProject(projectAddress),
+          ).to.be.revertedWith(
+            'DACAggregator__NOT_COLLABORATOR()',
+            'Should revert if the caller is not a collaborator',
+          );
+        });
+
+        it('Should revert if the project is expired (30 days of inactivity)', async () => {
+          const timeToPass = 2592001; // 30 days + 1 second
+          await time.increase(timeToPass);
+
+          await expect(
+            dacAggregatorContract.pingProject(projectAddress),
+          ).to.be.revertedWith(
+            'DACAggregator__EXPIRED()',
+            'Should revert if the project is expired',
+          );
+          assert.equal(
+            await dacAggregatorContract.isProjectActive(projectAddress),
+            false,
+            'The project should be inactive',
+          );
+        });
+
+        it('Should update the last activity timestamp for the project', async () => {
+          const currentTime = await time.latest();
+          const timeToPass = 1728000; // 20 days
+
+          // It should be at the current time
+          assert.equal(
+            Number(
+              (await dacAggregatorContract.getProject(projectAddress))
+                .lastActivityAt,
+            ),
+            currentTime,
+            'The last activity timestamp should be the current timestamp',
+          );
+
+          // Pass 20 days
+          await time.increase(timeToPass);
+
+          // Ping it
+          await dacAggregatorContract.pingProject(projectAddress);
+
+          // It should be at the current time + 20 days
+          assert.equal(
+            Number(
+              (await dacAggregatorContract.getProject(projectAddress))
+                .lastActivityAt,
+            ),
+            await time.latest(),
+            'The last activity timestamp should be + 20 days',
+          );
+
+          // Pass 20 more days
+          await time.increase(timeToPass);
+
+          // The project should still be active (pinged 20 days ago)
+          assert.equal(
+            await dacAggregatorContract.isProjectActive(projectAddress),
+            true,
+            'The project should still be active',
+          );
+
+          // But not after 40 days since the last ping
+          await time.increase(timeToPass);
+
+          assert.equal(
+            await dacAggregatorContract.isProjectActive(projectAddress),
+            false,
+            'The project should be inactive after 40 days',
+          );
+        });
+      });
+
+      /* -------------------------------------------------------------------------- */
+      /*                               ADMIN FUNCTIONS                              */
+      /* -------------------------------------------------------------------------- */
+
+      describe('setMaxContributions', function () {
+        it('Should revert if the caller is not the owner', async () => {
+          await expect(
+            dacAggregatorContract.connect(user).setMaxContributions(10),
+          ).to.be.revertedWith(
+            'DACAggregator__NOT_OWNER()',
+            'Should revert if the caller is not the owner',
+          );
+        });
+
+        it('Should correctly update the max contributions and emit the correct event', async () => {
+          await dacAggregatorContract.setMaxContributions(10);
+
+          assert.equal(
+            await dacAggregatorContract.getMaxContributions(),
+            10,
+            'The max contributions should be the number submitted',
+          );
+        });
+      });
+
+      describe('setNativeTokenLinkRate', function () {
+        it('Should revert if the caller is not the owner', async () => {
+          await expect(
+            dacAggregatorContract.connect(user).setNativeTokenLinkRate(10),
+          ).to.be.revertedWith(
+            'DACAggregator__NOT_OWNER()',
+            'Should revert if the caller is not the owner',
+          );
+        });
+
+        it('Should correctly update the native token link rate and emit the correct event', async () => {
+          await dacAggregatorContract.setNativeTokenLinkRate(10);
+
+          assert.equal(
+            await dacAggregatorContract.getNativeTokenLinkRate(),
+            10,
+            'The native token link rate should be the number submitted',
+          );
+        });
+      });
+
+      describe('setPremiumPercent', function () {
+        it('Should revert if the caller is not the owner', async () => {
+          await expect(
+            dacAggregatorContract.connect(user).setPremiumPercent(10),
+          ).to.be.revertedWith(
+            'DACAggregator__NOT_OWNER()',
+            'Should revert if the caller is not the owner',
+          );
+        });
+
+        it('Should correctly update the premium percent and emit the correct event', async () => {
+          await dacAggregatorContract.setPremiumPercent(10);
+
+          assert.equal(
+            await dacAggregatorContract.getPremiumPercent(),
+            10,
+            'The premium percent should be the number submitted',
+          );
+        });
+      });
+
+      describe('setUpkeepGasLimit', function () {
+        it('Should revert if the caller is not the owner', async () => {
+          await expect(
+            dacAggregatorContract.connect(user).setUpkeepGasLimit(10),
+          ).to.be.revertedWith(
+            'DACAggregator__NOT_OWNER()',
+            'Should revert if the caller is not the owner',
+          );
+        });
+
+        it('Should correctly update the upkeep gas limit and emit the correct event', async () => {
+          await dacAggregatorContract.setUpkeepGasLimit(10);
+
+          assert.equal(
+            await dacAggregatorContract.getUpkeepGasLimit(),
+            10,
+            'The upkeep gas limit should be the number submitted',
+          );
         });
       });
     });

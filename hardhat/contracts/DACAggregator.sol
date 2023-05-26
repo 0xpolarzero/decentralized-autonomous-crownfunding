@@ -122,11 +122,11 @@ contract DACAggregator {
     /// @dev The array of projects
     // Project[] private s_projects;
     /// @dev The array of contributor accounts
-    // ContributorAccount[] private s_contributors;
+    // ContributorAccount[] private s_contributorAccounts;
     /// @dev The mapping of project contract addresses to their project information
     mapping(address => Project) private s_projects;
     /// @dev The mapping of contributor addresses to their account (contract) address
-    mapping(address => address) private s_contributors;
+    mapping(address => address) private s_contributorAccounts;
 
     /// @dev A project that was submitted to the DAC process
     /// @param collaborators The addresses of the collaborators (including the initiator)
@@ -288,7 +288,7 @@ contract DACAggregator {
 
     function createContributorAccount(uint256 _paymentInterval) external {
         // It should not have a contributor account already
-        if (s_contributors[msg.sender] != address(0))
+        if (s_contributorAccounts[msg.sender] != address(0))
             revert DACAggregator__ALREADY_EXISTS();
 
         // It should be at least 1 day and at most 30 days
@@ -307,7 +307,7 @@ contract DACAggregator {
         );
 
         // Add it to the contributors array and mapping
-        s_contributors[msg.sender] = address(contributorContract);
+        s_contributorAccounts[msg.sender] = address(contributorContract);
 
         emit DACAggregator__ContributorAccountCreated(
             msg.sender,
@@ -348,7 +348,7 @@ contract DACAggregator {
      * @dev This will only affect new contributor accounts
      */
 
-    function setMaxContributions(uint256 _maxContributions) external {
+    function setMaxContributions(uint256 _maxContributions) external onlyOwner {
         s_maxContributions = _maxContributions;
         emit DACAggregator__MaxContributionsUpdated(_maxContributions);
     }
@@ -385,15 +385,15 @@ contract DACAggregator {
     }
 
     /**
-     * @notice Returns a specific contributor
+     * @notice Returns a specific contributor's account contract address
      * @param _contributor The address of the contributor
      * @return address The address of the contract of the contributor's account
      */
 
-    function getContributor(
+    function getContributorAccount(
         address _contributor
     ) external view returns (address) {
-        return s_contributors[_contributor];
+        return s_contributorAccounts[_contributor];
     }
 
     /**
@@ -410,7 +410,7 @@ contract DACAggregator {
      * @return uint256 The maximum amount of contributions
      */
 
-    function getMaximumContributions() external view returns (uint256) {
+    function getMaxContributions() external view returns (uint256) {
         return s_maxContributions;
     }
 

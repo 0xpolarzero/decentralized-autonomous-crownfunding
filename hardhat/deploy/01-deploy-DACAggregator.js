@@ -8,12 +8,17 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const args = Object.values(chainlink[network.name]);
 
-  const dacAggregator = await deploy('DACAggregator', {
-    from: deployer,
-    args,
-    log: true,
-    waitConfirmations: network.config.blockConfirmations || 1,
-  });
+  const dacAggregator = await deploy(
+    developmentChains.includes(network.name)
+      ? 'MockDACAggregator'
+      : 'DACAggregator',
+    {
+      from: deployer,
+      args,
+      log: true,
+      waitConfirmations: network.config.blockConfirmations || 1,
+    },
+  );
 
   if (
     !developmentChains.includes(network.name) &&
