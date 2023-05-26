@@ -5,7 +5,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe.only('DACAggregator unit tests', function () {
+  : describe('DACAggregator unit tests', function () {
       let deployer;
       let user;
       let dacAggregatorContract;
