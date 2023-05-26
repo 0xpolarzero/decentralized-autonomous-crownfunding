@@ -2,12 +2,13 @@ const { deployments, network, ethers } = require('hardhat');
 const { assert, expect } = require('chai');
 const {
   developmentChains,
-  PHASE_PERIOD,
+  chainlink,
+  MAX_CONTRIBUTIONS,
 } = require('../../helper-hardhat-config');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe('DACAggregator unit tests', function () {
+  : describe.only('DACAggregator unit tests', function () {
       let deployer;
       let user;
       let dacAggregatorContract;
@@ -43,6 +44,42 @@ const {
             deployer.address,
             'Should initialize the owner with the deployer address',
           );
+          assert.equal(
+            await dacAggregatorContract.getMaxContributions,
+            MAX_CONTRIBUTIONS,
+            'Should initialize the max contributions with the right value',
+          );
+          // Chainlink
+          assert.equal(
+            await dacAggregatorContract.getLinkTokenAddress(),
+            chainlink[network.name].LINK_TOKEN,
+            'Should initialize the LINK token address with the right address',
+          );
+          assert.equal(
+            await dacAggregatorContract.getKeeperRegistrarAddress(),
+            chainlink[network.name].REGISTRAR,
+            'Should initialize the keeper registrar address with the right address',
+          );
+          assert.equal(
+            await dacAggregatorContract.getKeeperRegistryAddress(),
+            chainlink[network.name].REGISTRY,
+            'Should initialize the keeper registry address with the right address',
+          );
+          assert.equal(
+            await dacAggregatorContract.getNativeTokenLinkRate(),
+            chainlink[network.name].NATIVE_TOKEN_LINK_RATE,
+            'Should initialize the native token link rate with the right value',
+          );
+          assert.equal(
+            await dacAggregatorContract.getPremiumPercent(),
+            chainlink[network.name].PREMIUM_PERCENT,
+            'Should initialize the payment premium percent with the right value',
+          );
+          assert.equal(
+            await dacAggregatorContract.getUpkeepGasLimit(),
+            chainlink[network.name].GAS_LIMIT,
+            'Should initialize the upkeep gas limit with the right value',
+          );
         });
       });
 
@@ -66,13 +103,13 @@ const {
           await expect(
             dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_LENGTH()',
+            'DACAggregator__INVALID_LENGTH()',
             'Should revert if there are more shares than collaborators',
           );
           await expect(
             dacAggregatorContract.submitProject(...Object.values(args2)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_LENGTH()',
+            'DACAggregator__INVALID_LENGTH()',
             'Should revert if there are more collaborators than shares',
           );
         });
@@ -87,7 +124,7 @@ const {
           await expect(
             dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR()',
+            'DACAggregator__DOES_NOT_INCLUDE_INITIATOR()',
             'Should revert if the called (initiator) is not included in collaborators',
           );
         });
@@ -101,7 +138,7 @@ const {
           await expect(
             dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_SHARES()',
+            'DACAggregator__INVALID_SHARES()',
             'Should revert if the total shares is not 100%',
           );
         });
@@ -115,31 +152,25 @@ const {
           await expect(
             dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
-            'DACAggregator__submitProject__INVALID_NAME()',
+            'DACAggregator__INVALID_NAME()',
             'Should revert if the name is not between 2 and 50 characters',
           );
         });
 
         it('Should submit a project successfully and add it to the array', async () => {
           // Submit the project
-          await dacAggregatorContract.submitProject(
+          const tx = await dacAggregatorContract.submitProject(
             ...Object.values(submitProjectArgs),
           );
+          const txReceipt = await tx.wait(1);
+          // Get the address of the child contract
+          const projectAddress = txReceipt.events.filter(
+            (e) => e.event === 'DACAggregator__ProjectSubmitted',
+          )[0].args[0].projectContract;
 
-          // Grab the projects and this specifig one
-          const projects = await dacAggregatorContract.getProjects();
-          const project = await dacAggregatorContract.getProjectAtIndex(0);
-
-          // Check the project is added to the array
-          assert.equal(
-            projects.length,
-            1,
-            'There should be 1 project in the array',
-          );
-          assert.deepEqual(
-            projects[0],
-            project,
-            'The only project should be the one just submitted',
+          // Grab the projects
+          const project = await dacAggregatorContract.getProject(
+            projectAddress,
           );
 
           // Check the values in the project
@@ -172,7 +203,7 @@ const {
           // Check that the address of the child contract points to the right contract
           const childContract = await ethers.getContractAt(
             'DACProject',
-            project.projectContract,
+            projectAddress,
           );
           assert.equal(
             await childContract.getName(),
@@ -215,9 +246,51 @@ const {
             submitProjectArgs.description,
             'The description should be the one submitted',
           );
+        });
 
-          // We can't really test the address of the child contract because the only other way
-          // to grab it is to call`getProjectAtIndex(0)`, which is already tested right above
+        /* -------------------------------------------------------------------------- */
+        /*                          createContributorAccount                          */
+        /* -------------------------------------------------------------------------- */
+
+        describe('createContributorAccount', function () {
+          //   function createContributorAccount(uint256 _paymentInterval) external {
+          //     // It should not have a contributor account already
+          //     if (s_contributors[msg.sender] != address(0))
+          //         revert DACAggregator__ALREADY_EXISTS();
+
+          //     // It should be at least 1 day and at most 30 days
+          //     if (_paymentInterval < 1 days || _paymentInterval > 30 days)
+          //         revert DACAggregator__INVALID_PAYMENT_INTERVAL();
+
+          //     // Create a child contract for the contributor
+          //     DACContributorAccount contributorContract = new DACContributorAccount(
+          //         msg.sender,
+          //         i_linkTokenAddress,
+          //         i_keeperRegistrarAddress,
+          //         i_keeperRegistryAddress,
+          //         _paymentInterval,
+          //         s_maxContributions,
+          //         s_upkeepGasLimit
+          //     );
+
+          //     // Add it to the contributors array and mapping
+          //     s_contributors[msg.sender] = address(contributorContract);
+
+          //     emit DACAggregator__ContributorAccountCreated(
+          //         msg.sender,
+          //         address(contributorContract)
+          //     );
+          // }
+
+          it('Should revert if the caller already has a contributor account', async () => {
+            await dacAggregatorContract.createContributorAccount(86400); // 1 day
+            await expect(
+              dacAggregatorContract.createContributorAccount(86400),
+            ).to.be.revertedWith(
+              'DACAggregator__ALREADY_EXISTS()',
+              'Should revert if the caller already has a contributor account',
+            );
+          });
         });
       });
     });

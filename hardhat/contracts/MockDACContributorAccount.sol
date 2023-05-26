@@ -5,12 +5,22 @@ import "./ChainlinkManager.sol";
 import "./DACAggregatorInterface.sol";
 
 /**
- * @title DAC (Decentralized Autonomous Crowdfunding) Contributor account
+ * @title Mock DAC (Decentralized Autonomous Crowdfunding) Contributor account
  * @author polarzero
  * @notice ...
+ * @dev This contract has the same functionalities as the DACContributorAccount contract,
+ * with a few differences, as we're not actually registering the upkeep on-chain.
+ * @dev Since the Chainlink Keepers registry and registrar are not real, the calls involving them
+ * are mocked.
+ * @dev The functions impacted are:
+ * - `constructor` -> calls `MOCK__registerUpkeep`
+ * - `registerUpkeep` -> calls `MOCK__registerUpkeep`
+ * - `fundUpkeep` -> calls `MOCK__fundUpkeep`
+ * - `cancelUpkeep` -> calls `MOCK__cancelUpkeep`
+ * - `withdrawUpkeepFunds` -> calls `MOCK__withdrawUpkeepFunds`
  */
 
-contract DACContributorAccount is AutomationCompatibleInterface {
+contract MockDACContributorAccount is AutomationCompatibleInterface {
     LinkTokenInterface internal immutable LINK;
     KeeperRegistrarInterface internal immutable REGISTRAR;
     KeeperRegistryInterface internal immutable REGISTRY;
@@ -231,18 +241,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
         // Register a new Chainlink Upkeep
         // We can't call `registerUpkeep` yet in the constructor because of the immutable variables
-        s_upkeepId = KeeperRegistrarInterface(_registrar).registerUpkeep(
-            RegistrationParams({
-                name: "DACContributorAccount",
-                encryptedEmail: "",
-                upkeepContract: address(this),
-                gasLimit: s_upkeepGasLimit,
-                adminAddress: _owner,
-                checkData: "0x",
-                offchainConfig: "0x",
-                amount: 0
-            })
-        );
+        s_upkeepId = MOCK_registerUpkeep();
     }
 
     /* -------------------------------------------------------------------------- */
@@ -432,7 +431,6 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     /**
      * @notice Send the contributions to the projects
      * @param _contributionsToSend The contributions to send
-     * TODO MAYBE CAN USE A MULTICALL INSTEAD OF A FOR LOOP
      */
 
     function transferContributions(
@@ -470,18 +468,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
         // Register the Chainlink Upkeep
-        s_upkeepId = REGISTRAR.registerUpkeep(
-            RegistrationParams({
-                name: "DACContributorAccount",
-                encryptedEmail: "",
-                upkeepContract: address(this),
-                gasLimit: s_upkeepGasLimit,
-                adminAddress: i_owner,
-                checkData: "0x",
-                offchainConfig: "0x",
-                amount: 0
-            })
-        );
+        s_upkeepId = MOCK_registerUpkeep();
 
         // Set the upkeep as registered
         s_upkeepRegistered = true;
@@ -508,7 +495,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
         // because in any case we want any LINK funds here to be used for the upkeep
         // Fund the upkeep
-        REGISTRY.addFunds(s_upkeepId, uint96(LINK.balanceOf(address(this))));
+        MOCK_addFundsToUpkeep(uint96(LINK.balanceOf(address(this))));
 
         emit DACContributorAccount__UpkeepFunded(_sender, _amount);
     }
@@ -520,7 +507,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     function cancelUpkeep() external onlyOwner {
         // Cancel the Chainlink Upkeep
-        REGISTRY.cancelUpkeep(s_upkeepId);
+        MOCK_cancelUpkeep();
         // Set the upkeep as not registered
         s_upkeepRegistered = false;
 
@@ -539,7 +526,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     function withdrawUpkeepFunds() external onlyOwner {
         // Withdraw the funds from the Chainlink Upkeep
-        REGISTRY.withdrawFunds(s_upkeepId, i_owner);
+        MOCK_withdrawFundsFromUpkeep();
 
         emit DACContributorAccount__UpkeepFundsWithdrawn(s_upkeepId);
     }
@@ -797,4 +784,39 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
         return false;
     }
+
+    /* -------------------------------------------------------------------------- */
+    /*                               MOCK FUNCTIONS                               */
+    /* -------------------------------------------------------------------------- */
+
+    /**
+     * @notice Mock function to simulate the Upkeep registration
+     * @return uint256 The Chainlink Upkeep ID
+     */
+
+    function MOCK_registerUpkeep() private pure returns (uint256) {
+        return 1;
+    }
+
+    /**
+     * @notice Mock function to simulate adding funds to the Upkeep
+     */
+
+    function MOCK_addFundsToUpkeep(uint96 _amount) private {
+        // This is called after the user sent some LINK to this contract
+        // Just sent it back to them
+        LINK.transfer(i_owner, _amount);
+    }
+
+    /**
+     * @notice Mock function to simulate cancelling the Upkeep
+     */
+
+    function MOCK_cancelUpkeep() private {}
+
+    /**
+     * @notice Mock function to simulate withdrawing the funds from the Upkeep
+     */
+
+    function MOCK_withdrawFundsFromUpkeep() private {}
 }

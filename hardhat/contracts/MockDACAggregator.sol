@@ -2,16 +2,19 @@
 pragma solidity ^0.8.7;
 
 import "./DACProject.sol";
-import "./DACContributorAccount.sol";
+import "./MockDACContributorAccount.sol";
 
 /**
- * @title DAC (Decentralized Autonomous Crowdfunding) Factory
+ * @title Mock DAC (Decentralized Autonomous Crowdfunding) Factory
  * @author polarzero
  * @notice ...
- * @dev ...
+ * @dev This contract has the same exact functionalities as the DACAggregator contract
+ * @dev The only difference is that it creates a MOCKContributorAccount contract instead of a ContributorAccount contract
+ * @dev This is due to the original contributor account contract calling the Chainlink Automation registry and registrar that
+ * require extensive setup and configuration to deploy locally. We do choose to keep these verifications for staging (testnet) tests.
  */
 
-contract DACAggregator {
+contract MockDACAggregator {
     /* -------------------------------------------------------------------------- */
     /*                                CUSTOM ERRORS                               */
     /* -------------------------------------------------------------------------- */
@@ -296,15 +299,16 @@ contract DACAggregator {
             revert DACAggregator__INVALID_PAYMENT_INTERVAL();
 
         // Create a child contract for the contributor
-        DACContributorAccount contributorContract = new DACContributorAccount(
-            msg.sender,
-            i_linkTokenAddress,
-            i_keeperRegistrarAddress,
-            i_keeperRegistryAddress,
-            _paymentInterval,
-            s_maxContributions,
-            s_upkeepGasLimit
-        );
+        /// @dev We're creating a mock contract here, without the actual Upkeep registration
+        MockDACContributorAccount contributorContract = new MockDACContributorAccount(
+                msg.sender,
+                i_linkTokenAddress,
+                i_keeperRegistrarAddress,
+                i_keeperRegistryAddress,
+                _paymentInterval,
+                s_maxContributions,
+                s_upkeepGasLimit
+            );
 
         // Add it to the contributors array and mapping
         s_contributors[msg.sender] = address(contributorContract);

@@ -7,7 +7,7 @@ const {
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe.only('DACProject unit tests', function () {
+  : describe('DACProject unit tests', function () {
       let deployer; // initiator of the project
       let user; // not a collaborator in the project
       let dacProjectContract;

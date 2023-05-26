@@ -32,6 +32,7 @@ module.exports = {
         enabled: false,
       },
       chainId: 31337,
+      allowUnlimitedContractSize: true,
     },
     localhost: {
       chainId: 31337,
@@ -96,6 +97,11 @@ module.exports = {
     compilers: [
       {
         version: '0.8.7',
+        settings: {
+          optimizer: {
+            enabled: true,
+          },
+        },
       },
       {
         version: '0.6.6',

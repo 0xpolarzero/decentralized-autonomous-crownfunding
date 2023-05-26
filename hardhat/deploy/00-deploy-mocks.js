@@ -1,4 +1,4 @@
-const { network } = require('hardhat');
+const { network, ethers } = require('hardhat');
 const { developmentChains, chainlink } = require('../helper-hardhat-config');
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
@@ -17,6 +17,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
 
   chainlink[network.name].LINK_TOKEN = linkToken.address;
+  chainlink[network.name].REGISTRAR = ethers.constants.AddressZero;
+  chainlink[network.name].REGISTRY = ethers.constants.AddressZero;
+
   console.log('Mocks deployed!');
 };
 
