@@ -76,6 +76,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
         uint256 amount,
         uint256 endDate
     );
+
     /// @dev Emitted when a contribution is updated
     /// @param projectContract The address of the project contract
     /// @param amount The new amount of the contribution
