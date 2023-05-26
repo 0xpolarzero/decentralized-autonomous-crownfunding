@@ -26,29 +26,29 @@ contract DACAggregator {
      */
 
     /// @dev The length of the collaborators and shares arrays should be the same
-    error DACAggregator__submitProject__INVALID_LENGTH();
+    error DACAggregator__INVALID_LENGTH();
     /// @dev The collaborators array should include the initiator
-    error DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR();
+    error DACAggregator__DOES_NOT_INCLUDE_INITIATOR();
     /// @dev The total shares should be 100
-    error DACAggregator__submitProject__INVALID_SHARES();
+    error DACAggregator__INVALID_SHARES();
     /// @dev The name should be at least 2 characters and at most 50 characters
-    error DACAggregator__submitProject__INVALID_NAME();
+    error DACAggregator__INVALID_NAME();
 
     /**
      * @dev createContributorAccount()
      */
 
     /// @dev The contributor account already exists
-    error DACAggregator__createContributorAccount__ALREADY_EXISTS();
+    error DACAggregator__ALREADY_EXISTS();
 
     /**
      * @dev pingProject()
      */
 
     /// @dev The project doesn't exist
-    error DACAggregator__pingProject__DOES_NOT_EXIST();
+    error DACAggregator__DOES_NOT_EXIST();
     /// @dev The caller is not a collaborator of the project
-    error DACAggregator__pingProject__NOT_COLLABORATOR();
+    error DACAggregator__NOT_COLLABORATOR();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -208,7 +208,7 @@ contract DACAggregator {
     ) external {
         // It should have a share for each collaborator
         if (_collaborators.length != _shares.length)
-            revert DACAggregator__submitProject__INVALID_LENGTH();
+            revert DACAggregator__INVALID_LENGTH();
 
         uint256 totalShares = 0;
         bool includesInitiator = false;
@@ -222,14 +222,13 @@ contract DACAggregator {
         }
         // It should include the initiator
         if (!includesInitiator)
-            revert DACAggregator__submitProject__DOES_NOT_INCLUDE_INITIATOR();
+            revert DACAggregator__DOES_NOT_INCLUDE_INITIATOR();
         // The total shares should be 100
-        if (totalShares != 100)
-            revert DACAggregator__submitProject__INVALID_SHARES();
+        if (totalShares != 100) revert DACAggregator__INVALID_SHARES();
 
         // It should have a name of at least 2 characters and at most 50 characters
         if (bytes(_name).length < 2 || bytes(_name).length > 50)
-            revert DACAggregator__submitProject__INVALID_NAME();
+            revert DACAggregator__INVALID_NAME();
 
         // Create a child contract for the project
         DACProject projectContract = new DACProject(
@@ -267,7 +266,7 @@ contract DACAggregator {
     function createContributorAccount() external {
         // It should not have a contributor account already
         if (s_contributorAccounts[msg.sender] != address(0))
-            revert DACAggregator__createContributorAccount__ALREADY_EXISTS();
+            revert DACAggregator__ALREADY_EXISTS();
 
         // Create a child contract for the contributor
         DACContributorAccount contributorContract = new DACContributorAccount(
@@ -302,11 +301,11 @@ contract DACAggregator {
     function pingProject(address _projectAddress) external {
         // It should be an existing project
         if (s_projects[_projectAddress].initiator == address(0))
-            revert DACAggregator__pingProject__DOES_NOT_EXIST();
+            revert DACAggregator__DOES_NOT_EXIST();
 
         // It should be a collaborator
         if (!DACProject(_projectAddress).isCollaborator(msg.sender))
-            revert DACAggregator__pingProject__NOT_A_COLLABORATOR();
+            revert DACAggregator__NOT_A_COLLABORATOR();
 
         // Update the project's last activity timestamp
         s_projects[_projectAddress].lastActivityTimestamp = block.timestamp;
