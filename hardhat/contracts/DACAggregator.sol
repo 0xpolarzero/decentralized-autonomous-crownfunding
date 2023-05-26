@@ -63,9 +63,11 @@ contract DACAggregator {
     /// @dev Emitted when a contributor account is created
     /// @dev See the struct `ContributorAccount` for more details about the parameters
     /// @dev See the function `createContributorAccount()` for more details about the process
-    /// @param contributorAccount The struct of the contributor account that was created
+    /// @param owner The address of the owner of the contributor account
+    /// @param contributorAccountContract The address of the contributor account contract
     event DACAggregator__ContributorAccountCreated(
-        ContributorAccount contributorAccount
+        address owner,
+        address contributorAccountContract
     );
 
     /// @dev Emitted when a project is updated (pinged by a collaborator)
@@ -142,15 +144,6 @@ contract DACAggregator {
         uint256 lastActivityAt;
         string name;
         string description;
-    }
-
-    /// @dev A contributor account
-    /// @param address The address of the contributor
-    /// @param accountContract The address of the child contract for this account
-    /// @dev See the `createContributorAccount()` function for more details
-    struct ContributorAccount {
-        address contributor;
-        address accountContract;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -269,6 +262,7 @@ contract DACAggregator {
             address(projectContract),
             msg.sender,
             block.timestamp,
+            block.timestamp,
             _name,
             _description
         );
@@ -329,10 +323,10 @@ contract DACAggregator {
 
         // It should be a collaborator
         if (!DACProject(_projectAddress).isCollaborator(msg.sender))
-            revert DACAggregator__NOT_A_COLLABORATOR();
+            revert DACAggregator__NOT_COLLABORATOR();
 
         // Update the project's last activity timestamp
-        s_projects[_projectAddress].lastActivityTimestamp = block.timestamp;
+        s_projects[_projectAddress].lastActivityAt = block.timestamp;
         // Emit an event
         emit DACAggregator__ProjectPinged(_projectAddress, msg.sender);
     }
@@ -367,8 +361,7 @@ contract DACAggregator {
         address _projectAddress
     ) external view returns (bool) {
         return
-            block.timestamp -
-                s_projects[_projectAddress].lastActivityTimestamp <
+            block.timestamp - s_projects[_projectAddress].lastActivityAt <
             30 days;
     }
 
@@ -433,7 +426,7 @@ contract DACAggregator {
      */
 
     function getMaximumContributions() external view returns (uint256) {
-        return i_maximumContributions;
+        return s_maxContributions;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -446,7 +439,7 @@ contract DACAggregator {
      */
 
     function setNativeTokenLinkRate(uint256 _rate) external {
-        s_rate = _rate;
+        s_nativeTokenLinkRate = _rate;
         emit DACAggregator__NativeTokenLinkRateUpdated(_rate);
     }
 
@@ -456,7 +449,7 @@ contract DACAggregator {
      */
 
     function setPremiumPercent(uint32 _premium) external {
-        s_premium = _premium;
+        s_premiumPercent = _premium;
         emit DACAggregator__PremiumPercentUpdated(_premium);
     }
 
@@ -491,7 +484,7 @@ contract DACAggregator {
         // Return the price
         return ((_upkeepGasLimit *
             gasPrice *
-            (100 + s_premium) +
+            (100 + s_premiumPercent) +
             (80_000 * gasPrice)) * s_nativeTokenLinkRate);
     }
 
@@ -545,7 +538,7 @@ contract DACAggregator {
      * @return uint32 The gas limit
      */
 
-    function getGasLimit() external view returns (uint32) {
-        return i_gasLimit;
+    function getUpkeepGasLimit() external view returns (uint32) {
+        return s_upkeepGasLimit;
     }
 }
