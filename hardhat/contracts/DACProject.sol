@@ -44,8 +44,6 @@ contract DACProject {
 
     /// @dev The last time a collaborator has manifested themselves
     uint256 private s_lastCollaboratorCheckTimestamp;
-    /// @dev The last time the collaborators received their payment
-    uint256 private s_lastPaymentTimestamp;
 
     /// @dev The status and infos of a collaborator
     /// @param shares The share of contributions of the collaborator
@@ -55,22 +53,10 @@ contract DACProject {
         uint256 totalWithdrawn;
     }
 
-    /// @dev The status and infos of a contributor
-    /// @param amount The amount of funds contributed by the contributor
-    /// @param endTimestamp The timestamp of the end of the contributor's subscription
-    struct Contributor {
-        uint256 amount;
-        uint256 endTimestamp;
-    }
-
     /// @dev The addresses of the collaborators
     address[] private s_collaboratorsAddresses;
-    /// @dev The addresses of the contributors
-    address[] private s_contributorsAddresses;
     /// @dev The status and infos of the collaborators (share & total withdrawn)
     mapping(address => Collaborator) private s_collaborators;
-    /// @dev The status and infos of the contributors (amount & end of subscription timestamp)
-    mapping(address => Contributor) private s_contributors;
 
     /* -------------------------------------------------------------------------- */
     /*                                  MODIFIERS                                 */
@@ -130,22 +116,11 @@ contract DACProject {
             // Initialize their share
             s_collaborators[_collaborators[i]] = Collaborator(_shares[i], 0);
         }
-
-        // Initialize state variables
-        s_lastCollaboratorCheckTimestamp = block.timestamp;
-        s_lastPaymentTimestamp = block.timestamp;
-
-        // Register a new Chainlink Upkeep
     }
 
     /* -------------------------------------------------------------------------- */
     /*                                  FUNCTIONS                                 */
     /* -------------------------------------------------------------------------- */
-
-    function triggerPayment() public {
-        // Should be triggered by the Chainlink Upkeep, if funded with enough LINK
-        // If it was not able to do it for a week, collaborators can trigger it manually
-    }
 
     /* -------------------------------------------------------------------------- */
     /*                                   SETTERS                                  */
@@ -192,31 +167,6 @@ contract DACProject {
     }
 
     /**
-     * @notice Get the addresses of the contributors
-     * @return array The addresses of the contributors
-     */
-
-    function getContributorsAddresses()
-        external
-        view
-        returns (address[] memory)
-    {
-        return s_contributorsAddresses;
-    }
-
-    /**
-     * @notice Get the informations of a specific contributor
-     * @param _contributor The address of the contributor
-     * @return struct The amount contributed by the contributor and the end of subscription timestamp
-     */
-
-    function getContributor(
-        address _contributor
-    ) external view returns (Contributor memory) {
-        return s_contributors[_contributor];
-    }
-
-    /**
      * @notice Get the initiator of the project
      * @return address The address of the initiator
      */
@@ -250,27 +200,5 @@ contract DACProject {
 
     function getDescription() external view returns (string memory) {
         return s_description;
-    }
-
-    /**
-     * @notice Get the last time a collaborator has manifested themselves
-     * @return uint256 The last time a collaborator has manifested themselves
-     */
-
-    function getLastCollaboratorCheckTimestamp()
-        external
-        view
-        returns (uint256)
-    {
-        return s_lastCollaboratorCheckTimestamp;
-    }
-
-    /**
-     * @notice Get the last time the collaborators received their payment
-     * @return uint256 The last time the collaborators received their payment
-     */
-
-    function getLastPaymentTimestamp() external view returns (uint256) {
-        return s_lastPaymentTimestamp;
     }
 }

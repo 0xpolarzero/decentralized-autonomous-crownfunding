@@ -57,26 +57,40 @@ contract DACAggregator {
     /// @dev Emitted when a project is submitted to the DAC process
     /// @dev See the struct `Project` for more details about the parameters
     /// @dev See the function `submitProject()` for more details about the process
+    /// @param project The struct of the project that was submitted
     event DACAggregator__ProjectSubmitted(Project project);
 
     /// @dev Emitted when a contributor account is created
     /// @dev See the struct `ContributorAccount` for more details about the parameters
     /// @dev See the function `createContributorAccount()` for more details about the process
+    /// @param contributorAccount The struct of the contributor account that was created
     event DACAggregator__ContributorAccountCreated(
         ContributorAccount contributorAccount
     );
 
     /// @dev Emitted when a project is updated (pinged by a collaborator)
+    /// @param projectAddress The address of the project contract
+    /// @param collaborator The address of the collaborator who pinged the project
     event DACAggregator__ProjectPinged(
         address projectAddress,
         address collaborator
     );
 
     /// @dev Emitted when the maximum amount of contributions is updated
+    /// @param maxContributions The new maximum amount of contributions
     event DACAggregator__MaxContributionsUpdated(uint256 maxContributions);
 
     /// @dev Emitted when the maximum gas limit for upkeep calls is updated
+    /// @param upkeepGasLimit The new maximum gas limit for upkeep calls
     event DACAggregator__UpkeepGasLimitUpdated(uint32 upkeepGasLimit);
+    /// @dev Emitted when the approximate native token / LINK rate is updated
+    /// @param nativeTokenLinkRate The new approximate native token / LINK rate
+    event DACAggregator__NativeTokenLinkRateUpdated(
+        uint256 nativeTokenLinkRate
+    );
+    /// @dev Emitted when the premium % of this chain is updated
+    /// @param premiumPercent The new premium % for this chain
+    event DACAggregator__PremiumPercentUpdated(uint256 premiumPercent);
 
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
@@ -94,6 +108,10 @@ contract DACAggregator {
 
     /// @dev The maximum amount of contributions for a contributor account
     uint256 private s_maxContributions;
+    /// @dev The approximate native token / LINK rate
+    uint256 private s_nativeTokenLinkRate;
+    /// @dev The premium % of this chain
+    uint32 private s_premiumPercent;
     /// @dev The maximum gas limit for upkeep calls
     uint32 private s_upkeepGasLimit;
 
@@ -158,6 +176,8 @@ contract DACAggregator {
      * @param _keeperRegistrarAddress The address of the Keeper Registrar
      * @param _keeperRegistryAddress The address of the Keeper Registry
      * @param _maxContributions The maximum amount of contributions for a contributor account
+     * @param _nativeTokenLinkRate The approximate native token / LINK rate
+     * @param _premiumPercent The premium % of this chain
      * @param _upkeepGasLimit The maximum gas limit for upkeep calls
      */
 
@@ -166,6 +186,8 @@ contract DACAggregator {
         address _keeperRegistrarAddress,
         address _keeperRegistryAddress,
         uint256 _maxContributions,
+        uint256 _nativeTokenLinkRate,
+        uint32 _premiumPercent,
         uint32 _upkeepGasLimit
     ) {
         // Set the deployer
@@ -178,6 +200,8 @@ contract DACAggregator {
 
         // Set the storage variables
         s_maxContributions = _maxContributions;
+        s_nativeTokenLinkRate = _nativeTokenLinkRate;
+        s_premiumPercent = _premiumPercent;
         s_upkeepGasLimit = _upkeepGasLimit;
     }
 
@@ -328,17 +352,6 @@ contract DACAggregator {
         emit DACAggregator__MaxContributionsUpdated(_maxContributions);
     }
 
-    /**
-     * @notice Update the gas limit for an upkeep call
-     * @param _gasLimit The new gas limit
-     * @dev This will only affect new contributor accounts
-     */
-
-    function setUpkeepGasLimit(uint32 _gasLimit) external {
-        s_upkeepGasLimit = _gasLimit;
-        emit DACAggregator__UpkeepGasLimitUpdated(_gasLimit);
-    }
-
     /* -------------------------------------------------------------------------- */
     /*                                   GETTERS                                  */
     /* -------------------------------------------------------------------------- */
@@ -415,6 +428,74 @@ contract DACAggregator {
     }
 
     /**
+     * @notice Returns the maximum amount of contributions for a contributor account
+     * @return uint256 The maximum amount of contributions
+     */
+
+    function getMaximumContributions() external view returns (uint256) {
+        return i_maximumContributions;
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                                   UPKEEP                                   */
+    /* -------------------------------------------------------------------------- */
+
+    /**
+     * @notice Update the native token / LINK rate
+     * @param _rate The new rate
+     */
+
+    function setNativeTokenLinkRate(uint256 _rate) external {
+        s_rate = _rate;
+        emit DACAggregator__NativeTokenLinkRateUpdated(_rate);
+    }
+
+    /**
+     * @notice Update the premium % for this chain
+     * @param _premium The new premium %
+     */
+
+    function setPremiumPercent(uint32 _premium) external {
+        s_premium = _premium;
+        emit DACAggregator__PremiumPercentUpdated(_premium);
+    }
+
+    /**
+     * @notice Update the gas limit for an upkeep call
+     * @param _gasLimit The new gas limit
+     * @dev This will only affect new contributor accounts
+     */
+
+    function setUpkeepGasLimit(uint32 _gasLimit) external {
+        s_upkeepGasLimit = _gasLimit;
+        emit DACAggregator__UpkeepGasLimitUpdated(_gasLimit);
+    }
+
+    /**
+     * @dev Calculate the approximate price of an upkeep based on the number of contributions
+     * @param _upkeepGasLimit The gas limit of the upkeep (since we can't use the stored one, that could be updated here
+     * but not on a previously created contributor account)
+     * @return uint256 The approximate price of an upkeep
+     */
+
+    function calculateUpkeepPrice(
+        uint32 _upkeepGasLimit
+    ) external view returns (uint256) {
+        // The formula is the following:
+        // [gasUsed * gasPrice * (1 + premium%) + (80,000 * gasPrice)] * (NativeToken / LINK rate)
+        // e.g. on Polygon Mumbai the premium is 429 % & the MATIC/LINK rate is ~ 1/7 (may 2023)
+
+        // We need to assume a gas price, and should better use a high one
+        uint256 gasPrice = 200 gwei;
+
+        // Return the price
+        return ((_upkeepGasLimit *
+            gasPrice *
+            (100 + s_premium) +
+            (80_000 * gasPrice)) * s_nativeTokenLinkRate);
+    }
+
+    /**
      * @notice Returns the address of the LINK token
      * @return address The address of the LINK token
      */
@@ -442,12 +523,21 @@ contract DACAggregator {
     }
 
     /**
-     * @notice Returns the maximum amount of contributions for a contributor account
-     * @return uint256 The maximum amount of contributions
+     * @notice Get the native token / LINK rate
+     * @return uint256 The native token / LINK rate
      */
 
-    function getMaximumContributions() external view returns (uint256) {
-        return i_maximumContributions;
+    function getNativeTokenLinkRate() external view returns (uint256) {
+        return s_nativeTokenLinkRate;
+    }
+
+    /**
+     * @notice Get the premium % for this chain
+     * @return uint256 The premium %
+     */
+
+    function getPremiumPercent() external view returns (uint32) {
+        return s_premiumPercent;
     }
 
     /**

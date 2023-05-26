@@ -10,7 +10,7 @@ import "./DACAggregatorInterface.sol";
  * @notice ...
  */
 
-contract DACContributorAccount {
+contract DACContributorAccount is AutomationCompatibleInterface {
     LinkTokenInterface internal immutable LINK;
     KeeperRegistrarInterface internal immutable REGISTRAR;
     KeeperRegistryInterface internal immutable REGISTRY;
@@ -52,6 +52,78 @@ contract DACContributorAccount {
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
     /* -------------------------------------------------------------------------- */
+
+    /**
+     * @dev Contributions
+     */
+
+    /// @dev Emitted when a new contribution is created
+    /// @param projectContract The address of the project contract
+    /// @param amount The amount of the contribution
+    /// @param endDate The timestamp when the contribution ends
+    event DACContributorAccount__ContributionCreated(
+        address indexed projectContract,
+        uint256 amount,
+        uint256 endDate
+    );
+    /// @dev Emitted when a contribution is updated
+    /// @param projectContract The address of the project contract
+    /// @param amount The new amount of the contribution
+    event DACContributorAccount__ContributionUpdated(
+        address indexed projectContract,
+        uint256 amount
+    );
+
+    /// @dev Emitted when a contribution is deleted
+    /// @param projectContract The address of the project contract
+    /// @param amount The amount of the contribution that is withdrawn
+    event DACContributorAccount__ContributionCanceled(
+        address indexed projectContract,
+        uint256 amount
+    );
+
+    /// @dev Emitted when all the contributions are deleted
+    /// @param contributions The structs of the contributions that are withdrawn
+    /// @param amount The amount of the contributions that are withdrawn
+    event DACContributorAccount__AllContributionsCanceled(
+        Contribution[] contributions,
+        uint256 amount
+    );
+
+    /// @dev Emitted when the contributions are sent to the projects
+    /// @param contributions The structs of the contributions that are sent (minimized)
+    event DACContributorAccount__ContributionsTransfered(
+        ContributionMinimal[] contributions
+    );
+
+    /**
+     * @dev Upkeep
+     */
+
+    /// @dev Emitted when the upkeep is registered
+    /// @param upkeepId The ID of the upkeep
+    /// @param interval The interval between each payment (upkeep)
+    event DACContributorAccount__UpkeepRegistered(
+        uint256 upkeepId,
+        uint256 interval
+    );
+
+    /// @dev Emitted when the upkeep is funded
+    /// @param sender The address that sent the LINK
+    /// @param amount The amount of LINK sent to the upkeep
+    event DACContributorAccount__UpkeepFunded(address sender, uint256 amount);
+
+    /// @dev Emitted when the upkeep is canceled
+    /// @param upkeepId The ID of the upkeep
+    event DACContributorAccount__UpkeepCanceled(uint256 upkeepId);
+
+    /// @dev Emitted when the upkeep funds are withdrawn
+    /// @param upkeepId The ID of the upkeep
+    event DACContributorAccount__UpkeepFundsWithdrawn(uint256 upkeepId);
+
+    /// @dev Emitted when the upkeep interval is updated
+    /// @param interval The new interval between each payment (upkeep)
+    event DACContributorAccount__UpkeepIntervalUpdated(uint256 interval);
 
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
@@ -155,7 +227,19 @@ contract DACContributorAccount {
         DAC_AGGREGATOR = DACAggregatorInterface(msg.sender);
 
         // Register a new Chainlink Upkeep
-        registerNewUpkeep();
+        // We can't call `registerUpkeep` yet in the constructor because of the immutable variables
+        s_upkeepId = KeeperRegistrarInterface(_registrar).registerUpkeep(
+            RegistrationParams({
+                name: "DACContributorAccount",
+                encryptedEmail: "",
+                upkeepContract: address(this),
+                gasLimit: s_upkeepGasLimit,
+                adminAddress: _owner,
+                checkData: "0x",
+                offchainConfig: "0x",
+                amount: 0
+            })
+        );
     }
 
     /* -------------------------------------------------------------------------- */
@@ -200,6 +284,12 @@ contract DACContributorAccount {
                 endsAt: _endDate
             })
         );
+
+        emit DACContributorAccount__ContributionCreated(
+            _projectContract,
+            _amount,
+            _endDate
+        );
     }
 
     /**
@@ -222,6 +312,11 @@ contract DACContributorAccount {
 
         // Increase the amount of the contribution
         s_contributions[_index].amountStored += _amount;
+
+        emit DACContributorAccount__ContributionUpdated(
+            contribution.projectContract,
+            _amount
+        );
     }
 
     /**
@@ -250,6 +345,11 @@ contract DACContributorAccount {
         // Withdraw the amount of the contribution
         (bool success, ) = msg.sender.call{value: _amount}("");
         if (!success) revert DACContributorAccount__TRANSFER_FAILED();
+
+        emit DACContributorAccount__ContributionUpdated(
+            contribution.projectContract,
+            _amount
+        );
     }
 
     /**
@@ -271,6 +371,11 @@ contract DACContributorAccount {
 
         // Remove the contribution from the array
         delete s_contributions[_index];
+
+        emit DACContributorAccount__ContributionCanceled(
+            contribution.projectContract,
+            contribution.amountStored - contribution.amountDistributed
+        );
     }
 
     /**
@@ -281,15 +386,23 @@ contract DACContributorAccount {
         Contribution[] memory contributions = s_contributions;
 
         // For each contribution
-        for (uint256 i = 0; i < contributions.length; i++) {
-            // Set the distributed amount to the total amount
-            s_contributions[i].amountDistributed = contributions[i]
-                .amountStored;
-        }
+        // for (uint256 i = 0; i < contributions.length; i++) {
+        //     // Set the distributed amount to the total amount
+        //     s_contributions[i].amountDistributed = contributions[i]
+        //         .amountStored;
+        // }
 
         // Withdraw everything from this contract
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         if (!success) revert DACContributorAccount__TRANSFER_FAILED();
+
+        // Remove all the contributions from the array
+        delete s_contributions;
+
+        emit DACContributorAccount__AllContributionsCanceled(
+            contributions,
+            address(this).balance
+        );
     }
 
     /**
@@ -316,20 +429,29 @@ contract DACContributorAccount {
     /**
      * @notice Send the contributions to the projects
      * @param _contributionsToSend The contributions to send
+     * TODO MAYBE CAN USE A MULTICALL INSTEAD OF A FOR LOOP
      */
 
     function transferContributions(
         ContributionMinimal[] memory _contributionsToSend
     ) internal {
         // For each contribution
-        for (uint256 i = 0; i < _contributionsToSend.length; i++) {
+        for (uint256 i = 0; i < _contributionsToSend.length; ) {
             // Send the contribution
             (bool success, ) = _contributionsToSend[i].projectContract.call{
                 value: _contributionsToSend[i].amount
             }("");
 
             if (!success) revert DACContributorAccount__CALL_FAILED();
+
+            unchecked {
+                i++;
+            }
         }
+
+        emit DACContributorAccount__ContributionsTransfered(
+            _contributionsToSend
+        );
     }
 
     /* -------------------------------------------------------------------------- */
@@ -348,6 +470,7 @@ contract DACContributorAccount {
         s_upkeepId = REGISTRAR.registerUpkeep(
             RegistrationParams({
                 name: "DACContributorAccount",
+                encryptedEmail: "",
                 upkeepContract: address(this),
                 gasLimit: s_upkeepGasLimit,
                 adminAddress: i_owner,
@@ -359,28 +482,32 @@ contract DACContributorAccount {
 
         // Set the upkeep as registered
         s_upkeepRegistered = true;
+
+        emit DACContributorAccount__UpkeepRegistered(
+            s_upkeepId,
+            s_upkeepInterval
+        );
     }
 
     /**
      * @notice Fund the upkeep of the account after a transfer of LINK tokens
      * @param _sender The sender of the LINK tokens (most probably the owner of the account)
      * @param _amount The amount of LINK tokens sent
-     * @param _data The data sent with the transfer
      * @dev This function is called by the LINK token contract after being called with the `transferAndCall` function
-     * @dev The recommended process for funding the upkeep is therefore to:
-     * - let the user approve the spending of LINK tokens to the LINK contract
-     * - call the `transferAndCall` function of the LINK contract with the amount approved (using the address of this account
-     * as the receiver)
+     * @dev The recommended process for funding the upkeep is therefore to let the user in the frontend call this function
+     * directly from the LINK contract, using the address of this account as the receiver, which will automatically add the funds
      */
     function onTokenTransfer(
         address _sender,
         uint256 _amount,
-        bytes _data
-    ) external override {
+        bytes calldata /* _data */
+    ) external {
         // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
         // because in any case we want any LINK funds here to be used for the upkeep
         // Fund the upkeep
-        REGISTRY.addFunds(s_upkeepId, LINK.balanceOf(address(this)));
+        REGISTRY.addFunds(s_upkeepId, uint96(LINK.balanceOf(address(this))));
+
+        emit DACContributorAccount__UpkeepFunded(_sender, _amount);
     }
 
     /**
@@ -390,9 +517,11 @@ contract DACContributorAccount {
 
     function cancelUpkeep() external onlyOwner {
         // Cancel the Chainlink Upkeep
-        REGISTRAR.cancelUpkeep(s_upkeepId);
+        REGISTRY.cancelUpkeep(s_upkeepId);
         // Set the upkeep as not registered
         s_upkeepRegistered = false;
+
+        emit DACContributorAccount__UpkeepCanceled(s_upkeepId);
     }
 
     /**
@@ -408,6 +537,8 @@ contract DACContributorAccount {
     function withdrawUpkeepFunds() external onlyOwner {
         // Withdraw the funds from the Chainlink Upkeep
         REGISTRY.withdrawFunds(s_upkeepId, i_owner);
+
+        emit DACContributorAccount__UpkeepFundsWithdrawn(s_upkeepId);
     }
 
     /**
@@ -449,9 +580,9 @@ contract DACContributorAccount {
         s_lastUpkeep = block.timestamp;
 
         // Decode the array of contributions to send
-        address[] memory contributionsToSend = abi.decode(
+        ContributionMinimal[] memory contributionsToSend = abi.decode(
             performData,
-            (Contribution[])
+            (ContributionMinimal[])
         );
 
         // Send the contributions
@@ -469,6 +600,7 @@ contract DACContributorAccount {
 
     function setUpkeepInterval(uint256 _interval) external onlyOwner {
         s_upkeepInterval = _interval;
+        emit DACContributorAccount__UpkeepIntervalUpdated(_interval);
     }
 
     /* -------------------------------------------------------------------------- */
@@ -530,18 +662,29 @@ contract DACContributorAccount {
     }
 
     /**
+     * @notice Get the Chainlink Upkeep registered status
+     * @return bool Whether the Chainlink Upkeep is registered or not
+     */
+
+    function isUpkeepRegistered() external view returns (bool) {
+        return s_upkeepRegistered;
+    }
+
+    /**
      * @notice Calculate if the contract holds enough LINK to process the next upkeep
      * @return bool Whether the contract can process the next upkeep or not
-     * @dev It will be based on the maximum price it could cost with a maximum gas price
+     * @dev It will be approximated with a fixed high gas price and the gas limit fixed at the creation of this contract
+     * @dev See the DACAggregator contract for more details about the calculation
      */
 
     function hasEnoughLinkForNextUpkeep() external view returns (bool) {
         // Calculate the amount of LINK needed for the next upkeep
-        uint256 amountNeeded = calculateAmountNeededForNextUpkeep();
+        uint256 amountNeeded = DAC_AGGREGATOR.calculateUpkeepPrice(
+            s_upkeepGasLimit
+        );
 
         // If the contract holds enough LINK, return true
         if (LINK.balanceOf(address(this)) >= amountNeeded) return true;
-
         // If the contract doesn't hold enough LINK, return false
         return false;
     }
@@ -551,13 +694,19 @@ contract DACContributorAccount {
      * @return array The contributions that should be sent
      */
 
-    function calculateContributions() internal returns (Contribution[] memory) {
+    function calculateContributions()
+        internal
+        view
+        returns (ContributionMinimal[] memory)
+    {
         // Cache the contributions
         Contribution[] memory contributions = s_contributions;
         // Prepare the array to hold the contributions that need to be sent
         ContributionMinimal[] memory contributionsToSend;
+        // And the number of contributions that need to be sent
+        uint256 contributionsToSendCount = 0;
 
-        for (uint256 i = 0; i < contributions.length; i++) {
+        for (uint256 i = 0; i < contributions.length; ) {
             // If the project is still active and there are still some funds to send
             if (
                 isProjectStillActive(contributions[i].projectContract) &&
@@ -571,13 +720,20 @@ contract DACContributorAccount {
                 // If the amount to send is not 0
                 if (amountToSend > 0) {
                     // Add the contribution to the array
-                    contributionsToSend.push(
-                        ContributionMinimal({
-                            projectContract: contributions[i].projectContract,
-                            amount: amountToSend
-                        })
-                    );
+                    contributionsToSend[
+                        contributionsToSendCount
+                    ] = ContributionMinimal({
+                        projectContract: contributions[i].projectContract,
+                        amount: amountToSend
+                    });
+                    unchecked {
+                        contributionsToSendCount++;
+                    }
                 }
+            }
+
+            unchecked {
+                i++;
             }
         }
 
@@ -602,7 +758,7 @@ contract DACContributorAccount {
             return _contribution.amountStored - _contribution.amountDistributed;
 
         // Calculate the amount of the contribution that should be sent based on the time left
-        uint256 remainingDuration = _contribution.endDate - block.timestamp;
+        uint256 remainingDuration = _contribution.endsAt - block.timestamp;
         uint256 remainingIntervals = remainingDuration / s_upkeepInterval;
         uint256 remainingAmount = _contribution.amountStored -
             _contribution.amountDistributed;
@@ -610,20 +766,6 @@ contract DACContributorAccount {
         // Calculate the amount to distribute based on the remaining intervals.
         // If there's an incomplete interval, it will be counted as a whole one.
         return remainingAmount / (remainingIntervals + 1); // "+1" for rounding up
-    }
-
-    /**
-     * @notice Know if the contribution is still active or not
-     * @param _contribution The contribution to check
-     * @return bool Whether the contribution is still active or not
-     */
-
-    function isContributionActive(
-        Contribution memory _contribution
-    ) internal view returns (bool) {
-        if (_contribution.amount > _contribution.amountDistributed) return true;
-
-        return false;
     }
 
     /**
@@ -636,5 +778,20 @@ contract DACContributorAccount {
         address _projectContract
     ) internal view returns (bool) {
         return DAC_AGGREGATOR.isProjectActive(_projectContract);
+    }
+
+    /**
+     * @notice Know if the contribution is still active or not
+     * @param _contribution The contribution to check
+     * @return bool Whether the contribution is still active or not
+     */
+
+    function isContributionActive(
+        Contribution memory _contribution
+    ) internal pure returns (bool) {
+        if (_contribution.amountStored > _contribution.amountDistributed)
+            return true;
+
+        return false;
     }
 }
