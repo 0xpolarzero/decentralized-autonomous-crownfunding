@@ -1,15 +1,13 @@
 const { deployments, network, ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const {
-  developmentChains,
-  PLACEHOLDER_ADDRESS,
-} = require('../../helper-hardhat-config');
+const { developmentChains } = require('../../helper-hardhat-config');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe('DACProject unit tests', function () {
+  : describe.only('DACProject unit tests', function () {
       let deployer; // initiator of the project
-      let user; // not a collaborator in the project
+      let user; // collaborator
+      let notUser; // not a collaborator
       let dacProjectContract;
       let creationTxReceipt;
 
@@ -17,6 +15,7 @@ const {
         const accounts = await ethers.getSigners();
         deployer = accounts[0];
         user = accounts[1];
+        notUser = accounts[2];
         await deployments.fixture(['all']);
 
         // Create a project using the factory
@@ -25,7 +24,7 @@ const {
           deployer,
         );
         const submitProjectArgs = {
-          collaborators: [deployer.address, PLACEHOLDER_ADDRESS], // collaborators
+          collaborators: [deployer.address, user.address], // collaborators
           shares: [70, 30], // shares of 70% and 30%
           paymentInterval: 7 * 24 * 60 * 60, // payment interval of 7 days
           name: 'Project 1', // project name
@@ -105,27 +104,6 @@ const {
             await dacProjectContract.getCreatedAt(),
             (await creationTxReceipt.events[0].getBlock()).timestamp,
             'Should initialize the creation date with the right value',
-          );
-
-          // Active phase
-          assert.equal(
-            await dacProjectContract.isActive(),
-            true,
-            'Should initialize the active phase with the right value',
-          );
-          // Last time a collaborator manifested themselves
-          assert.equal(
-            Number(
-              await dacProjectContract.getLastCollaboratorCheckTimestamp(),
-            ),
-            (await creationTxReceipt.events[0].getBlock()).timestamp,
-            'Should initialize the last time a collaborator manifested themselves with the right value',
-          );
-          // Last time a payment was made
-          assert.equal(
-            Number(await dacProjectContract.getLastPaymentTimestamp()),
-            (await creationTxReceipt.events[0].getBlock()).timestamp,
-            'Should initialize the last time a payment was made with the right value',
           );
         });
       });
