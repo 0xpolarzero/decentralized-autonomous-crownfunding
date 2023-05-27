@@ -122,10 +122,10 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       });
 
       /* -------------------------------------------------------------------------- */
-      /*                                   receive                                  */
+      /*                              receive/fallback                              */
       /* -------------------------------------------------------------------------- */
 
-      describe('receive', function () {
+      describe('receive/fallback', function () {
         it('Should distribute the available amounts correctly in case someone directly sends funds to the contract', async () => {
           const submitProjectArgs = creationTxReceipt.events[0].args[0];
 
