@@ -335,8 +335,11 @@ contract MockDACAggregator {
             revert DACAggregator__DOES_NOT_EXIST();
 
         // It should be a collaborator
-        if (!DACProject(_projectAddress).isCollaborator(msg.sender))
-            revert DACAggregator__NOT_COLLABORATOR();
+        if (
+            !DACProject(payable(address(_projectAddress))).isCollaborator(
+                msg.sender
+            )
+        ) revert DACAggregator__NOT_COLLABORATOR();
 
         // It should not be too late to ping the project (after 30 days of inactivity)
         if (

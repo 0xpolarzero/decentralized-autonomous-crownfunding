@@ -271,7 +271,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
             revert DACContributorAccount__INCORRECT_AMOUNT();
 
         // Check if the amount is not higher than the maximum amount of contributions
-        if (_amount > i_maxContributions)
+        if (s_contributions.length > i_maxContributions)
             revert DACContributorAccount__TOO_MANY_CONTRIBUTIONS();
 
         // Check if the end date is not in the past
@@ -706,7 +706,10 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         // Cache the contributions
         Contribution[] memory contributions = s_contributions;
         // Prepare the array to hold the contributions that need to be sent
-        ContributionMinimal[] memory contributionsToSend;
+        ContributionMinimal[]
+            memory contributionsToSend = new ContributionMinimal[](
+                contributions.length
+            );
         // And the number of contributions that need to be sent
         uint256 contributionsToSendCount = 0;
 
@@ -741,6 +744,11 @@ contract DACContributorAccount is AutomationCompatibleInterface {
             }
         }
 
+        // Shrink the array to the correct size
+        assembly {
+            mstore(contributionsToSend, contributionsToSendCount)
+        }
+
         return contributionsToSend;
     }
 
@@ -769,7 +777,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
         // Calculate the amount to distribute based on the remaining intervals.
         // If there's an incomplete interval, it will be counted as a whole one.
-        return remainingAmount / (remainingIntervals + 1); // "+1" for rounding up
+        return remainingAmount / (remainingIntervals + 2); // "+1" for rounding up
+        // and "+1" for the incomplete interval (we want a payment at the end of the period)
     }
 
     /**

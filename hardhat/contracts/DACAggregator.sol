@@ -329,7 +329,7 @@ contract DACAggregator {
             revert DACAggregator__DOES_NOT_EXIST();
 
         // It should be a collaborator
-        if (!DACProject(_projectAddress).isCollaborator(msg.sender))
+        if (!DACProject(payable(_projectAddress)).isCollaborator(msg.sender))
             revert DACAggregator__NOT_COLLABORATOR();
 
         // Update the project's last activity timestamp

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
+import "hardhat/console.sol";
+
 /**
  * @title DAC (Decentralized Autonomous Crowdfunding) Project
  * @author polarzero
@@ -101,8 +103,7 @@ contract DACProject {
      */
 
     modifier onlyCollaborator() {
-        if (s_collaborators[msg.sender].share == 0)
-            revert DACProject__NOT_COLLABORATOR();
+        if (!isCollaborator(msg.sender)) revert DACProject__NOT_COLLABORATOR();
         _;
     }
 
@@ -234,10 +235,11 @@ contract DACProject {
      * @param _collaborator The address to check
      */
 
-    function isCollaborator(
-        address _collaborator
-    ) external view returns (bool) {
-        return s_collaborators[_collaborator].share > 0;
+    function isCollaborator(address _collaborator) public view returns (bool) {
+        for (uint256 i = 0; i < s_collaboratorsAddresses.length; i++) {
+            if (s_collaboratorsAddresses[i] == _collaborator) return true;
+        }
+        return false;
     }
 
     /**
