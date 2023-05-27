@@ -5,7 +5,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe.only('DACProject unit tests', function () {
+  : describe('DACProject unit tests', function () {
       let deployer; // initiator of the project
       let user; // collaborator
       let notUser; // not a collaborator
@@ -129,10 +129,16 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
         it('Should distribute the available amounts correctly in case someone directly sends funds to the contract', async () => {
           const submitProjectArgs = creationTxReceipt.events[0].args[0];
 
-          // Send 1 ETH to the contract
+          // Send 1 ETH to the contract (will trigger receive)
           await deployer.sendTransaction({
             to: dacProjectContract.address,
             value: ethers.utils.parseEther('1'),
+          });
+          // Do it again but trigger fallback
+          await deployer.sendTransaction({
+            to: dacProjectContract.address,
+            value: ethers.utils.parseEther('1'),
+            data: '0x1234',
           });
 
           // Check the balance of the contract
@@ -140,7 +146,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             Number(
               await ethers.provider.getBalance(dacProjectContract.address),
             ),
-            ethers.utils.parseEther('1'),
+            ethers.utils.parseEther('2'),
             'Should have the right balance',
           );
 
@@ -152,7 +158,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
               );
               assert.equal(
                 Number(collaborator.amountAvailable),
-                ethers.utils.parseEther('1') * (collaborator.share / 100),
+                ethers.utils.parseEther('2') * (collaborator.share / 100),
                 'Should have the right available amount',
               );
             },
@@ -239,6 +245,29 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             'Should have the right contributed amount',
           );
         });
+
+        it('Should emit the correct event with the correct parameters', async () => {
+          // receive
+          await expect(
+            deployer.sendTransaction({
+              to: dacProjectContract.address,
+              value: ethers.utils.parseEther('1'),
+            }),
+          )
+            .to.emit(dacProjectContract, 'DACProject__ReceivedContribution')
+            .withArgs(deployer.address, ethers.utils.parseEther('1'));
+
+          // fallback
+          await expect(
+            deployer.sendTransaction({
+              to: dacProjectContract.address,
+              value: ethers.utils.parseEther('1'),
+              data: '0x1234',
+            }),
+          )
+            .to.emit(dacProjectContract, 'DACProject__ReceivedContribution')
+            .withArgs(deployer.address, ethers.utils.parseEther('1'));
+        });
       });
 
       /* -------------------------------------------------------------------------- */
@@ -246,26 +275,6 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('withdrawShare', function () {
-        //   function withdrawShare(uint256 _amount) external onlyCollaborator {
-        //     // Get the amount available and withdrawn for the collaborator
-        //     Collaborator memory collaborator = s_collaborators[msg.sender];
-
-        //     // Check if the collaborator has enough funds available
-        //     if (collaborator.amountAvailable < _amount)
-        //         revert DACProject__NOT_ENOUGH_FUNDS_AVAILABLE();
-
-        //     // Update the amount available
-        //     unchecked {
-        //         s_collaborators[msg.sender].amountAvailable -= _amount;
-        //     }
-
-        //     // Transfer the funds to the collaborator
-        //     (bool success, ) = msg.sender.call{value: _amount}("");
-        //     if (!success) revert DACProject__TRANSFER_FAILED();
-
-        //     emit DACProject__ShareWithdrawn(msg.sender, _amount);
-        // }
-
         let expectedAmount;
 
         beforeEach(async () => {
@@ -335,6 +344,168 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             0,
             'Should have no funds available to withdraw',
           );
+        });
+
+        it('Should work correctly with multiple contributions and withdrawals', async () => {
+          // Just a small simulation to verify that everything is working correctly
+          // Get the initial values
+          const collaborators = [
+            await dacProjectContract.getCollaborator(deployer.address),
+            await dacProjectContract.getCollaborator(user.address),
+          ];
+          const initialBalances = [
+            Number(await ethers.provider.getBalance(deployer.address)),
+            Number(await ethers.provider.getBalance(user.address)),
+          ];
+          const availableShares = [
+            Number(collaborators[0].amountAvailable),
+            Number(collaborators[1].amountAvailable),
+          ];
+          const withdrawnShares = [0, 0];
+          const spentGas = [0, 0];
+          // There should already be some funds raised
+          let totalRaised = expectedAmount;
+          // Withdraw the share
+          const txWithdraw1 = await dacProjectContract
+            .connect(deployer)
+            .withdrawShare(collaborators[0].amountAvailable);
+          const txReceipt1 = await txWithdraw1.wait(1);
+
+          // Update gas & shares
+          spentGas[0] += Number(
+            txReceipt1.cumulativeGasUsed.mul(txReceipt1.effectiveGasPrice),
+          );
+          availableShares[0] -= Number(collaborators[0].amountAvailable);
+          withdrawnShares[0] += Number(collaborators[0].amountAvailable);
+
+          // Send some money again
+          const contributionAmount = ethers.utils.parseEther('1');
+          const txContribution2 = await notUser.sendTransaction({
+            to: dacProjectContract.address,
+            value: contributionAmount,
+          });
+          await txContribution2.wait(1);
+
+          // Update the total raised & available shares
+          totalRaised += Number(contributionAmount);
+          availableShares[0] += Number(
+            (contributionAmount * Number(collaborators[0].share)) / 100,
+          );
+          availableShares[1] += Number(
+            (contributionAmount * Number(collaborators[1].share)) / 100,
+          );
+
+          // Withdraw part of the share
+          const txWithdraw2 = await dacProjectContract
+            .connect(user)
+            .withdrawShare(collaborators[1].amountAvailable.div(2));
+          const txReceipt2 = await txWithdraw2.wait(1);
+
+          // Update gas & shares
+          spentGas[1] += Number(
+            txReceipt2.cumulativeGasUsed.mul(txReceipt2.effectiveGasPrice),
+          );
+          availableShares[1] -= Number(collaborators[1].amountAvailable.div(2));
+          withdrawnShares[1] += Number(collaborators[1].amountAvailable.div(2));
+
+          // Send some money again
+          const txContribution3 = await notUser.sendTransaction({
+            to: dacProjectContract.address,
+            value: contributionAmount,
+          });
+          await txContribution3.wait(1);
+          // expected 140 ETH but 1.4 ETH
+          // Update the total raised & available shares
+          totalRaised += Number(contributionAmount);
+          availableShares[0] += Number(
+            (contributionAmount * Number(collaborators[0].share)) / 100,
+          );
+          availableShares[1] += Number(
+            (contributionAmount * Number(collaborators[1].share)) / 100,
+          );
+
+          // Test the values
+          // Balances
+          assert.equal(
+            Number(await ethers.provider.getBalance(deployer.address)),
+            initialBalances[0] + withdrawnShares[0] - spentGas[0],
+            'Should return the right balance for the deployer',
+          );
+          assert.equal(
+            Number(await ethers.provider.getBalance(user.address)),
+            initialBalances[1] + withdrawnShares[1] - spentGas[1],
+            'Should return the right balance for the user',
+          );
+          // Amount available
+          assert.equal(
+            Number(
+              (await dacProjectContract.getCollaborator(deployer.address))
+                .amountAvailable,
+            ),
+            availableShares[0],
+            'Should return the right amount available for the deployer',
+          );
+          assert.equal(
+            Number(
+              (await dacProjectContract.getCollaborator(user.address))
+                .amountAvailable,
+            ),
+            availableShares[1],
+            'Should return the right amount available for the user',
+          );
+          // Total raised
+          assert.equal(
+            Number(await dacProjectContract.getTotalRaised()),
+            totalRaised,
+            'Should return the right total raised',
+          );
+
+          // Contract balance
+          assert.equal(
+            Number(
+              await ethers.provider.getBalance(dacProjectContract.address),
+            ),
+            totalRaised - withdrawnShares[0] - withdrawnShares[1],
+            'Should return the right contract balance',
+          );
+
+          // Contributions
+          assert.equal(
+            Number(
+              await dacProjectContract.getContributedAmount(notUser.address),
+            ),
+            Number(contributionAmount) * 2, // 2 direct contributions, the initial one is made through their contributor contract
+            'Should return the right contributed amount',
+          );
+          assert.deepEqual(
+            await dacProjectContract.getContributorsAddresses(),
+            [contributorAccountContract.address, notUser.address],
+            'Should return the right contributors addresses (contributor account & individual)',
+          );
+          assert.deepEqual(
+            await dacProjectContract.getContributorsWithAmounts(),
+            [
+              [contributorAccountContract.address, notUser.address],
+              [
+                ethers.BigNumber.from(expectedAmount.toString()),
+                contributionAmount.mul(2),
+              ],
+            ],
+            'Should return the right contributors addresses with amounts (contributor account & individual)',
+          );
+        });
+
+        it('Should emit the correct event with the correct parameters', async () => {
+          // Get the available funds
+          const availableShare = (
+            await dacProjectContract.getCollaborator(user.address)
+          ).amountAvailable;
+
+          await expect(
+            dacProjectContract.connect(user).withdrawShare(availableShare),
+          )
+            .to.emit(dacProjectContract, 'DACProject__ShareWithdrawn')
+            .withArgs(user.address, availableShare);
         });
       });
 
