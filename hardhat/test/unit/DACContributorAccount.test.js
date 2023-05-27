@@ -1,16 +1,19 @@
 const { deployments, network, ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const { developmentChains } = require('../../helper-hardhat-config');
+const { developmentChains, chainlink } = require('../../helper-hardhat-config');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe('MockDACContributorAccount unit tests', function () {
+  : describe.only('MockDACContributorAccount unit tests', function () {
       let deployer;
       let user; // owner of the contributor account
       let notUser; // not the owner
+      let dacAggregatorContract;
       let projectContract;
       let contributorAccountContract;
+      let creationTxReceipt;
+      let paymentInterval = 60 * 60 * 24 * 7; // 1 week
 
       beforeEach(async () => {
         const accounts = await ethers.getSigners();
@@ -19,24 +22,24 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
         notUser = accounts[2];
         await deployments.fixture(['all']);
 
-        const dacAggregatorContract = await ethers.getContract(
+        dacAggregatorContract = await ethers.getContract(
           'MockDACAggregator',
           deployer,
         );
 
         // Create a contributor account
-        const paymentInterval = 60 * 60 * 24 * 7; // 1 week
-        const txAccount = await dacAggregatorContract.createContributorAccount(
-          paymentInterval,
-        );
-        await txAccount.wait(1);
+        const txAccount = await dacAggregatorContract
+          .connect(user)
+          .createContributorAccount(paymentInterval);
+        creationTxReceipt = await txAccount.wait(1);
 
         // Grab the contract
         const contributorAccountAddress =
-          await dacAggregatorContract.getContributorAccount(notUser.address);
+          await dacAggregatorContract.getContributorAccount(user.address);
         contributorAccountContract = await ethers.getContractAt(
           'MockDACContributorAccount',
           contributorAccountAddress,
+          user,
         );
 
         // Create a project
@@ -64,23 +67,65 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /*                                 constructor                                */
       /* -------------------------------------------------------------------------- */
 
-      describe.only('constructor', function () {
+      describe('constructor', function () {
         it('Should initialize the variables with the right value', async () => {
-          // getOwner
-          // getCreatedAt
-          // getMaxContributions
-          // getLink
-          // getUpkeepRegistry
-          // getUpkeepRegistrar
-          // getDACAggregator
-          // getLastUpkeep
-          // getUpkeepInterval
-          // getUpkeepId
-          // isUpkeepRegistered
-
+          /// Immutable variables
           assert.equal(
             await contributorAccountContract.getOwner(),
             user.address,
+            'Should set the owner to the user address',
+          );
+          assert.equal(
+            Number(await contributorAccountContract.getCreatedAt()),
+            (await creationTxReceipt.events[0].getBlock()).timestamp,
+            'Should set the createdAt to the block timestamp',
+          );
+          assert.equal(
+            await contributorAccountContract.getMaxContributions(),
+            chainlink[network.name].MAX_CONTRIBUTIONS,
+            'Should set the maxContributions to the expected max contributions',
+          );
+          assert.equal(
+            await contributorAccountContract.getDACAggregator(),
+            dacAggregatorContract.address,
+            'Should set the DACAggregator to the DACAggregator address',
+          );
+          assert.equal(
+            await contributorAccountContract.getLink(),
+            chainlink[network.name].LINK_TOKEN,
+            'Should set the LINK token to the LINK token address',
+          );
+          assert.equal(
+            await contributorAccountContract.getUpkeepRegistry(),
+            chainlink[network.name].REGISTRY,
+            'Should set the upkeepRegistry to the registry address',
+          );
+          assert.equal(
+            await contributorAccountContract.getUpkeepRegistrar(),
+            chainlink[network.name].REGISTRAR,
+            'Should set the upkeepRegistrar to the registrar address',
+          );
+
+          /// Upkeep
+          assert.equal(
+            Number(await contributorAccountContract.getLastUpkeep()),
+            (await creationTxReceipt.events[0].getBlock()).timestamp,
+            'Should set the lastUpkeep to the creation block timestamp',
+          );
+          assert.equal(
+            Number(await contributorAccountContract.getUpkeepInterval()),
+            paymentInterval,
+            'Should set the upkeepInterval to the paymentInterval',
+          );
+          assert.equal(
+            Number(await contributorAccountContract.getUpkeepId()),
+            1,
+            'Should set the upkeepId to 1',
+          );
+          assert.equal(
+            await contributorAccountContract.isUpkeepRegistered(),
+            true,
+            'Should set the isUpkeepRegistered to true',
           );
         });
       });
@@ -90,12 +135,154 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('createContribution', function () {
-        // revert if not owner
-        // revert if project no longer active
-        // revert if create without any eth or different arg as msg.value
-        // revert if already max amount of contributions
-        // revert if endDate already passed
-        // indeed created (check s_contributions array) and emit correct event
+        it('Should revert if not owner', async () => {
+          await expect(
+            contributorAccountContract
+              .connect(notUser)
+              .createContribution(
+                projectContract.address,
+                ethers.utils.parseEther('1'),
+                inOneMonth(),
+                { value: ethers.utils.parseEther('1') },
+              ),
+          ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+        });
+
+        it('Should revert if project no longer active', async () => {
+          // Just pass more than 30 days so the project is no longer active
+          await time.increase(60 * 60 * 24 * 31); // 31 days
+          await expect(
+            contributorAccountContract.createContribution(
+              projectContract.address,
+              ethers.utils.parseEther('1'),
+              inOneMonth(),
+              { value: ethers.utils.parseEther('1') },
+            ),
+          ).to.be.revertedWith('DACContributorAccount__PROJECT_NOT_ACTIVE()');
+        });
+
+        it('Should revert if the value sent along is incorrect (null or different than parameter)', async () => {
+          // Value mismatch
+          await expect(
+            contributorAccountContract.createContribution(
+              projectContract.address,
+              ethers.utils.parseEther('1'),
+              inOneMonth(),
+              { value: ethers.utils.parseEther('2') },
+            ),
+          ).to.be.revertedWith('DACContributorAccount__INCORRECT_AMOUNT()');
+
+          // No value sent
+          await expect(
+            contributorAccountContract.createContribution(
+              projectContract.address,
+              ethers.utils.parseEther('1'),
+              inOneMonth(),
+            ),
+          ).to.be.revertedWith('DACContributorAccount__INCORRECT_AMOUNT()');
+        });
+
+        it('Should revert if the number of contributions has already reached the max', async () => {
+          // Create the max amount of contributions
+          for (
+            let i = 0;
+            i < chainlink[network.name].MAX_CONTRIBUTIONS + 1;
+            i++
+          ) {
+            await contributorAccountContract.createContribution(
+              projectContract.address,
+              ethers.utils.parseEther('1'),
+              inOneMonth(),
+              { value: ethers.utils.parseEther('1') },
+            );
+          }
+
+          // Try to create another contribution
+          await expect(
+            contributorAccountContract.createContribution(
+              projectContract.address,
+              ethers.utils.parseEther('1'),
+              inOneMonth(),
+              { value: ethers.utils.parseEther('1') },
+            ),
+          ).to.be.revertedWith(
+            'DACContributorAccount__TOO_MANY_CONTRIBUTIONS()',
+          );
+        });
+
+        it('Should revert if the chosen endDate is already passed', async () => {
+          await expect(
+            contributorAccountContract.createContribution(
+              projectContract.address,
+              ethers.utils.parseEther('1'),
+              (await time.latest()) - 1,
+              { value: ethers.utils.parseEther('1') },
+            ),
+          ).to.be.revertedWith('DACContributorAccount__INVALID_TIMESTAMP()');
+        });
+
+        it('Should successfully create a contribution and emit the correct event', async () => {
+          const endDate = await inOneMonth();
+          const tx = await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            endDate,
+            { value: ethers.utils.parseEther('1') },
+          );
+          const txReceipt = await tx.wait(1);
+
+          // Check the event
+          const event = txReceipt.events?.find(
+            (e) => e.event === 'DACContributorAccount__ContributionCreated',
+          );
+
+          assert.equal(
+            event.args.projectContract,
+            projectContract.address,
+            'Should emit the correct project contract address',
+          );
+          assert.equal(
+            Number(event.args.amount),
+            ethers.utils.parseEther('1'),
+            'Should emit the correct contribution amount',
+          );
+          assert.equal(
+            Number(event.args.endDate),
+            endDate,
+            'Should emit the correct end date',
+          );
+
+          // Check the contribution
+          const contribution = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          assert.equal(
+            contribution.projectContract,
+            projectContract.address,
+            'Should set the correct project contract address',
+          );
+          assert.equal(
+            Number(contribution.amountStored),
+            ethers.utils.parseEther('1'),
+            'Should set the correct stored amount',
+          );
+          assert.equal(
+            Number(contribution.amountDistributed),
+            0,
+            'Should set the correct distributed amount',
+          );
+          assert.equal(
+            Number(contribution.startedAt),
+            (await txReceipt.events[0].getBlock()).timestamp,
+            'Should set the correct start date',
+          );
+          assert.equal(
+            Number(contribution.endsAt),
+            endDate,
+            'Should set the correct end date',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */
@@ -103,13 +290,119 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('updateContribution', function () {
-        // revert if not owner
-        // revert if contribution no longer active (meaning that everything was already distributed)
+        beforeEach(async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+        });
+
+        it('Should revert if not owner', async () => {
+          await expect(
+            contributorAccountContract
+              .connect(notUser)
+              .updateContribution(0, ethers.utils.parseEther('2')),
+          ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+        });
+
+        it('Should revert if the contribution was already fully distributed)', async () => {
+          await time.increase(60 * 60 * 24 * 20); // 20 days
+          // Ping the project so it does not become inactive
+          await dacAggregatorContract.pingProject(projectContract.address);
+          await time.increase(60 * 60 * 24 * 11); // 11 days
+          // Send the entire contribution
+          await contributorAccountContract.triggerManualPayment();
+
+          await expect(
+            contributorAccountContract.updateContribution(
+              0,
+              ethers.utils.parseEther('2'),
+              { value: ethers.utils.parseEther('1') },
+            ),
+          ).to.be.revertedWith(
+            'DACContributorAccount__CONTRIBUTION_ALREADY_DISTRIBUTED()',
+          );
+        });
+
         /// If it's a contribution increase
-        // revert if the value is not enough to cover the increase
-        // successfull update (check s_contributions array) and emit correct event
+        it('Should revert if the value is not enough to cover the increase', async () => {
+          await expect(
+            contributorAccountContract.updateContribution(
+              0,
+              ethers.utils.parseEther('2'),
+              { value: ethers.utils.parseEther('0.5') },
+            ),
+          ).to.be.revertedWith('DACContributorAccount__INCORRECT_AMOUNT()');
+        });
+
+        it('Should successfully update the contribution and emit the correct event', async () => {
+          const tx = await contributorAccountContract.updateContribution(
+            0,
+            ethers.utils.parseEther('2'),
+            { value: ethers.utils.parseEther('1') },
+          );
+          const txReceipt = await tx.wait(1);
+
+          // Check the event
+          const event = txReceipt.events?.find(
+            (e) => e.event === 'DACContributorAccount__ContributionUpdated',
+          );
+
+          assert.equal(
+            event.args.projectContract,
+            projectContract.address,
+            'Should emit the correct project contract address',
+          );
+          assert.equal(
+            Number(event.args.amount),
+            ethers.utils.parseEther('2'),
+            'Should emit the correct contribution amount',
+          );
+
+          // Check the contribution
+          const contribution = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          assert.equal(
+            contribution.projectContract,
+            projectContract.address,
+            'Should set the correct project contract address',
+          );
+          assert.equal(
+            Number(contribution.amountStored),
+            ethers.utils.parseEther('2'),
+            'Should set the correct stored amount',
+          );
+          assert.equal(
+            Number(contribution.amountDistributed),
+            0,
+            'Should set the correct distributed amount',
+          );
+        });
+
         /// If it's a contribution decrease
-        // revert if the amount is lower than the amount already distributed
+        it('Should revert if the amount is lower than the amount already distributed', async () => {
+          await time.increase(60 * 60 * 24 * 14); // 14 days
+          // Send part of the contribution
+          await contributorAccountContract.triggerManualPayment();
+
+          // Find how much was already distributed
+          const contribution = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          await expect(
+            contributorAccountContract.updateContribution(
+              0,
+              contribution.amountDistributed.sub(ethers.BigNumber.from('1')),
+            ),
+          ).to.be.revertedWith('DACContributorAccount__INCORRECT_AMOUNT()');
+        });
+
         // successfull update (check s_contributions array), transfer the difference to the owner and emit correct event
       });
 
@@ -141,6 +434,8 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
         // revert if not owner
         // update the time of the last upkeep
         // send the correct contributions to the correct projects and emit correct event
+        // if during the contribution period
+        // if after the contribution period
       });
 
       /* -------------------------------------------------------------------------- */
@@ -266,5 +561,14 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
         // Return the expected amount
         return amount / (timeSpan / timeToPass);
+      };
+
+      /**
+       * @dev Get the timestamp of one month from now
+       * @returns {number} - Timestamp of one month from now
+       */
+
+      const inOneMonth = async () => {
+        return (await time.latest()) + 30 * 24 * 60 * 60;
       };
     });

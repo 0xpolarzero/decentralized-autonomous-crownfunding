@@ -31,16 +31,18 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     /// @dev The call to an external contract failed
     error DACContributorAccount__CALL_FAILED();
-    /// @dev The contribution is not active anymore
-    error DACContributorAccount__CONTRIBUTION_NOT_ACTIVE();
+    /// @dev The contribution is already fully distributed
+    error DACContributorAccount__CONTRIBUTION_ALREADY_DISTRIBUTED();
     /// @dev The project is not active anymore
     error DACContributorAccount__PROJECT_NOT_ACTIVE();
     /// @dev The amount sent is not correct
     error DACContributorAccount__INCORRECT_AMOUNT();
-    /// @dev The amount sent is higher than the maximum amount of contributions
+    /// @dev There are already too many contributions
     error DACContributorAccount__TOO_MANY_CONTRIBUTIONS();
     /// @dev The timestamp is in the past
     error DACContributorAccount__INVALID_TIMESTAMP();
+    /// @dev There is no contribution to send (already fully distributed or the project is not active anymore)
+    error DACContributorAccount__NO_CONTRIBUTION_TO_SEND();
 
     /**
      * @dev Upkeep
@@ -170,9 +172,11 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     /// @dev The minimal infos of a contribution to prepare the upkeep
     /// @param projectContract The address of the project contract
     /// @param amount The amount of the contribution that should be sent (based on the current date, start and end date)
+    /// @param index The index of the contribution in the array of contributions
     struct ContributionMinimal {
         address projectContract;
         uint256 amount;
+        uint256 index;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -244,6 +248,9 @@ contract DACContributorAccount is AutomationCompatibleInterface {
                 amount: 0
             })
         );
+
+        // Set the upkeep as registered
+        s_upkeepRegistered = true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -308,8 +315,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     ) external payable onlyOwner {
         Contribution memory contribution = s_contributions[_index];
         // Check if the contribution is still active
-        if (!isContributionActive(contribution))
-            revert DACContributorAccount__CONTRIBUTION_NOT_ACTIVE();
+        if (!isContributionAlreadyDistributed(contribution))
+            revert DACContributorAccount__CONTRIBUTION_ALREADY_DISTRIBUTED();
 
         if (_amount > contribution.amountStored) {
             // If it's an increase, check that the amount sent is correct
@@ -348,8 +355,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     function cancelContribution(uint256 _index) external onlyOwner {
         Contribution memory contribution = s_contributions[_index];
         // Check if the contribution is still active
-        if (!isContributionActive(contribution))
-            revert DACContributorAccount__CONTRIBUTION_NOT_ACTIVE();
+        if (!isContributionAlreadyDistributed(contribution))
+            revert DACContributorAccount__CONTRIBUTION_ALREADY_DISTRIBUTED();
 
         // Withdraw the amount of the contribution
         (bool success, ) = msg.sender.call{
@@ -404,6 +411,10 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         ContributionMinimal[]
             memory contributionsToSend = calculateContributions();
 
+        // If there is no contribution to send, revert
+        if (contributionsToSend.length == 0)
+            revert DACContributorAccount__NO_CONTRIBUTION_TO_SEND();
+
         // Update the timestamp of the last upkeep
         s_lastUpkeep = block.timestamp;
 
@@ -425,6 +436,12 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     ) internal {
         // For each contribution
         for (uint256 i = 0; i < _contributionsToSend.length; ) {
+            // Update the amount distributed
+            unchecked {
+                s_contributions[_contributionsToSend[i].index]
+                    .amountDistributed += _contributionsToSend[i].amount;
+            }
+
             // Send the contribution
             (bool success, ) = _contributionsToSend[i].projectContract.call{
                 value: _contributionsToSend[i].amount
@@ -746,7 +763,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
             // If the project is still active and there are still some funds to send
             if (
                 isProjectStillActive(contributions[i].projectContract) &&
-                isContributionActive(contributions[i])
+                isContributionAlreadyDistributed(contributions[i])
             ) {
                 // Calculate the amount of the contribution that can be sent based on the time left
                 uint256 amountToSend = calculateIndividualContribution(
@@ -760,7 +777,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
                         contributionsToSendCount
                     ] = ContributionMinimal({
                         projectContract: contributions[i].projectContract,
-                        amount: amountToSend
+                        amount: amountToSend,
+                        index: i
                     });
                     unchecked {
                         contributionsToSendCount++;
@@ -828,7 +846,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
      * @return bool Whether the contribution is still active or not
      */
 
-    function isContributionActive(
+    function isContributionAlreadyDistributed(
         Contribution memory _contribution
     ) internal pure returns (bool) {
         if (_contribution.amountStored > _contribution.amountDistributed)
