@@ -297,12 +297,12 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Increase the amount of a contribution
+     * @notice Update the amount of a contribution
      * @param _index The index of the contribution in the array
      * @param _amount The new amount
      */
 
-    function increaseContribution(
+    function updateContribution(
         uint256 _index,
         uint256 _amount
     ) external payable onlyOwner {
@@ -310,45 +310,29 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         // Check if the contribution is still active
         if (!isContributionActive(contribution))
             revert DACContributorAccount__CONTRIBUTION_NOT_ACTIVE();
-        // Check that the amount sent is correct
-        if (msg.value != _amount)
-            revert DACContributorAccount__INCORRECT_AMOUNT();
 
-        // Increase the amount of the contribution
-        s_contributions[_index].amountStored += _amount;
+        if (_amount > contribution.amountStored) {
+            // If it's an increase, check that the amount sent is correct
+            if (msg.value != _amount - contribution.amountStored)
+                revert DACContributorAccount__INCORRECT_AMOUNT();
 
-        emit DACContributorAccount__ContributionUpdated(
-            contribution.projectContract,
-            _amount
-        );
-    }
+            // Increment the amount of the contribution
+            s_contributions[_index].amountStored = _amount;
+        } else {
+            // If it's a decrease, check that the amount is not lower than what is left to distribute
+            if (_amount < contribution.amountDistributed)
+                revert DACContributorAccount__INCORRECT_AMOUNT();
 
-    /**
-     * @notice Decrease the amount of a contribution
-     * @param _index The index of the contribution in the array
-     * @param _amount The new amount
-     */
+            // Decrement the amount of the contribution
+            s_contributions[_index].amountStored = _amount;
 
-    function decreaseContribution(
-        uint256 _index,
-        uint256 _amount
-    ) external onlyOwner {
-        Contribution memory contribution = s_contributions[_index];
-        // Check if the contribution is still active
-        if (!isContributionActive(contribution))
-            revert DACContributorAccount__CONTRIBUTION_NOT_ACTIVE();
-
-        // Check that the amount is not higher than the amount of the contribution
-        if (
-            _amount > contribution.amountStored - contribution.amountDistributed
-        ) revert DACContributorAccount__INCORRECT_AMOUNT();
-
-        // Decrease the amount of the contribution
-        s_contributions[_index].amountStored -= _amount;
-
-        // Withdraw the amount of the contribution
-        (bool success, ) = msg.sender.call{value: _amount}("");
-        if (!success) revert DACContributorAccount__TRANSFER_FAILED();
+            // Withdraw the difference
+            uint256 difference = contribution.amountStored -
+                contribution.amountDistributed -
+                _amount;
+            (bool success, ) = msg.sender.call{value: difference}("");
+            if (!success) revert DACContributorAccount__TRANSFER_FAILED();
+        }
 
         emit DACContributorAccount__ContributionUpdated(
             contribution.projectContract,
@@ -420,14 +404,14 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         ContributionMinimal[]
             memory contributionsToSend = calculateContributions();
 
+        // Update the timestamp of the last upkeep
+        s_lastUpkeep = block.timestamp;
+
         // If at least one project is still active
         if (contributionsToSend.length > 0) {
             // Send the contributions
             transferContributions(contributionsToSend);
         }
-
-        // Update the timestamp of the last upkeep
-        s_lastUpkeep = block.timestamp;
     }
 
     /**
@@ -494,27 +478,6 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Fund the upkeep of the account after a transfer of LINK tokens
-     * @param _sender The sender of the LINK tokens (most probably the owner of the account)
-     * @param _amount The amount of LINK tokens sent
-     * @dev This function is called by the LINK token contract after being called with the `transferAndCall` function
-     * @dev The recommended process for funding the upkeep is therefore to let the user in the frontend call this function
-     * directly from the LINK contract, using the address of this account as the receiver, which will automatically add the funds
-     */
-    function onTokenTransfer(
-        address _sender,
-        uint256 _amount,
-        bytes calldata /* _data */
-    ) external {
-        // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
-        // because in any case we want any LINK funds here to be used for the upkeep
-        // Fund the upkeep
-        REGISTRY.addFunds(s_upkeepId, uint96(LINK.balanceOf(address(this))));
-
-        emit DACContributorAccount__UpkeepFunded(_sender, _amount);
-    }
-
-    /**
      * @notice Cancel the registration of the Chainlink Upkeep
      * @dev This will cancel the upkeep but it won't withdraw the funds
      */
@@ -543,6 +506,27 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         REGISTRY.withdrawFunds(s_upkeepId, i_owner);
 
         emit DACContributorAccount__UpkeepFundsWithdrawn(s_upkeepId);
+    }
+
+    /**
+     * @notice Fund the upkeep of the account after a transfer of LINK tokens
+     * @param _sender The sender of the LINK tokens (most probably the owner of the account)
+     * @param _amount The amount of LINK tokens sent
+     * @dev This function is called by the LINK token contract after being called with the `transferAndCall` function
+     * @dev The recommended process for funding the upkeep is therefore to let the user in the frontend call this function
+     * directly from the LINK contract, using the address of this account as the receiver, which will automatically add the funds
+     */
+    function onTokenTransfer(
+        address _sender,
+        uint256 _amount,
+        bytes calldata /* _data */
+    ) external {
+        // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
+        // because in any case we want any LINK funds here to be used for the upkeep
+        // Fund the upkeep
+        REGISTRY.addFunds(s_upkeepId, uint96(LINK.balanceOf(address(this))));
+
+        emit DACContributorAccount__UpkeepFunded(_sender, _amount);
     }
 
     /**
@@ -612,6 +596,42 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     /* -------------------------------------------------------------------------- */
 
     /**
+     * @dev Get the address of the LINK token contract
+     * @return address The address of the contract
+     */
+
+    function getLink() external view returns (address) {
+        return address(LINK);
+    }
+
+    /**
+     * @notice Get the address of the Upkeep registry
+     * @return address The address of the contract
+     */
+
+    function getUpkeepRegistry() external view returns (address) {
+        return address(REGISTRY);
+    }
+
+    /**
+     * @notice Get the address of the Upkeep registrar
+     * @return address The address of the contract
+     */
+
+    function getUpkeepRegistrar() external view returns (address) {
+        return address(REGISTRAR);
+    }
+
+    /**
+     * @notice Get the address of the DAC Aggregator
+     * @return address The address of the contract
+     */
+
+    function getDACAggregator() external view returns (address) {
+        return address(DAC_AGGREGATOR);
+    }
+
+    /**
      * @notice Get the address of the owner of the account
      * @return address The address of the owner of the account
      */
@@ -627,6 +647,15 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     function getCreatedAt() external view returns (uint256) {
         return i_createdAt;
+    }
+
+    /**
+     * @notice Get the maximum amount of contributions that this account can hold
+     * @return uint256 The maximum amount of contributions
+     */
+
+    function getMaxContributions() external view returns (uint256) {
+        return i_maxContributions;
     }
 
     /**
