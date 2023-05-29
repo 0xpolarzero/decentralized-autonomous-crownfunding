@@ -499,9 +499,78 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('cancelAllContributions', function () {
-        // revert if not owner
-        // withdraw the whole balance of the contract to the owner
-        // successfull delete the array (check s_contributions array) and emit correct event
+        it('Should revert if not owner', async () => {
+          await expect(
+            contributorAccountContract
+              .connect(notUser)
+              .cancelAllContributions(),
+          ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+        });
+
+        it('Should successfully cancel all contributions, send the owner the remaining contract balance and emit the correct event', async () => {
+          // Get the initial balances
+          const initialUserBalance = await ethers.provider.getBalance(
+            await user.getAddress(),
+          );
+          const initialContractBalance = await ethers.provider.getBalance(
+            contributorAccountContract.address,
+          );
+          // Get the initial contributions
+          const initialContributions =
+            await contributorAccountContract.getContributions();
+
+          // Cancel all contributions
+          const txCancel =
+            await contributorAccountContract.cancelAllContributions();
+          const txReceipt = await txCancel.wait(1);
+
+          // Check the event
+          const event = txReceipt.events?.find(
+            (e) =>
+              e.event === 'DACContributorAccount__AllContributionsCanceled',
+          );
+
+          assert.deepEqual(
+            event.args.contributions,
+            initialContributions,
+            'Should emit the correct canceled contributions',
+          );
+          assert.deepEqual(
+            event.args.amount,
+            initialContractBalance,
+            'Should emit the correct withdrawn contract balance',
+          );
+
+          // Check the balances
+          const gasUsed = txReceipt.cumulativeGasUsed.mul(
+            txReceipt.effectiveGasPrice,
+          );
+
+          assert.deepEqual(
+            await ethers.provider.getBalance(await user.getAddress()),
+            initialUserBalance.add(initialContractBalance).sub(gasUsed),
+            'Should transfer the difference to the user',
+          );
+          assert.equal(
+            Number(
+              await ethers.provider.getBalance(
+                contributorAccountContract.address,
+              ),
+            ),
+            0,
+            'Should withdraw the whole balance of the contract',
+          );
+
+          // Check the contributions
+          const contributions =
+            await contributorAccountContract.getContributions();
+
+          assert.deepEqual(
+            contributions,
+            [],
+            'Should delete the contributions array',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */
