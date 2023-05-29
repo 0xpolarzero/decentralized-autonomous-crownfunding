@@ -981,20 +981,203 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('checkUpkeep', function () {
-        /// It will return true if the interval has passed & there is at least a contribution to send
-        // return false is the interval has not passed (even if there is a contribution to send)
-        // return false if the interval has passed but there is no contribution to send
-        // return true if the interval has passed and there is a contribution to send
-        // and also return the data of the contributions to send along
+        /// It will return true only if the interval has passed && there is at least a contribution to send
+        it('Should return false if there is no contribution to send', async () => {
+          // It should initially return false as there is no contribution to send
+          // it will return an array with the following values:
+          // [bool upkeepNeeded, bytes memory performData]
+          assert.equal(
+            (await contributorAccountContract.checkUpkeep('0x'))[0],
+            false,
+            'Should return false initially',
+          );
+
+          // Pass some time so the interval condition is met
+          await time.increase(paymentInterval + 1);
+
+          // It should still return false as there is no contribution to send
+          assert.equal(
+            (await contributorAccountContract.checkUpkeep('0x'))[0],
+            false,
+            'Should return false as there is no contribution to send',
+          );
+        });
+
+        it('Should return false if the interval has not passed', async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+
+          // It should return false as the interval has not passed
+          assert.equal(
+            (await contributorAccountContract.checkUpkeep('0x'))[0],
+            false,
+            'Should return false as the interval has not passed',
+          );
+        });
+
+        it('Should return true if the interval has passed and there is at least a contribution to send', async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+          // Pass some time so the interval condition is met
+          await time.increase(paymentInterval + 1);
+
+          // It should return true as the interval has passed and there is a contribution to send
+          assert.equal(
+            (await contributorAccountContract.checkUpkeep('0x'))[0],
+            true,
+            'Should return true as the interval has passed and there is a contribution to send',
+          );
+        });
+
+        it('Should return the correct data of the contributions to send', async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+          // Pass some time so the interval condition is met
+          await time.increase(paymentInterval + 1);
+
+          // Calculate how much will be distributed
+          const amountToDistribute = await calculateContributionAt(
+            (
+              await contributorAccountContract.getContributions()
+            )[0],
+            await time.latest(),
+          );
+
+          // It should return the correct data of the contributions to send
+          const performData = (
+            await contributorAccountContract.checkUpkeep('0x')
+          )[1];
+          // Decode it
+          const decodedPerformData = ethers.utils.defaultAbiCoder.decode(
+            ['tuple(address,uint256,uint256)[]'],
+            performData,
+          );
+
+          // Check the decoded data
+          assert.equal(
+            decodedPerformData[0][0][0],
+            projectContract.address,
+            'Should return the correct project address',
+          );
+          assert.deepEqual(
+            decodedPerformData[0][0][1],
+            amountToDistribute,
+            'Should return the correct amount to send to the project',
+          );
+          assert.equal(
+            Number(decodedPerformData[0][0][2]),
+            0,
+            'Should return the correct index in the original contributions array',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */
       /*                                performUpkeep                               */
       /* -------------------------------------------------------------------------- */
 
-      describe('performUpkeep', function () {
-        // update the time of the last upkeep
-        // send the correct contributions to the correct projects and emit correct event
+      describe.only('performUpkeep', function () {
+        it('Should send the correct contributions, update the last upkeep time and emit the correct event', async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+          // Pass some time
+          await time.increase(paymentInterval + 1);
+
+          // Calculate how much will be distributed
+          const amountToDistribute = await calculateContributionAt(
+            (
+              await contributorAccountContract.getContributions()
+            )[0],
+            await time.latest(),
+          );
+          // Get the data to pass to the performUpkeep function
+          const performData = (
+            await contributorAccountContract.checkUpkeep('0x')
+          )[1];
+
+          // Prepare the listener
+          const listener = new Promise((resolve, reject) => {
+            contributorAccountContract.on(
+              'DACContributorAccount__ContributionsTransfered',
+              (contributions) => {
+                try {
+                  resolve({ ...contributions[0] });
+                } catch (err) {
+                  reject(err);
+                }
+              },
+            );
+          });
+
+          // Perform the upkeep
+          const tx = await contributorAccountContract.performUpkeep(
+            performData,
+          );
+          const txReceipt = await tx.wait(1);
+
+          // Check that the event has been emitted correctly
+          const event = await listener;
+          assert.equal(
+            event.projectContract,
+            projectContract.address,
+            'Should emit the correct project address',
+          );
+          assert.deepEqual(
+            event.amount,
+            amountToDistribute,
+            'Should emit the correct amount sent to the project',
+          );
+          assert.equal(
+            Number(event.index),
+            0,
+            'Should emit the correct index in the original contributions array',
+          );
+
+          // Check that the last upkeep time has been updated
+          assert.equal(
+            Number(await contributorAccountContract.getLastUpkeep()),
+            (await txReceipt.events[0].getBlock()).timestamp,
+            'Should update the last upkeep time',
+          );
+
+          // Check that the contribution has been updated correctly
+          const contribution = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          assert.deepEqual(
+            contribution.amountDistributed,
+            amountToDistribute,
+            'Should update the amount distributed',
+          );
+
+          // Check the project contract balance
+          assert.deepEqual(
+            await ethers.provider.getBalance(projectContract.address),
+            amountToDistribute,
+            'Should have sent the correct amount to the project contract',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */
