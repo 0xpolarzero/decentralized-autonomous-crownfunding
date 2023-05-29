@@ -403,7 +403,80 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           ).to.be.revertedWith('DACContributorAccount__INCORRECT_AMOUNT()');
         });
 
-        // successfull update (check s_contributions array), transfer the difference to the owner and emit correct event
+        it('Should successfully update the contribution, transfer the difference and emit the correct event', async () => {
+          await time.increase(60 * 60 * 24 * 14); // 14 days
+          // Send part of the contribution
+          const txPayment =
+            await contributorAccountContract.triggerManualPayment();
+          await txPayment.wait(1);
+          // Get the balance before the update
+          const initialBalance = await ethers.provider.getBalance(
+            await user.getAddress(),
+          );
+
+          // Find how much was already distributed
+          const contribution = (
+            await contributorAccountContract.getContributions()
+          )[0];
+          // Find how much is left to distribute
+          const amountLeft = contribution.amountStored.sub(
+            contribution.amountDistributed,
+          );
+
+          const txUpdate = await contributorAccountContract.updateContribution(
+            0,
+            contribution.amountDistributed,
+          );
+          const txReceipt = await txUpdate.wait(1);
+
+          // Check the event
+          const event = txReceipt.events?.find(
+            (e) => e.event === 'DACContributorAccount__ContributionUpdated',
+          );
+
+          assert.equal(
+            event.args.projectContract,
+            projectContract.address,
+            'Should emit the correct project contract address',
+          );
+          assert.equal(
+            Number(event.args.amount),
+            contribution.amountDistributed,
+            'Should emit the correct contribution amount',
+          );
+
+          // Check the contribution
+          const updatedContribution = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          assert.equal(
+            updatedContribution.projectContract,
+            projectContract.address,
+            'Should set the correct project contract address',
+          );
+          assert.deepEqual(
+            updatedContribution.amountStored,
+            contribution.amountDistributed,
+            'Should set the correct stored amount',
+          );
+          assert.deepEqual(
+            updatedContribution.amountDistributed,
+            contribution.amountDistributed,
+            'Should set the correct distributed amount',
+          );
+
+          // Check the balance
+          const gasUsed = txReceipt.cumulativeGasUsed.mul(
+            txReceipt.effectiveGasPrice,
+          );
+
+          assert.deepEqual(
+            await ethers.provider.getBalance(await user.getAddress()),
+            initialBalance.add(amountLeft).sub(gasUsed),
+            'Should transfer the difference to the user',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */

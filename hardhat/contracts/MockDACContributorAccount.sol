@@ -333,9 +333,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
             s_contributions[_index].amountStored = _amount;
 
             // Withdraw the difference
-            uint256 difference = contribution.amountStored -
-                contribution.amountDistributed -
-                _amount;
+            uint256 difference = contribution.amountStored - _amount;
             (bool success, ) = msg.sender.call{value: difference}("");
             if (!success) revert DACContributorAccount__TRANSFER_FAILED();
         }
