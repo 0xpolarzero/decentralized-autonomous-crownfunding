@@ -483,11 +483,16 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /*                             cancelContribution                             */
       /* -------------------------------------------------------------------------- */
 
-      describe('cancelContribution', function () {
-        // revert if not owner
-        // revert if contribution no longer active (meaning that everything was already distributed)
-        // successfull cancel (check s_contributions array), send the owner the remaining amount and emit correct event
-      });
+      // describe('cancelContribution', function () {
+      //   it('Should revert if not owner', async () => {
+      //     await expect(
+      //       contributorAccountContract.connect(notUser).cancelContribution(0),
+      //     ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+      //   });
+      //   // revert if contribution no longer active (meaning that everything was already distributed)
+      //   it('Should revert if the contribution was already fully distributed', async () => {
+      //   // successfull cancel (check s_contributions array), send the owner the remaining amount and emit correct event
+      // });
 
       /* -------------------------------------------------------------------------- */
       /*                           cancelAllContributions                           */

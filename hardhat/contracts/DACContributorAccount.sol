@@ -346,44 +346,12 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Cancel a contribution and withdraw the funds
-     * @param _index The index of the contribution in the array
-     */
-
-    function cancelContribution(uint256 _index) external onlyOwner {
-        Contribution memory contribution = s_contributions[_index];
-        // Check if the contribution is still active
-        if (!isContributionAlreadyDistributed(contribution))
-            revert DACContributorAccount__CONTRIBUTION_ALREADY_DISTRIBUTED();
-
-        // Withdraw the amount of the contribution
-        (bool success, ) = msg.sender.call{
-            value: contribution.amountStored - contribution.amountDistributed
-        }("");
-        if (!success) revert DACContributorAccount__TRANSFER_FAILED();
-
-        // Remove the contribution from the array
-        delete s_contributions[_index];
-
-        emit DACContributorAccount__ContributionCanceled(
-            contribution.projectContract,
-            contribution.amountStored - contribution.amountDistributed
-        );
-    }
-
-    /**
      * @notice Cancel all the contributions and withdraw the funds
      */
 
     function cancelAllContributions() external onlyOwner {
         Contribution[] memory contributions = s_contributions;
-
-        // For each contribution
-        // for (uint256 i = 0; i < contributions.length; i++) {
-        //     // Set the distributed amount to the total amount
-        //     s_contributions[i].amountDistributed = contributions[i]
-        //         .amountStored;
-        // }
+        uint256 contractBalance = address(this).balance;
 
         // Withdraw everything from this contract
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
@@ -394,7 +362,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
         emit DACContributorAccount__AllContributionsCanceled(
             contributions,
-            address(this).balance
+            contractBalance
         );
     }
 
