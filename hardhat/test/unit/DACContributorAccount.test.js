@@ -921,16 +921,58 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             );
 
             assert.equal(
-              event.args.upkeepId,
-              0,
+              Number(event.args.upkeepId),
+              1,
               'Should emit the correct upkeep id',
             );
           });
         });
 
         // Triggered when LINK is being sent to the contract (with `transferAndCall`)
+        // In this mock function, the LINK tokens are just being transfered to the owner of the account
+        // instead of the upkeep
         describe('onTokenTransfer', function () {
-          // just send link with transferAndCall and check that the event is emitted
+          it('Should successfully be triggered when receiving LINK and emit the correct event', async () => {
+            const linkTokenContract = await ethers.getContract(
+              'LinkToken',
+              deployer,
+            );
+
+            // Prepare a listener for the event
+            const listener = new Promise((resolve, reject) => {
+              contributorAccountContract.on(
+                'DACContributorAccount__UpkeepFunded',
+                (sender, amount) => {
+                  try {
+                    resolve({ sender, amount });
+                  } catch (err) {
+                    reject(err);
+                  }
+                },
+              );
+            });
+
+            // Send some LINK to the contract
+            const tx = await linkTokenContract.transferAndCall(
+              contributorAccountContract.address,
+              100,
+              '0x',
+            );
+            await tx.wait(1);
+
+            // Check that the event has been emitted
+            const event = await listener;
+            assert.equal(
+              event.sender,
+              deployer.address,
+              'Should emit the correct upkeep id',
+            );
+            assert.equal(
+              event.amount,
+              100,
+              'Should emit the correct amount of LINK',
+            );
+          });
         });
       });
 
