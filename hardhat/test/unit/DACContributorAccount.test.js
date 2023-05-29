@@ -499,6 +499,16 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('cancelAllContributions', function () {
+        beforeEach(async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+        });
+
         it('Should revert if not owner', async () => {
           await expect(
             contributorAccountContract
@@ -578,11 +588,183 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       describe('triggerManualPayment', function () {
-        // revert if not owner
-        // update the time of the last upkeep
+        beforeEach(async () => {
+          // Create a contribution
+          await contributorAccountContract.createContribution(
+            projectContract.address,
+            ethers.utils.parseEther('1'),
+            inOneMonth(),
+            { value: ethers.utils.parseEther('1') },
+          );
+        });
+
+        it('Should revert if not owner', async () => {
+          await expect(
+            contributorAccountContract.connect(notUser).triggerManualPayment(),
+          ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+        });
+
+        it('Should revert if there are no contributions to distribute', async () => {
+          /// Complete the contribution
+          // Pass 20 days
+          await time.increase(20 * 24 * 60 * 60);
+          // Ping the project so it won't become inactive
+          await dacAggregatorContract.pingProject(projectContract.address);
+          // Pass 11 days
+          await time.increase(11 * 24 * 60 * 60);
+          // Distribute it fully
+          const txPayment =
+            await contributorAccountContract.triggerManualPayment();
+          await txPayment.wait(1);
+
+          // Try to trigger the manual payment
+          await expect(
+            contributorAccountContract.triggerManualPayment(),
+          ).to.be.revertedWith(
+            'DACContributorAccount__NO_CONTRIBUTION_TO_SEND()',
+          );
+        });
+
+        it('Should successfully update the time of the last upkeep', async () => {
+          // Trigger the manual payment
+          const txTrigger =
+            await contributorAccountContract.triggerManualPayment();
+          const txReceipt = await txTrigger.wait(1);
+
+          assert.equal(
+            Number(await contributorAccountContract.getLastUpkeep()),
+            (await txReceipt.events[0].getBlock()).timestamp,
+            'Should update the time of the last upkeep',
+          );
+        });
+
         // send the correct contributions to the correct projects and emit correct event
-        // if during the contribution period
-        // if after the contribution period
+        it('Should successfully send the correct contributions to the correct projects and emit the correct event', async () => {
+          const contributionAtStart = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          /// During the contribution period
+          // Pass 20 days
+          await time.increase(20 * 24 * 60 * 60);
+          // Ping the project so it won't become inactive
+          await dacAggregatorContract.pingProject(projectContract.address);
+
+          // Send the contribution
+          const txTrigger =
+            await contributorAccountContract.triggerManualPayment();
+          const txReceipt = await txTrigger.wait(1);
+
+          const contributionDuringPeriod = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          // Check the distribution
+          assert.deepEqual(
+            contributionDuringPeriod.amountDistributed,
+            await calculateContributionAt(
+              contributionAtStart,
+              await (
+                await txReceipt.events[0].getBlock()
+              ).timestamp,
+            ),
+            'Should send the correct amount during the contribution period',
+          );
+          // Check the balance of the project
+          assert.deepEqual(
+            await ethers.provider.getBalance(projectContract.address),
+            contributionDuringPeriod.amountDistributed,
+            'Should send the amountDistributed to the project during the contribution period',
+          );
+          // Check the contract balance
+          assert.deepEqual(
+            await ethers.provider.getBalance(
+              contributorAccountContract.address,
+            ),
+            contributionDuringPeriod.amountStored.sub(
+              contributionDuringPeriod.amountDistributed,
+            ),
+            'Should remove the amountDistributed from the account contract during the contribution period',
+          );
+          // Check the event
+          const eventDuringPeriod = txReceipt.events?.find(
+            (e) => e.event === 'DACContributorAccount__ContributionsTransfered',
+          );
+
+          assert.deepEqual(
+            eventDuringPeriod.args[0][0].projectContract,
+            projectContract.address,
+            'Should emit the correct project contract',
+          );
+          assert.deepEqual(
+            eventDuringPeriod.args[0][0].amount,
+            contributionDuringPeriod.amountDistributed,
+            'Should emit the correct amount distributed',
+          );
+
+          // Pass time till the end of the contribution period (11 days)
+          await time.increase(11 * 24 * 60 * 60);
+
+          // Send the contribution
+          const txTrigger2 =
+            await contributorAccountContract.triggerManualPayment();
+          const txReceipt2 = await txTrigger2.wait(1);
+
+          const contributionAfterPeriod = (
+            await contributorAccountContract.getContributions()
+          )[0];
+
+          // Check the distribution
+          assert.deepEqual(
+            contributionAfterPeriod.amountDistributed,
+            await calculateContributionAt(
+              contributionAtStart,
+              await (
+                await txReceipt2.events[0].getBlock()
+              ).timestamp,
+            ),
+            'Should send the correct amount after the contribution period',
+          );
+          // It should have distributed everything
+          assert.deepEqual(
+            contributionAfterPeriod.amountDistributed,
+            contributionAfterPeriod.amountStored,
+            'Should have sent all the stored amount after the contribution period',
+          );
+          // Check the balance of the project
+          assert.deepEqual(
+            await ethers.provider.getBalance(projectContract.address),
+            contributionAfterPeriod.amountDistributed,
+            'Should send the amountDistributed to the project during the contribution period',
+          );
+          // Check the contract balance
+          assert.deepEqual(
+            await ethers.provider.getBalance(
+              contributorAccountContract.address,
+            ),
+            contributionAfterPeriod.amountStored.sub(
+              contributionAfterPeriod.amountDistributed,
+            ),
+            'Should remove the amountDistributed from the account contract during the contribution period',
+          );
+          // Check the event
+          const eventAfterPeriod = txReceipt2.events?.find(
+            (e) => e.event === 'DACContributorAccount__ContributionsTransfered',
+          );
+
+          assert.deepEqual(
+            eventAfterPeriod.args[0][0].projectContract,
+            projectContract.address,
+            'Should emit the correct project contract',
+          );
+          assert.deepEqual(
+            eventAfterPeriod.args[0][0].amount,
+            contributionAfterPeriod.amountDistributed.sub(
+              contributionDuringPeriod.amountDistributed,
+            ),
+            'Should emit the correct amount distributed',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */
@@ -663,51 +845,36 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /* -------------------------------------------------------------------------- */
 
       /**
-       * @dev Create a contribution and send part of the funds
-       * @param {number} amount - Amount to send during the whole time span
-       * @param {number} timeSpan - Time span in seconds
-       * @param {number} timeToPass - Time to pass in seconds after creating the contribution, to send the funds
-       * @returns {number} - Expected amount to be sent
-       * @dev e.g. Create a contribution with 1 ETH to be distributed in 1 month, pass 7 days and send it (~1/4 of the funds)
+       * @dev Calculate the expected amount to distribute at x time
+       * @param {object} contribution - Contribution object
+       * @param {number} timestamp - Time to calculate the expected amount
        */
 
-      const createContributionAndTransfer = async (
-        amount,
-        timeSpan,
-        timeToPass,
-      ) => {
-        // Create the contribution
-        const txCreate = await contributorAccountContract
-          .connect(notUser)
-          .createContribution(
-            projectContract.address,
-            amount,
-            (await time.latest()) + timeSpan,
-            { value: amount },
-          );
-        await txCreate.wait(1);
+      const calculateContributionAt = async (contribution, timestamp) => {
+        timestamp = ethers.BigNumber.isBigNumber(timestamp)
+          ? timestamp
+          : ethers.BigNumber.from(timestamp.toString());
 
-        // Verify the contribution is there
-        const contribution = (
-          await contributorAccountContract.getContributions()
-        )[0];
-        assert.equal(
-          Number(contribution.amountStored),
-          amount,
-          'Should have stored the right amount',
+        // If there is nothing to distribute anymore, return 0
+        if (contribution.amountStored.isZero()) return ethers.constants.Zero;
+
+        // If the contribution period has ended, return the amount that is left
+        if (contribution.endsAt.lt(timestamp))
+          return contribution.amountStored.sub(contribution.amountDistributed);
+
+        // Calculate the amount of the contribution that should be sent based on the time left
+        const remainingDuration = contribution.endsAt.sub(timestamp);
+        const remainingIntervals = await remainingDuration.div(
+          await contributorAccountContract.getUpkeepInterval(),
+        );
+        const remainingAmount = contribution.amountStored.sub(
+          contribution.amountDistributed,
         );
 
-        // Pass the time
-        await time.increase(timeToPass);
-
-        // Trigger the payment
-        const txTransfer = await contributorAccountContract
-          .connect(notUser)
-          .triggerManualPayment();
-        await txTransfer.wait(1);
-
-        // Return the expected amount
-        return amount / (timeSpan / timeToPass);
+        // Calculate the amount to distribute based on the remaining intervals.
+        // If there's an incomplete interval, it will be counted as a whole one.
+        return remainingAmount.div(remainingIntervals.add(2));
+        // "+1" for rounding up and "+1" for the incomplete interval (we want a payment at the end of the period)
       };
 
       /**
