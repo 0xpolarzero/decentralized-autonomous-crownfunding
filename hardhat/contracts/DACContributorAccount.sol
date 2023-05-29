@@ -50,6 +50,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     /// @dev An upkeep is already registered
     error DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
+    /// @dev The upkeep is not registered
+    error DACContributorAccount__UPKEEP_NOT_REGISTERED();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -466,6 +468,9 @@ contract DACContributorAccount is AutomationCompatibleInterface {
      */
 
     function cancelUpkeep() external onlyOwner {
+        if (!s_upkeepRegistered)
+            revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
+
         // Cancel the Chainlink Upkeep
         REGISTRY.cancelUpkeep(s_upkeepId);
         // Set the upkeep as not registered

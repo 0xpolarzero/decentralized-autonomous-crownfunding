@@ -638,7 +638,6 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           );
         });
 
-        // send the correct contributions to the correct projects and emit correct event
         it('Should successfully send the correct contributions to the correct projects and emit the correct event', async () => {
           const contributionAtStart = (
             await contributorAccountContract.getContributions()
@@ -779,26 +778,160 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /*                               Mock functions                               */
       /* -------------------------------------------------------------------------- */
 
-      describe('registerNewUpkeep', function () {
-        // revert if not owner
-        // revert if the upkeep is already registered
-        // successfully registers the upkeep (check upkeepId)
-        // Updates the registered variable & emit correct event
-      });
+      describe('Mock functions', function () {
+        describe('registerNewUpkeep', function () {
+          beforeEach(async () => {
+            // We need to cancel the upkeep that was registered in the constructor
+            // to correctly test the `registerNewUpkeep` function
+            const tx = await contributorAccountContract.cancelUpkeep();
+            await tx.wait(1);
+          });
 
-      describe('cancelUpkeep', function () {
-        // revert if not owner
-        // set upkeep registered to false and emit correct event
-      });
+          it('Should revert if not owner', async () => {
+            await expect(
+              contributorAccountContract.connect(notUser).registerNewUpkeep(),
+            ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+          });
 
-      describe('withdrawUpkeepFunds', function () {
-        // revert if not owner
-        // emit correct event
-      });
+          it('Should revert if the upkeep is already registered', async () => {
+            const tx = await contributorAccountContract.registerNewUpkeep();
+            await tx.wait(1);
 
-      // Triggered when LINK is being sent to the contract (with `transferAndCall`)
-      describe('onTokenTransfer', function () {
-        // just send link with transferAndCall and check that the event is emitted
+            await expect(
+              contributorAccountContract.registerNewUpkeep(),
+            ).to.be.revertedWith(
+              'DACContributorAccount__UPKEEP_ALREADY_REGISTERED()',
+            );
+          });
+
+          it('Should successfully register the upkeep', async () => {
+            assert.equal(
+              await contributorAccountContract.getUpkeepId(),
+              1, // it's actually been set to 1 in the constructor, but using the same logic
+              'Should have the correct upkeepId',
+            );
+          });
+
+          it('Should set the upkeep as registered and emit the correct event', async () => {
+            assert.equal(
+              await contributorAccountContract.isUpkeepRegistered(),
+              false,
+              'Should not be registered initially',
+            );
+
+            const tx = await contributorAccountContract.registerNewUpkeep();
+            const txReceipt = await tx.wait(1);
+
+            assert.equal(
+              await contributorAccountContract.isUpkeepRegistered(),
+              true,
+              'Should set the upkeep as registered',
+            );
+
+            const event = txReceipt.events?.find(
+              (e) => e.event === 'DACContributorAccount__UpkeepRegistered',
+            );
+
+            assert.equal(
+              event.args.upkeepId,
+              1,
+              'Should emit the correct upkeepId',
+            );
+            assert.equal(
+              Number(event.args.interval),
+              paymentInterval,
+              'Should emit the correct upkeep interval',
+            );
+          });
+        });
+
+        describe('cancelUpkeep', function () {
+          it('Should revert if not owner', async () => {
+            await expect(
+              contributorAccountContract.connect(notUser).cancelUpkeep(),
+            ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+          });
+
+          it('Should revert if the upkeep is not registered', async () => {
+            const tx = await contributorAccountContract.cancelUpkeep();
+            await tx.wait(1);
+
+            await expect(
+              contributorAccountContract.cancelUpkeep(),
+            ).to.be.revertedWith(
+              'DACContributorAccount__UPKEEP_NOT_REGISTERED()',
+            );
+          });
+
+          it('Should successfully cancel the upkeep, set is to unregistered and emit the correct event', async () => {
+            const tx = await contributorAccountContract.cancelUpkeep();
+            const txReceipt = await tx.wait(1);
+
+            assert.equal(
+              await contributorAccountContract.isUpkeepRegistered(),
+              false,
+              'Should set the upkeep as unregistered',
+            );
+
+            const event = txReceipt.events?.find(
+              (e) => e.event === 'DACContributorAccount__UpkeepCanceled',
+            );
+
+            assert.equal(
+              event.args.upkeepId,
+              1,
+              'Should emit the correct upkeepId',
+            );
+          });
+
+          it('Should allow to register a new upkeep', async () => {
+            const tx = await contributorAccountContract.cancelUpkeep();
+            await tx.wait(1);
+
+            assert.equal(
+              await contributorAccountContract.isUpkeepRegistered(),
+              false,
+              'Should set the upkeep as unregistered',
+            );
+
+            const tx2 = await contributorAccountContract.registerNewUpkeep();
+            await tx2.wait(1);
+
+            assert.equal(
+              await contributorAccountContract.isUpkeepRegistered(),
+              true,
+              'Should set the upkeep as registered',
+            );
+          });
+        });
+
+        describe('withdrawUpkeepFunds', function () {
+          it('Should revert if not owner', async () => {
+            await expect(
+              contributorAccountContract.connect(notUser).withdrawUpkeepFunds(),
+            ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+          });
+
+          it('Should emit the correct event', async () => {
+            const tx = await contributorAccountContract.withdrawUpkeepFunds();
+            const txReceipt = await tx.wait(1);
+
+            const event = txReceipt.events?.find(
+              (e) => e.event === 'DACContributorAccount__UpkeepFundsWithdrawn',
+            );
+
+            assert.equal(
+              event.args.upkeepId,
+              0,
+              'Should emit the correct upkeep id',
+            );
+          });
+        });
+
+        // Triggered when LINK is being sent to the contract (with `transferAndCall`)
+        describe('onTokenTransfer', function () {
+          // just send link with transferAndCall and check that the event is emitted
+        });
       });
 
       /* -------------------------------------------------------------------------- */

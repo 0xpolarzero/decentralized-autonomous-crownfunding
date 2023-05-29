@@ -61,6 +61,8 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
 
     /// @dev An upkeep is already registered
     error DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
+    /// @dev The upkeep is not registered
+    error DACContributorAccount__UPKEEP_NOT_REGISTERED();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -453,6 +455,9 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      */
 
     function cancelUpkeep() external onlyOwner {
+        if (!s_upkeepRegistered)
+            revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
+
         // Cancel the Chainlink Upkeep
         MOCK_cancelUpkeep();
         // Set the upkeep as not registered
