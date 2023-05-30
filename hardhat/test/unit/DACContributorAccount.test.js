@@ -1091,7 +1091,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /*                                performUpkeep                               */
       /* -------------------------------------------------------------------------- */
 
-      describe.only('performUpkeep', function () {
+      describe('performUpkeep', function () {
         it('Should send the correct contributions, update the last upkeep time and emit the correct event', async () => {
           // Create a contribution
           await contributorAccountContract.createContribution(
@@ -1184,9 +1184,43 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       /*                         hasEnoughLinkForNextUpkeep                         */
       /* -------------------------------------------------------------------------- */
 
-      describe('hasEnoughLinkForNextUpkeep', function () {
-        // return true if the contract has enough link to pay for the next upkeep
-        // return false if the contract does not have enough link to pay for the next upkeep
+      // This will return either true or false, based on a calculation with high gas prices and gas limit
+      // This is just here to help the user know when they should top up their upkeep balance
+      // or how many payments it should be able to handle
+      describe.only('hasEnoughLinkForNextUpkeep', function () {
+        let requiredBalance;
+
+        beforeEach(async () => {
+          // Calculate the required balance
+          requiredBalance = await calculateUpkeepPrice(
+            // Gas price of 200 Gwei
+            ethers.utils.parseUnits('200', 'gwei'),
+            // Gas limit (should be 5 million)
+            ethers.BigNumber.from(chainlink[network.name].GAS_LIMIT.toString()),
+            // The payment premium for a Chainlink Upkeep on this chain
+            ethers.BigNumber.from(
+              chainlink[network.name].PREMIUM_PERCENT.toString(),
+            ),
+            // The native token / LINK rate on this chain
+            ethers.BigNumber.from(
+              chainlink[network.name].NATIVE_TOKEN_LINK_RATE.toString(),
+            ),
+          );
+        });
+
+        it('Should return false if the contract does not have enough LINK to pay for the next upkeep', async () => {
+          assert.equal(
+            await contributorAccountContract.hasEnoughLinkForNextUpkeep(),
+            false,
+            'Should return false as the contract has no LINK yet',
+          );
+
+          // Even with a small amount of LINK, it should still return false
+          console.log(await requiredBalance.toString());
+
+          // 702240000000000000
+          // returns 0.7 LINK in the contract right now
+        });
       });
 
       /* -------------------------------------------------------------------------- */
@@ -1195,7 +1229,41 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
       describe('setUpkeepInterval', function () {
         // revert if not owner
+        it('Should revert if not owner', async () => {
+          await expect(
+            contributorAccountContract
+              .connect(notUser)
+              .setUpkeepInterval(86400), // 1 day
+          ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
+        });
+
         // update the interval and emit correct event
+        it('Should update the interval and emit the correct event', async () => {
+          // Update the interval
+          const tx = await contributorAccountContract.setUpkeepInterval(
+            86400, // 1 day
+          );
+          const txReceipt = await tx.wait(1);
+
+          // Check the interval
+          assert.equal(
+            Number(await contributorAccountContract.getUpkeepInterval()),
+            86400,
+            'Should update the interval',
+          );
+
+          // Check the event
+          assert.equal(
+            txReceipt.events[0].event,
+            'DACContributorAccount__UpkeepIntervalUpdated',
+            'Should emit the correct event',
+          );
+          assert.equal(
+            txReceipt.events[0].args.interval,
+            86400,
+            'Should emit the correct interval',
+          );
+        });
       });
 
       /* -------------------------------------------------------------------------- */
@@ -1234,6 +1302,31 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
         return remainingAmount.div(remainingIntervals.add(2));
         // "+1" for rounding up and "+1" for the incomplete interval (we want a payment at the end of the period)
       };
+
+      /**
+       * @dev Calculate the approximate price of an upkeep
+       * @param {number} gasPrice - Gas price dedicated to the upkeep
+       * @param {number} upkeepGasLimit - Gas limit dedicated to the upkeep
+       * @param {number} paymentPremiumPercent - Premium percent dedicated on this chain
+       * @param {number} nativeTokenLinkRate - Rate of the native token to LINK
+       * @returns {number} - Approximate price of an upkeep in LINK
+       */
+
+      const calculateUpkeepPrice = async (
+        gasPrice,
+        upkeepGasLimit,
+        paymentPremiumPercent,
+        nativeTokenLinkRate,
+      ) =>
+        gasPrice
+          // .div(1e9)
+          .mul(upkeepGasLimit)
+          .mul(paymentPremiumPercent.div(100).add(1))
+          .add(
+            gasPrice /* .div(1e9) */
+              .mul(80000),
+          )
+          .mul(nativeTokenLinkRate.div(100));
 
       /**
        * @dev Get the timestamp of one month from now

@@ -467,10 +467,11 @@ contract DACAggregator {
         uint256 gasPrice = 200 gwei;
 
         // Return the price
-        return ((_upkeepGasLimit *
-            gasPrice *
-            (100 + s_premiumPercent) +
-            (80_000 * gasPrice)) * s_nativeTokenLinkRate);
+        return ((((_upkeepGasLimit * (gasPrice /* / 1e9 */)) *
+            (1 + s_premiumPercent / 100) +
+            (80_000 * (gasPrice /* / 1e9 */))) * (s_nativeTokenLinkRate)) /
+            // / 100 because the native token / LINK rate has been multiplied by 100
+            100);
     }
 
     /**

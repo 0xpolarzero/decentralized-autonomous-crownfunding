@@ -7,6 +7,6 @@ interface DACAggregatorInterface {
     ) external view returns (bool);
 
     function calculateUpkeepPrice(
-        uint256 _contributions
+        uint32 _upkeepGasLimit
     ) external view returns (uint256);
 }

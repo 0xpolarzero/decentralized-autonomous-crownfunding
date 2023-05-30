@@ -683,6 +683,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      * @return bool Whether the contract can process the next upkeep or not
      * @dev It will be approximated with a fixed high gas price and the gas limit fixed at the creation of this contract
      * @dev See the DACAggregator contract for more details about the calculation
+     * @dev It will check the balance of the contract instead of the upkeep balance in this mock contract
      */
 
     function hasEnoughLinkForNextUpkeep() external view returns (bool) {
@@ -692,6 +693,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
         );
 
         // If the contract holds enough LINK, return true
+        // It checks the upkeep balance instead of this in the real contract
         if (LINK.balanceOf(address(this)) >= amountNeeded) return true;
         // If the contract doesn't hold enough LINK, return false
         return false;

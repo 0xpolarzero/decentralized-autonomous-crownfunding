@@ -704,8 +704,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
             s_upkeepGasLimit
         );
 
-        // If the contract holds enough LINK, return true
-        if (LINK.balanceOf(address(this)) >= amountNeeded) return true;
+        // If the upkeep holds enough LINK, return true
+        if (REGISTRY.getUpkeep(s_upkeepId).balance >= amountNeeded) return true;
         // If the contract doesn't hold enough LINK, return false
         return false;
     }

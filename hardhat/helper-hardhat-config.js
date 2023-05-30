@@ -12,8 +12,8 @@ const chainlink = {
     REGISTRY: '0x02777053d6764996e594c3E88AF1D58D5363a2e6',
     // The maximum amount of contributions for a contributor account
     MAX_CONTRIBUTIONS: 100,
-    // Here MATIC / LINK is ~1/7
-    NATIVE_TOKEN_LINK_RATE: Number((1 / 7).toFixed()),
+    // Here MATIC / LINK is ~1/7 but * 100 for rounding
+    NATIVE_TOKEN_LINK_RATE: Number(((1 / 7) * 100).toFixed()),
     // The premium percent fee for the calculation of the price of an upkeep call
     PREMIUM_PERCENT: 70,
     // The gas limit for an upkeep call
@@ -24,7 +24,7 @@ const chainlink = {
     REGISTRAR: '0x57A4a13b35d25EE78e084168aBaC5ad360252467',
     REGISTRY: '0xE16Df59B887e3Caa439E0b29B42bA2e7976FD8b2',
     MAX_CONTRIBUTIONS: 100,
-    NATIVE_TOKEN_LINK_RATE: Number((1 / 7).toFixed()),
+    NATIVE_TOKEN_LINK_RATE: Number(((1 / 7) * 100).toFixed()),
     PREMIUM_PERCENT: 429,
     GAS_LIMIT: 5_000_000,
   },
@@ -33,7 +33,7 @@ const chainlink = {
     REGISTRAR: '',
     REGISTRY: '',
     MAX_CONTRIBUTIONS: 100,
-    NATIVE_TOKEN_LINK_RATE: Number((1800 / 7).toFixed()), // We're using ETH instead of MATIC
+    NATIVE_TOKEN_LINK_RATE: Number(((1 / 7) * 100).toFixed()),
     PREMIUM_PERCENT: 429, // We're just using the maximum value
     GAS_LIMIT: 5_000_000,
   },

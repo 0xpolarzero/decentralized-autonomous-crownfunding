@@ -469,6 +469,7 @@ contract MockDACAggregator {
      * @param _upkeepGasLimit The gas limit of the upkeep (since we can't use the stored one, that could be updated here
      * but not on a previously created contributor account)
      * @return uint256 The approximate price of an upkeep
+     * @dev This would fail if the native token / LINK rate were to become lower than 1
      */
 
     function calculateUpkeepPrice(
@@ -481,11 +482,20 @@ contract MockDACAggregator {
         // We need to assume a gas price, and should better use a high one
         uint256 gasPrice = 200 gwei;
 
+        console.log(
+            (((_upkeepGasLimit * (gasPrice /* / 1e9 */)) *
+                (1 + s_premiumPercent / 100) +
+                (80_000 * (gasPrice /* / 1e9 */))) * (s_nativeTokenLinkRate)) /
+                // / 100 because the native token / LINK rate has been multiplied by 100
+                100
+        );
+
         // Return the price
-        return ((_upkeepGasLimit *
-            gasPrice *
-            (100 + s_premiumPercent) +
-            (80_000 * gasPrice)) * s_nativeTokenLinkRate);
+        return ((((_upkeepGasLimit * (gasPrice /* / 1e9 */)) *
+            (1 + s_premiumPercent / 100) +
+            (80_000 * (gasPrice /* / 1e9 */))) * (s_nativeTokenLinkRate)) /
+            // / 100 because the native token / LINK rate has been multiplied by 100
+            100);
     }
 
     /**
