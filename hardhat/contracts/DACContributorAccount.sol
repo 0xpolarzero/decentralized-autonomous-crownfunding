@@ -52,6 +52,10 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     error DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
     /// @dev The upkeep is not registered
     error DACContributorAccount__UPKEEP_NOT_REGISTERED();
+    /// @dev The upkeep registration failed
+    error DACContributorAccount__UPKEEP_REGISTRATION_FAILED();
+    /// @dev The amount of LINK to fund the upkeep is too low
+    error DACContributorAccount__FUNDING_AMOUNT_TOO_LOW();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -235,24 +239,6 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
         // Initialize the DAC Aggregator
         DAC_AGGREGATOR = DACAggregatorInterface(msg.sender);
-
-        // Register a new Chainlink Upkeep
-        // We can't call `registerUpkeep` yet in the constructor because of the immutable variables
-        s_upkeepId = KeeperRegistrarInterface(_registrar).registerUpkeep(
-            RegistrationParams({
-                name: "DACContributorAccount",
-                encryptedEmail: "",
-                upkeepContract: address(this),
-                gasLimit: s_upkeepGasLimit,
-                adminAddress: _owner,
-                checkData: "0x",
-                offchainConfig: "0x",
-                amount: 0
-            })
-        );
-
-        // Set the upkeep as registered
-        s_upkeepRegistered = true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -433,27 +419,38 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     /**
      * @notice Register a new Chainlink Upkeep
+     * @param _fundingAmount The amount of LINK to initially fund the upkeep
+     * @dev The user needs to send the amount of LINK to the contract before calling this function
      */
 
-    function registerNewUpkeep() public onlyOwner {
+    function registerNewUpkeep(uint96 _fundingAmount) public onlyOwner {
         if (s_upkeepRegistered)
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
+        if (_fundingAmount < 0.1 * 10 ** 18)
+            revert DACContributorAccount__FUNDING_AMOUNT_TOO_LOW();
+
+        // Approve spending of LINK
+        LINK.approve(address(REGISTRAR), _fundingAmount);
+
         // Register the Chainlink Upkeep
-        s_upkeepId = REGISTRAR.registerUpkeep(
+        uint256 upkeepId = REGISTRAR.registerUpkeep(
             RegistrationParams({
                 name: "DACContributorAccount",
-                encryptedEmail: "",
+                encryptedEmail: hex"",
                 upkeepContract: address(this),
                 gasLimit: s_upkeepGasLimit,
                 adminAddress: i_owner,
-                checkData: "0x",
-                offchainConfig: "0x",
-                amount: 0
+                checkData: hex"",
+                offchainConfig: hex"",
+                amount: _fundingAmount
             })
         );
 
-        // Set the upkeep as registered
+        if (upkeepId == 0)
+            revert DACContributorAccount__UPKEEP_REGISTRATION_FAILED();
+
+        s_upkeepId = upkeepId;
         s_upkeepRegistered = true;
 
         emit DACContributorAccount__UpkeepRegistered(
@@ -509,6 +506,9 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         uint256 _amount,
         bytes calldata /* _data */
     ) external {
+        if (!s_upkeepRegistered)
+            revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
+
         // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
         // because in any case we want any LINK funds here to be used for the upkeep
         // Fund the upkeep

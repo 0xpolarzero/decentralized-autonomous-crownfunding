@@ -480,12 +480,12 @@ contract MockDACAggregator {
         // e.g. on Polygon Mumbai the premium is 429 % & the MATIC/LINK rate is ~ 1/7 (may 2023)
 
         // We need to assume a gas price, and should better use a high one
-        uint256 gasPrice = 200 gwei;
+        uint256 gasPrice = 200;
 
         console.log(
-            (((_upkeepGasLimit * (gasPrice /* / 1e9 */)) *
+            (((_upkeepGasLimit * (gasPrice / 1e9)) *
                 (1 + s_premiumPercent / 100) +
-                (80_000 * (gasPrice /* / 1e9 */))) * (s_nativeTokenLinkRate)) /
+                (80_000 * (gasPrice / 1e9))) * (s_nativeTokenLinkRate)) /
                 // / 100 because the native token / LINK rate has been multiplied by 100
                 100
         );
@@ -497,6 +497,8 @@ contract MockDACAggregator {
             // / 100 because the native token / LINK rate has been multiplied by 100
             100);
     }
+
+    // [(_upkeepGasLimit * 183.3/e9) * (1 + 0.7) + (80K * 183.3/1e9)] * 0.131
 
     /**
      * @notice Returns the address of the LINK token

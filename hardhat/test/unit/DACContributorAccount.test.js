@@ -1216,7 +1216,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           );
 
           // Even with a small amount of LINK, it should still return false
-          console.log(await requiredBalance.toString());
+          console.log('in test', await requiredBalance.toString());
 
           // 702240000000000000
           // returns 0.7 LINK in the contract right now

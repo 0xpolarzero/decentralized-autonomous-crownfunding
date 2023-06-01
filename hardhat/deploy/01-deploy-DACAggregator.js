@@ -22,7 +22,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   if (
     !developmentChains.includes(network.name) &&
-    process.env.ARBISCAN_API_KEY
+    process.env.POLYGONSCAN_API_KEY
   ) {
     console.log('Verifying contract...');
     await verify(dacAggregator.address, args);
