@@ -56,6 +56,8 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     error DACContributorAccount__UPKEEP_REGISTRATION_FAILED();
     /// @dev The amount of LINK to fund the upkeep is too low
     error DACContributorAccount__FUNDING_AMOUNT_TOO_LOW();
+    /// @dev The upkeep interval is either too low or too high
+    error DACContributorAccount__INVALID_UPKEEP_INTERVAL();
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -116,11 +118,6 @@ contract DACContributorAccount is AutomationCompatibleInterface {
         uint256 upkeepId,
         uint256 interval
     );
-
-    /// @dev Emitted when the upkeep is funded
-    /// @param sender The address that sent the LINK
-    /// @param amount The amount of LINK sent to the upkeep
-    event DACContributorAccount__UpkeepFunded(address sender, uint256 amount);
 
     /// @dev Emitted when the upkeep is canceled
     /// @param upkeepId The ID of the upkeep
@@ -421,6 +418,7 @@ contract DACContributorAccount is AutomationCompatibleInterface {
      * @notice Register a new Chainlink Upkeep
      * @param _fundingAmount The amount of LINK to initially fund the upkeep
      * @dev The user needs to send the amount of LINK to the contract before calling this function
+     * @dev The upkeep can then be funded by directly interacting with the Registry contract
      */
 
     function registerNewUpkeep(uint96 _fundingAmount) public onlyOwner {
@@ -494,30 +492,6 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Fund the upkeep of the account after a transfer of LINK tokens
-     * @param _sender The sender of the LINK tokens (most probably the owner of the account)
-     * @param _amount The amount of LINK tokens sent
-     * @dev This function is called by the LINK token contract after being called with the `transferAndCall` function
-     * @dev The recommended process for funding the upkeep is therefore to let the user in the frontend call this function
-     * directly from the LINK contract, using the address of this account as the receiver, which will automatically add the funds
-     */
-    function onTokenTransfer(
-        address _sender,
-        uint256 _amount,
-        bytes calldata /* _data */
-    ) external {
-        if (!s_upkeepRegistered)
-            revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
-
-        // We don't really need to perform any checks here (e.g. is the caller LINK, is the amount correct...)
-        // because in any case we want any LINK funds here to be used for the upkeep
-        // Fund the upkeep
-        REGISTRY.addFunds(s_upkeepId, uint96(LINK.balanceOf(address(this))));
-
-        emit DACContributorAccount__UpkeepFunded(_sender, _amount);
-    }
-
-    /**
      * @notice The Chainlink Upkeep method to check if an upkeep is needed
      * @dev This will be called by a Chainlink Automation node
      * @dev This won't use any gas so we take advantage of this to calculate the contributions here
@@ -572,9 +546,13 @@ contract DACContributorAccount is AutomationCompatibleInterface {
     /**
      * @notice Set the interval between each upkeep
      * @param _interval The interval between each upkeep
+     * @dev The value should be between 1 day and 30 days
      */
 
     function setUpkeepInterval(uint256 _interval) external onlyOwner {
+        if (_interval < 1 days || _interval > 30 days)
+            revert DACContributorAccount__INVALID_UPKEEP_INTERVAL();
+
         s_upkeepInterval = _interval;
         emit DACContributorAccount__UpkeepIntervalUpdated(_interval);
     }
@@ -689,25 +667,6 @@ contract DACContributorAccount is AutomationCompatibleInterface {
 
     function isUpkeepRegistered() external view returns (bool) {
         return s_upkeepRegistered;
-    }
-
-    /**
-     * @notice Calculate if the contract holds enough LINK to process the next upkeep
-     * @return bool Whether the contract can process the next upkeep or not
-     * @dev It will be approximated with a fixed high gas price and the gas limit fixed at the creation of this contract
-     * @dev See the DACAggregator contract for more details about the calculation
-     */
-
-    function hasEnoughLinkForNextUpkeep() external view returns (bool) {
-        // Calculate the amount of LINK needed for the next upkeep
-        uint256 amountNeeded = DAC_AGGREGATOR.calculateUpkeepPrice(
-            s_upkeepGasLimit
-        );
-
-        // If the upkeep holds enough LINK, return true
-        if (REGISTRY.getUpkeep(s_upkeepId).balance >= amountNeeded) return true;
-        // If the contract doesn't hold enough LINK, return false
-        return false;
     }
 
     /**

@@ -465,42 +465,6 @@ contract MockDACAggregator {
     }
 
     /**
-     * @dev Calculate the approximate price of an upkeep based on the number of contributions
-     * @param _upkeepGasLimit The gas limit of the upkeep (since we can't use the stored one, that could be updated here
-     * but not on a previously created contributor account)
-     * @return uint256 The approximate price of an upkeep
-     * @dev This would fail if the native token / LINK rate were to become lower than 1
-     */
-
-    function calculateUpkeepPrice(
-        uint32 _upkeepGasLimit
-    ) external view returns (uint256) {
-        // The formula is the following:
-        // [gasUsed * gasPrice * (1 + premium%) + (80,000 * gasPrice)] * (NativeToken / LINK rate)
-        // e.g. on Polygon Mumbai the premium is 429 % & the MATIC/LINK rate is ~ 1/7 (may 2023)
-
-        // We need to assume a gas price, and should better use a high one
-        uint256 gasPrice = 200;
-
-        console.log(
-            (((_upkeepGasLimit * (gasPrice / 1e9)) *
-                (1 + s_premiumPercent / 100) +
-                (80_000 * (gasPrice / 1e9))) * (s_nativeTokenLinkRate)) /
-                // / 100 because the native token / LINK rate has been multiplied by 100
-                100
-        );
-
-        // Return the price
-        return ((((_upkeepGasLimit * (gasPrice /* / 1e9 */)) *
-            (1 + s_premiumPercent / 100) +
-            (80_000 * (gasPrice /* / 1e9 */))) * (s_nativeTokenLinkRate)) /
-            // / 100 because the native token / LINK rate has been multiplied by 100
-            100);
-    }
-
-    // [(_upkeepGasLimit * 183.3/e9) * (1 + 0.7) + (80K * 183.3/1e9)] * 0.131
-
-    /**
      * @notice Returns the address of the LINK token
      * @return address The address of the LINK token
      */

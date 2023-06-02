@@ -5,7 +5,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 !developmentChains.includes(network.name)
   ? describe.skip
-  : describe.only('MockDACContributorAccount unit tests', function () {
+  : describe('MockDACContributorAccount unit tests', function () {
       let deployer;
       let user; // owner of the contributor account
       let notUser; // not the owner
@@ -927,53 +927,6 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             );
           });
         });
-
-        // Triggered when LINK is being sent to the contract (with `transferAndCall`)
-        // In this mock function, the LINK tokens are just being transfered to the owner of the account
-        // instead of the upkeep
-        describe('onTokenTransfer', function () {
-          it('Should successfully be triggered when receiving LINK and emit the correct event', async () => {
-            const linkTokenContract = await ethers.getContract(
-              'LinkToken',
-              deployer,
-            );
-
-            // Prepare a listener for the event
-            const listener = new Promise((resolve, reject) => {
-              contributorAccountContract.on(
-                'DACContributorAccount__UpkeepFunded',
-                (sender, amount) => {
-                  try {
-                    resolve({ sender, amount });
-                  } catch (err) {
-                    reject(err);
-                  }
-                },
-              );
-            });
-
-            // Send some LINK to the contract
-            const tx = await linkTokenContract.transferAndCall(
-              contributorAccountContract.address,
-              100,
-              '0x',
-            );
-            await tx.wait(1);
-
-            // Check that the event has been emitted
-            const event = await listener;
-            assert.equal(
-              event.sender,
-              deployer.address,
-              'Should emit the correct upkeep id',
-            );
-            assert.equal(
-              event.amount,
-              100,
-              'Should emit the correct amount of LINK',
-            );
-          });
-        });
       });
 
       /* -------------------------------------------------------------------------- */
@@ -1181,54 +1134,10 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
       });
 
       /* -------------------------------------------------------------------------- */
-      /*                         hasEnoughLinkForNextUpkeep                         */
-      /* -------------------------------------------------------------------------- */
-
-      // This will return either true or false, based on a calculation with high gas prices and gas limit
-      // This is just here to help the user know when they should top up their upkeep balance
-      // or how many payments it should be able to handle
-      describe.only('hasEnoughLinkForNextUpkeep', function () {
-        let requiredBalance;
-
-        beforeEach(async () => {
-          // Calculate the required balance
-          requiredBalance = await calculateUpkeepPrice(
-            // Gas price of 200 Gwei
-            ethers.utils.parseUnits('200', 'gwei'),
-            // Gas limit (should be 5 million)
-            ethers.BigNumber.from(chainlink[network.name].GAS_LIMIT.toString()),
-            // The payment premium for a Chainlink Upkeep on this chain
-            ethers.BigNumber.from(
-              chainlink[network.name].PREMIUM_PERCENT.toString(),
-            ),
-            // The native token / LINK rate on this chain
-            ethers.BigNumber.from(
-              chainlink[network.name].NATIVE_TOKEN_LINK_RATE.toString(),
-            ),
-          );
-        });
-
-        it('Should return false if the contract does not have enough LINK to pay for the next upkeep', async () => {
-          assert.equal(
-            await contributorAccountContract.hasEnoughLinkForNextUpkeep(),
-            false,
-            'Should return false as the contract has no LINK yet',
-          );
-
-          // Even with a small amount of LINK, it should still return false
-          console.log('in test', await requiredBalance.toString());
-
-          // 702240000000000000
-          // returns 0.7 LINK in the contract right now
-        });
-      });
-
-      /* -------------------------------------------------------------------------- */
       /*                               Admin functions                              */
       /* -------------------------------------------------------------------------- */
 
       describe('setUpkeepInterval', function () {
-        // revert if not owner
         it('Should revert if not owner', async () => {
           await expect(
             contributorAccountContract
@@ -1237,7 +1146,22 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
         });
 
-        // update the interval and emit correct event
+        it('Should revert if the new interval is too low or too high', async () => {
+          // It should not be lower than 1 day
+          await expect(
+            contributorAccountContract.setUpkeepInterval(86399), // 1 day - 1 second
+          ).to.be.revertedWith(
+            'DACContributorAccount__INVALID_UPKEEP_INTERVAL()',
+          );
+
+          // It should not be higher than 30 days
+          await expect(
+            contributorAccountContract.setUpkeepInterval(2592001), // 30 days + 1 second
+          ).to.be.revertedWith(
+            'DACContributorAccount__INVALID_UPKEEP_INTERVAL()',
+          );
+        });
+
         it('Should update the interval and emit the correct event', async () => {
           // Update the interval
           const tx = await contributorAccountContract.setUpkeepInterval(
