@@ -3,6 +3,7 @@ pragma solidity ^0.8.7;
 
 import "./DACProject.sol";
 import "./MockDACContributorAccount.sol";
+import "./DACContributorLibrary.sol";
 
 /**
  * @title Mock DAC (Decentralized Autonomous Crowdfunding) Factory
@@ -15,6 +16,9 @@ import "./MockDACContributorAccount.sol";
  */
 
 contract MockDACAggregator {
+    using DACContributorLibrary for DACContributorLibrary.Contribution;
+    using DACContributorLibrary for DACContributorLibrary.ContributionMinimal;
+
     /* -------------------------------------------------------------------------- */
     /*                                CUSTOM ERRORS                               */
     /* -------------------------------------------------------------------------- */
@@ -23,6 +27,8 @@ contract MockDACAggregator {
     error DACAggregator__NOT_OWNER();
     /// @dev The transfer failed
     error DACAggregator__TRANSFER_FAILED();
+    /// @dev The call is not made from a contributor account
+    error DACAggregator__NOT_CONTRIBUTOR_ACCOUNT();
 
     /**
      * @dev submitProject()
@@ -84,6 +90,33 @@ contract MockDACAggregator {
         address projectAddress,
         address collaborator
     );
+
+    /// @dev Emitted when a contribution is created
+    /// @param accountContract The address of the contributor account contract
+    /// @param contribution The new contribution struct
+    event DACAggregator__ContributionCreated(
+        address accountContract,
+        DACContributorLibrary.Contribution contribution
+    );
+    /// @dev Emitted when a contribution is updated
+    /// @param accountContract The address of the contributor account contract
+    /// @param index The index of the contribution in the array of contributions
+    /// @param contribution The updated contribution struct
+    event DACAggregator__ContributionUpdated(
+        address accountContract,
+        uint256 index,
+        DACContributorLibrary.Contribution contribution
+    );
+    /// @dev Emitted when contributions were transfered to the projects
+    /// @param accountContract The address of the contributor account contract
+    /// @param contributions The array of contributions that were transfered
+    event DACAggregator__ContributionsTransfered(
+        address accountContract,
+        DACContributorLibrary.ContributionMinimal[] contributions
+    );
+    /// @dev Emitted when all contributions were canceled from an account
+    /// @param accountContract The address of the contributor account contract
+    event DACAggregator__AllContributionsCanceled(address accountContract);
 
     /// @dev Emitted when the maximum amount of contributions is updated
     /// @param maxContributions The new maximum amount of contributions
@@ -163,6 +196,17 @@ contract MockDACAggregator {
 
     modifier onlyOwner() {
         if (msg.sender != i_owner) revert DACAggregator__NOT_OWNER();
+        _;
+    }
+
+    /**
+     * @notice Verifies that the call is made from a contributor account
+     * @param _accountContract The address of the contributor account contract
+     */
+
+    modifier verifyContributorAccount(address _accountContract) {
+        if (s_contributorAccounts[msg.sender] != _accountContract)
+            revert DACAggregator__NOT_CONTRIBUTOR_ACCOUNT();
         _;
     }
 
@@ -351,6 +395,74 @@ contract MockDACAggregator {
         s_projects[_projectAddress].lastActivityAt = block.timestamp;
         // Emit an event
         emit DACAggregator__ProjectPinged(_projectAddress, msg.sender);
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                            CONTRIBUTOR ACCOUNTS                            */
+    /* -------------------------------------------------------------------------- */
+    /// @dev These functions are called by the contributor accounts on different actions,
+    /// so we can aggregate events here and let the subgraph index them
+
+    /**
+     * @notice Called by a contributor account when the user creates a contribution
+     * @param _accountContract The address of the contributor account contract
+     * @param _contribution The contribution object
+     */
+
+    function onContributionCreated(
+        address _accountContract,
+        DACContributorLibrary.Contribution memory _contribution
+    ) external verifyContributorAccount(_accountContract) {
+        emit DACAggregator__ContributionCreated(
+            _accountContract,
+            _contribution
+        );
+    }
+
+    /**
+     * @notice Called by a contributor account when the user updates or cancels a contribution
+     * @param _accountContract The address of the contributor account contract
+     * @param _index The index of the contribution in the array
+     * @param _contribution The new contribution object
+     */
+
+    function onContributionUpdated(
+        address _accountContract,
+        uint256 _index,
+        DACContributorLibrary.Contribution memory _contribution
+    ) external verifyContributorAccount(_accountContract) {
+        emit DACAggregator__ContributionUpdated(
+            _accountContract,
+            _index,
+            _contribution
+        );
+    }
+
+    /**
+     * @notice Called by a contributor account when contributions have been transfered
+     * @param _accountContract The address of the contributor account contract
+     * @param _contributions The contributions that have been transfered
+     */
+
+    function onContributionsTransfered(
+        address _accountContract,
+        DACContributorLibrary.ContributionMinimal[] memory _contributions
+    ) external verifyContributorAccount(_accountContract) {
+        emit DACAggregator__ContributionsTransfered(
+            _accountContract,
+            _contributions
+        );
+    }
+
+    /**
+     * @notice Called by a contributor account when the user cancels all contributions
+     * @param _accountContract The address of the contributor account contract
+     */
+
+    function onAllContributionsCanceled(
+        address _accountContract
+    ) external verifyContributorAccount(_accountContract) {
+        emit DACAggregator__AllContributionsCanceled(_accountContract);
     }
 
     /* -------------------------------------------------------------------------- */

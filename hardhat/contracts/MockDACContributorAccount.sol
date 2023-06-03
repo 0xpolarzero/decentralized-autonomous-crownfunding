@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 
 import "./ChainlinkManager.sol";
 import "./DACAggregatorInterface.sol";
-import "hardhat/console.sol";
+import "./DACContributorLibrary.sol";
 
 /**
  * @title Mock DAC (Decentralized Autonomous Crowdfunding) Contributor account
@@ -22,6 +22,9 @@ import "hardhat/console.sol";
  */
 
 contract MockDACContributorAccount is AutomationCompatibleInterface {
+    using DACContributorLibrary for DACContributorLibrary.Contribution;
+    using DACContributorLibrary for DACContributorLibrary.ContributionMinimal;
+
     LinkTokenInterface internal immutable LINK;
     KeeperRegistrarInterface internal immutable REGISTRAR;
     KeeperRegistryInterface internal immutable REGISTRY;
@@ -104,14 +107,14 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
     /// @param contributions The structs of the contributions that are withdrawn
     /// @param amount The amount of the contributions that are withdrawn
     event DACContributorAccount__AllContributionsCanceled(
-        Contribution[] contributions,
+        DACContributorLibrary.Contribution[] contributions,
         uint256 amount
     );
 
     /// @dev Emitted when the contributions are sent to the projects
     /// @param contributions The structs of the contributions that are sent (minimized)
     event DACContributorAccount__ContributionsTransfered(
-        ContributionMinimal[] contributions
+        DACContributorLibrary.ContributionMinimal[] contributions
     );
 
     /**
@@ -163,31 +166,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
     bool private s_upkeepRegistered;
 
     /// @dev The projects the account is contributing to
-    Contribution[] private s_contributions;
-
-    /// @dev The status and infos of a contribution
-    /// @param projectContract The address of the project contract
-    /// @param amountStored The amount of the contribution stored in the account
-    /// @param amountDistributed The amount of the contribution that was already sent to the project
-    /// @param startedAt The timestamp when the contribution started
-    /// @param endsAt The timestamp when the contribution ends
-    struct Contribution {
-        address projectContract;
-        uint256 amountStored;
-        uint256 amountDistributed;
-        uint256 startedAt;
-        uint256 endsAt;
-    }
-
-    /// @dev The minimal infos of a contribution to prepare the upkeep
-    /// @param projectContract The address of the project contract
-    /// @param amount The amount of the contribution that should be sent (based on the current date, start and end date)
-    /// @param index The index of the contribution in the array of contributions
-    struct ContributionMinimal {
-        address projectContract;
-        uint256 amount;
-        uint256 index;
-    }
+    DACContributorLibrary.Contribution[] private s_contributions;
 
     /* -------------------------------------------------------------------------- */
     /*                                  MODIFIERS                                 */
@@ -285,7 +264,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
 
         // Create the contribution
         s_contributions.push(
-            Contribution({
+            DACContributorLibrary.Contribution({
                 projectContract: _projectContract,
                 amountStored: _amount,
                 amountDistributed: 0,
@@ -311,7 +290,8 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
         uint256 _index,
         uint256 _amount
     ) external payable onlyOwner {
-        Contribution memory contribution = s_contributions[_index];
+        DACContributorLibrary.Contribution
+            memory contribution = s_contributions[_index];
         // Check if the contribution is still active
         if (!isContributionAlreadyDistributed(contribution))
             revert DACContributorAccount__CONTRIBUTION_ALREADY_DISTRIBUTED();
@@ -348,15 +328,16 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      */
 
     function cancelAllContributions() external onlyOwner {
-        Contribution[] memory contributions = s_contributions;
+        DACContributorLibrary.Contribution[]
+            memory contributions = s_contributions;
         uint256 contractBalance = address(this).balance;
+
+        // Remove all the contributions from the array
+        delete s_contributions;
 
         // Withdraw everything from this contract
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         if (!success) revert DACContributorAccount__TRANSFER_FAILED();
-
-        // Remove all the contributions from the array
-        delete s_contributions;
 
         emit DACContributorAccount__AllContributionsCanceled(
             contributions,
@@ -372,7 +353,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
 
     function triggerManualPayment() external onlyOwner {
         // Check which contributions need to be sent
-        ContributionMinimal[]
+        DACContributorLibrary.ContributionMinimal[]
             memory contributionsToSend = calculateContributions();
 
         // If there is no contribution to send, revert
@@ -395,7 +376,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      */
 
     function transferContributions(
-        ContributionMinimal[] memory _contributionsToSend
+        DACContributorLibrary.ContributionMinimal[] memory _contributionsToSend
     ) internal {
         // For each contribution
         for (uint256 i = 0; i < _contributionsToSend.length; ) {
@@ -492,7 +473,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
         // If the interval has passed
         if (block.timestamp - s_lastUpkeep > s_upkeepInterval) {
             // Check which contributions need to be sent
-            ContributionMinimal[]
+            DACContributorLibrary.ContributionMinimal[]
                 memory contributionsToSend = calculateContributions();
 
             // If at least one contribution to a project is still active
@@ -519,10 +500,11 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
         s_lastUpkeep = block.timestamp;
 
         // Decode the array of contributions to send
-        ContributionMinimal[] memory contributionsToSend = abi.decode(
-            performData,
-            (ContributionMinimal[])
-        );
+        DACContributorLibrary.ContributionMinimal[]
+            memory contributionsToSend = abi.decode(
+                performData,
+                (DACContributorLibrary.ContributionMinimal[])
+            );
 
         // Send the contributions
         transferContributions(contributionsToSend);
@@ -636,7 +618,11 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      * @return array The contributions of the account
      */
 
-    function getContributions() external view returns (Contribution[] memory) {
+    function getContributions()
+        external
+        view
+        returns (DACContributorLibrary.Contribution[] memory)
+    {
         return s_contributions;
     }
 
@@ -666,13 +652,14 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
     function calculateContributions()
         internal
         view
-        returns (ContributionMinimal[] memory)
+        returns (DACContributorLibrary.ContributionMinimal[] memory)
     {
         // Cache the contributions
-        Contribution[] memory contributions = s_contributions;
+        DACContributorLibrary.Contribution[]
+            memory contributions = s_contributions;
         // Prepare the array to hold the contributions that need to be sent
-        ContributionMinimal[]
-            memory contributionsToSend = new ContributionMinimal[](
+        DACContributorLibrary.ContributionMinimal[]
+            memory contributionsToSend = new DACContributorLibrary.ContributionMinimal[](
                 contributions.length
             );
         // And the number of contributions that need to be sent
@@ -694,7 +681,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
                     // Add the contribution to the array
                     contributionsToSend[
                         contributionsToSendCount
-                    ] = ContributionMinimal({
+                    ] = DACContributorLibrary.ContributionMinimal({
                         projectContract: contributions[i].projectContract,
                         amount: amountToSend,
                         index: i
@@ -726,7 +713,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      */
 
     function calculateIndividualContribution(
-        Contribution memory _contribution
+        DACContributorLibrary.Contribution memory _contribution
     ) internal view returns (uint256) {
         // If there is nothing to distribute anymore, return 0
         if (_contribution.amountStored == 0) return 0;
@@ -766,7 +753,7 @@ contract MockDACContributorAccount is AutomationCompatibleInterface {
      */
 
     function isContributionAlreadyDistributed(
-        Contribution memory _contribution
+        DACContributorLibrary.Contribution memory _contribution
     ) internal pure returns (bool) {
         if (_contribution.amountStored > _contribution.amountDistributed)
             return true;
