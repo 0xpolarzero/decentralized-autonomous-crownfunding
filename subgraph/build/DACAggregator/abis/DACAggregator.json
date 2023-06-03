@@ -1,0 +1,811 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_linkTokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_keeperRegistrarAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_keeperRegistryAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxContributions",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_nativeTokenLinkRate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_premiumPercent",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "_upkeepGasLimit",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__ALREADY_EXISTS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__DOES_NOT_EXIST",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__DOES_NOT_INCLUDE_INITIATOR",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__INVALID_LENGTH",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__INVALID_NAME",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__INVALID_PAYMENT_INTERVAL",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__INVALID_SHARES",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__NOT_COLLABORATOR",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__NOT_CONTRIBUTOR_ACCOUNT",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__NOT_OWNER",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DACAggregator__TRANSFER_FAILED",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "accountContract",
+        "type": "address"
+      }
+    ],
+    "name": "DACAggregator__AllContributionsCanceled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "accountContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountStored",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountDistributed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "startedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "endsAt",
+            "type": "uint256"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct DACContributionSystem.Contribution",
+        "name": "contribution",
+        "type": "tuple"
+      }
+    ],
+    "name": "DACAggregator__ContributionCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "accountContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "index",
+            "type": "uint256"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct DACContributionSystem.ContributionMinimal",
+        "name": "contribution",
+        "type": "tuple"
+      }
+    ],
+    "name": "DACAggregator__ContributionUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "accountContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "index",
+            "type": "uint256"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct DACContributionSystem.ContributionMinimal[]",
+        "name": "contributions",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "DACAggregator__ContributionsTransfered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "contributorAccountContract",
+        "type": "address"
+      }
+    ],
+    "name": "DACAggregator__ContributorAccountCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxContributions",
+        "type": "uint256"
+      }
+    ],
+    "name": "DACAggregator__MaxContributionsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "nativeTokenLinkRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "DACAggregator__NativeTokenLinkRateUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "premiumPercent",
+        "type": "uint256"
+      }
+    ],
+    "name": "DACAggregator__PremiumPercentUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "projectAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "collaborator",
+        "type": "address"
+      }
+    ],
+    "name": "DACAggregator__ProjectPinged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address[]",
+            "name": "collaborators",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "shares",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "initiator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "createdAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastActivityAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct DACAggregator.Project",
+        "name": "project",
+        "type": "tuple"
+      }
+    ],
+    "name": "DACAggregator__ProjectSubmitted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "upkeepGasLimit",
+        "type": "uint32"
+      }
+    ],
+    "name": "DACAggregator__UpkeepGasLimitUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_paymentInterval",
+        "type": "uint256"
+      }
+    ],
+    "name": "createContributorAccount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_contributor",
+        "type": "address"
+      }
+    ],
+    "name": "getContributorAccount",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getKeeperRegistrarAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getKeeperRegistryAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getLinkTokenAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMaxContributions",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getNativeTokenLinkRate",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getOwner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPremiumPercent",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_projectAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getProject",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address[]",
+            "name": "collaborators",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "shares",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "initiator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "createdAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastActivityAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct DACAggregator.Project",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getUpkeepGasLimit",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_projectAddress",
+        "type": "address"
+      }
+    ],
+    "name": "isProjectActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_accountContract",
+        "type": "address"
+      }
+    ],
+    "name": "onAllContributionsCanceled",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_accountContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountStored",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountDistributed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "startedAt",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "endsAt",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DACContributionSystem.Contribution",
+        "name": "_contribution",
+        "type": "tuple"
+      }
+    ],
+    "name": "onContributionCreated",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_accountContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "index",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DACContributionSystem.ContributionMinimal",
+        "name": "_contribution",
+        "type": "tuple"
+      }
+    ],
+    "name": "onContributionUpdated",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_accountContract",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "projectContract",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "index",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct DACContributionSystem.ContributionMinimal[]",
+        "name": "_contributions",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "onContributionsTransfered",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_projectAddress",
+        "type": "address"
+      }
+    ],
+    "name": "pingProject",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_maxContributions",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxContributions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_rate",
+        "type": "uint256"
+      }
+    ],
+    "name": "setNativeTokenLinkRate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_premium",
+        "type": "uint32"
+      }
+    ],
+    "name": "setPremiumPercent",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_gasLimit",
+        "type": "uint32"
+      }
+    ],
+    "name": "setUpkeepGasLimit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_collaborators",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_shares",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_description",
+        "type": "string"
+      }
+    ],
+    "name": "submitProject",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -1,4 +1,4 @@
-import { Address, BigInt, store } from '@graphprotocol/graph-ts';
+import { Address, BigInt, Bytes, store } from '@graphprotocol/graph-ts';
 import {
   DACAggregator__AllContributionsCanceled as AllContributionsCanceledEvent,
   DACAggregator__ContributionCreated as ContributionCreatedEvent,
@@ -22,7 +22,9 @@ export function handleProjectSubmitted(event: ProjectSubmittedEvent): void {
   project.lastActivityAt = event.params.project.lastActivityAt;
   project.projectContract = event.params.project.projectContract;
   project.initiator = event.params.project.initiator;
-  project.collaborators = event.params.project.collaborators;
+  project.collaborators = event.params.project.collaborators.map<Bytes>(
+    (e: Bytes) => e,
+  );
   project.shares = event.params.project.shares;
   project.contributors = [];
   project.totalRaised = BigInt.fromI32(0);
@@ -52,6 +54,7 @@ export function handleContributorAccountCreated(
   );
 
   account.owner = event.params.owner;
+  account.accountContract = event.params.contributorAccountContract;
   account.createdAt = event.params._event.block.timestamp;
   account.contributions = [];
   account.totalContributed = BigInt.fromI32(0);
@@ -65,11 +68,13 @@ export function handleContributionCreated(
   let account = ContributorAccount.load(getId(event.params.accountContract));
   let project = Project.load(getId(event.params.contribution.projectContract));
 
+  if (!account || !project) return;
+
   // Just create a new contribution to populate it and add it to the array
   let contribution = new Contribution(
     getIdForContribution(
       event.params.accountContract,
-      BigInt.fromI32(account?.contributions.length || 0),
+      BigInt.fromI32(account.contributions.length || 0),
     ),
   );
 
@@ -81,12 +86,12 @@ export function handleContributionCreated(
   contribution.endsAt = event.params.contribution.endsAt;
 
   // Update
-  account?.contributions.push(contribution.id);
-  project?.contributors.push(contribution.id);
+  account.contributions.push(contribution.id);
+  project.contributors.push(contribution.id);
 
   contribution.save();
-  account?.save();
-  project?.save();
+  account.save();
+  project.save();
 }
 
 export function handleContributionUpdated(
@@ -146,21 +151,33 @@ export function handleAllContributionsCanceled(
     if (!contribution) continue;
 
     // Find the reference in the project and account to remove it
-    let project = Project.load(getId(contribution.projectContract));
-
-    let projectContributors = project?.contributors.filter(
-      (c) => c != contribution?.id,
-    );
-    let accountContributions = account.contributions.filter(
-      (c) => c != contribution?.id,
+    let project = Project.load(
+      getId(Address.fromBytes(contribution.projectContract)),
     );
 
-    project!.contributors = projectContributors!;
-    account.contributions = accountContributions!;
+    if (!project) continue;
+
+    const id = contribution.id;
+    let projectContributors: string[] = [];
+    for (let i = 0; i < project.contributors.length; i++) {
+      if (project.contributors[i] != id) {
+        projectContributors.push(project.contributors[i]);
+      }
+    }
+
+    let accountContributions: string[] = [];
+    for (let i = 0; i < account.contributions.length; i++) {
+      if (account.contributions[i] != id) {
+        accountContributions.push(account.contributions[i]);
+      }
+    }
+
+    project.contributors = projectContributors;
+    account.contributions = accountContributions;
 
     // Update storage
     account.save();
-    project?.save();
+    project.save();
 
     store.remove('Contribution', contribution.id);
   }
