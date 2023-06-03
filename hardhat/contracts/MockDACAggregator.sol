@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 
 import "./DACProject.sol";
 import "./MockDACContributorAccount.sol";
-import "./DACContributorLibrary.sol";
+import "./DACContributionSystem.sol";
 
 /**
  * @title Mock DAC (Decentralized Autonomous Crowdfunding) Factory
@@ -15,10 +15,7 @@ import "./DACContributorLibrary.sol";
  * require extensive setup and configuration to deploy locally. We do choose to keep these verifications for staging (testnet) tests.
  */
 
-contract MockDACAggregator {
-    using DACContributorLibrary for DACContributorLibrary.Contribution;
-    using DACContributorLibrary for DACContributorLibrary.ContributionMinimal;
-
+contract MockDACAggregator is DACContributionSystem {
     /* -------------------------------------------------------------------------- */
     /*                                CUSTOM ERRORS                               */
     /* -------------------------------------------------------------------------- */
@@ -96,23 +93,21 @@ contract MockDACAggregator {
     /// @param contribution The new contribution struct
     event DACAggregator__ContributionCreated(
         address accountContract,
-        DACContributorLibrary.Contribution contribution
+        Contribution contribution
     );
     /// @dev Emitted when a contribution is updated
     /// @param accountContract The address of the contributor account contract
-    /// @param index The index of the contribution in the array of contributions
-    /// @param contribution The updated contribution struct
+    /// @param contribution The new contribution struct
     event DACAggregator__ContributionUpdated(
         address accountContract,
-        uint256 index,
-        DACContributorLibrary.Contribution contribution
+        ContributionMinimal contribution
     );
     /// @dev Emitted when contributions were transfered to the projects
     /// @param accountContract The address of the contributor account contract
     /// @param contributions The array of contributions that were transfered
     event DACAggregator__ContributionsTransfered(
         address accountContract,
-        DACContributorLibrary.ContributionMinimal[] contributions
+        ContributionMinimal[] contributions
     );
     /// @dev Emitted when all contributions were canceled from an account
     /// @param accountContract The address of the contributor account contract
@@ -411,7 +406,7 @@ contract MockDACAggregator {
 
     function onContributionCreated(
         address _accountContract,
-        DACContributorLibrary.Contribution memory _contribution
+        Contribution memory _contribution
     ) external verifyContributorAccount(_accountContract) {
         emit DACAggregator__ContributionCreated(
             _accountContract,
@@ -422,18 +417,15 @@ contract MockDACAggregator {
     /**
      * @notice Called by a contributor account when the user updates or cancels a contribution
      * @param _accountContract The address of the contributor account contract
-     * @param _index The index of the contribution in the array
      * @param _contribution The new contribution object
      */
 
     function onContributionUpdated(
         address _accountContract,
-        uint256 _index,
-        DACContributorLibrary.Contribution memory _contribution
+        ContributionMinimal memory _contribution
     ) external verifyContributorAccount(_accountContract) {
         emit DACAggregator__ContributionUpdated(
             _accountContract,
-            _index,
             _contribution
         );
     }
@@ -446,7 +438,7 @@ contract MockDACAggregator {
 
     function onContributionsTransfered(
         address _accountContract,
-        DACContributorLibrary.ContributionMinimal[] memory _contributions
+        ContributionMinimal[] memory _contributions
     ) external verifyContributorAccount(_accountContract) {
         emit DACAggregator__ContributionsTransfered(
             _accountContract,

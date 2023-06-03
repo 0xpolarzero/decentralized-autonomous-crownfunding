@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-library DACContributorLibrary {
+contract DACContributionSystem {
     /// @dev The status and infos of a contribution
     /// @param projectContract The address of the project contract
     /// @param amountStored The amount of the contribution stored in the account
