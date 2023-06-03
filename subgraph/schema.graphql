@@ -1,0 +1,31 @@
+type Project @entity {
+  id: ID!
+  name: String!
+  description: String!
+  createdAt: BigInt!
+  lastActivityAt: BigInt!
+  projectContract: Bytes! # address
+  initiator: Bytes! # address
+  collaborators: [Bytes!]! # address[]
+  shares: [BigInt!]! # uint256[]
+  contributors: [Contribution!]! # @derivedFrom(field: "projectContract")
+  totalRaised: BigInt! # @derivedFrom(field: "projectContract")
+}
+
+type ContributorAccount @entity {
+  id: ID!
+  owner: Bytes! # address
+  createdAt: BigInt!
+  contributions: [Contribution!]! # @derivedFrom(field: "accountContract")
+  totalContributed: BigInt! # @derivedFrom(field: "accountContract")
+}
+
+type Contribution @entity {
+  id: ID!
+  accountContract: Bytes! # address
+  projectContract: Bytes! # address
+  amountStored: BigInt!
+  amountDistributed: BigInt!
+  startedAt: BigInt!
+  endsAt: BigInt!
+}
