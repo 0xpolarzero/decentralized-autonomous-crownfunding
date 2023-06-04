@@ -10,9 +10,9 @@ import {
 import { buttonVariants } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
-import { Table } from "@/components/ui/table"
+import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 
-import { columns } from "./projects-table/columns"
+import { columns, columnsSkeleton } from "./projects-table/columns"
 import formatData from "./projects-table/format-data"
 
 export default function ProjectsPage() {
@@ -86,9 +86,9 @@ export default function ProjectsPage() {
           to find specific projects or collaborators.
         </p>
       </div>
-      <div className="flex-grow overflow-auto">
+      <div className="grow overflow-auto">
         {loading ? (
-          "loading skeleton"
+          <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
         ) : error ? (
           "error skeleton"
         ) : (

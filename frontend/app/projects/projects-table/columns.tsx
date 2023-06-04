@@ -3,6 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { LucideCheckCircle2, LucideXCircle } from "lucide-react"
 
+import { Skeleton } from "@/components/ui/skeleton"
 import AddressComponent from "@/components/ui-custom/address"
 import CurrencyComponent from "@/components/ui-custom/currency"
 import TooltipComponent from "@/components/ui-custom/tooltip"
@@ -84,3 +85,12 @@ export const columns: ColumnDef<ProjectTable>[] = [
     },
   },
 ]
+
+export const columnsSkeleton: ColumnDef<ProjectTable>[] = columns.map(
+  (column) => {
+    return {
+      ...column,
+      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+    }
+  }
+)
