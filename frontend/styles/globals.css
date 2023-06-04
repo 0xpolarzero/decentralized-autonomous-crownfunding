@@ -34,6 +34,10 @@
     --ring: 215 20.2% 65.1%;
 
     --radius: 0.5rem;
+
+    --green: #00a99d;
+    --red: #ff5252;
+    --yellow: #ffab00;
   }
 
   .dark {

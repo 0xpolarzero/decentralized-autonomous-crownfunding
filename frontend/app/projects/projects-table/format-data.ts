@@ -23,18 +23,18 @@ export default function formatData(data: Project[]) {
       status:
         new Date(lastActivityAt * 1000) >
         new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-          ? "Active"
-          : "Inactive",
+          ? true
+          : false,
       collaborators,
       totalRaised,
       // Indirect display (popover, modal, etc.)
-      //   description,
-      //     createdAt: new Date(createdAt * 1000).toLocaleDateString(),
-      //   lastActivityAt: new Date(lastActivityAt * 1000).toLocaleDateString(),
-      //   projectContract,
-      //   initiator,
-      //   shares,
-      //   contributors,
+      description,
+      createdAt: new Date(createdAt * 1000).toLocaleDateString(),
+      lastActivityAt: new Date(lastActivityAt * 1000).toLocaleDateString(),
+      projectContract,
+      initiator,
+      shares,
+      contributors,
     }
   })
 }

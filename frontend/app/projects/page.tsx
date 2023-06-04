@@ -87,16 +87,13 @@ export default function ProjectsPage() {
         </p>
       </div>
       <div className="flex-grow overflow-auto">
-        {
-          loading ? (
-            "loading skeleton"
-          ) : error ? (
-            "error skeleton"
-          ) : (
-            <DataTable columns={columns} data={formatData(projects)} />
-          )
-          // <Table data={filteredProjects} />{" "}
-        }
+        {loading ? (
+          "loading skeleton"
+        ) : error ? (
+          "error skeleton"
+        ) : (
+          <DataTable columns={columns} data={formatData(projects)} />
+        )}
       </div>
     </section>
   )
