@@ -6,9 +6,9 @@ dataSources:
     name: DACAggregator
     network: mumbai
     source:
-      address: '0x6628c1d5E2e84381f3f9fd59649a8e7752f14b6a'
+      address: '0x5A6bD67071fbc895d6DAa840f5Ddc2e0046676f4'
       abi: DACAggregator
-      startBlock: 36393289
+      startBlock: 36439412
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -37,6 +37,6 @@ dataSources:
           handler: handleContributorAccountCreated
         - event: DACAggregator__ProjectPinged(address,address)
           handler: handleProjectPinged
-        - event: DACAggregator__ProjectSubmitted((address[],uint256[],address,address,uint256,uint256,string,string))
+        - event: DACAggregator__ProjectSubmitted((address[],uint256[],address,address,uint256,uint256,string,string,string,string))
           handler: handleProjectSubmitted
       file: ./src/dac-aggregator.ts

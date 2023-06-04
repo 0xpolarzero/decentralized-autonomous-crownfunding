@@ -6,12 +6,11 @@ import {
   LucideArrowDownRight,
   LucideArrowUpRight,
   LucideCheckCircle2,
-  LucideChevronDown,
-  LucideChevronUp,
   LucideXCircle,
   MoreHorizontal,
 } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -119,6 +118,44 @@ export const columns: ColumnDef<ProjectTable>[] = [
     cell: ({ row }) => {
       const totalRaised: number = row.getValue("totalRaised")
       return <CurrencyComponent amount={Number(totalRaised)} currency="matic" />
+    },
+  },
+  {
+    accessorKey: "links",
+    header: "Links",
+    cell: ({ row }) => {
+      const links: string[] = row.getValue("links")
+      return (
+        <div className="space-y-2">
+          {links.map((link, i) => {
+            return (
+              <div key={i} className="whitespace-pre-line">
+                <a href={link} target="_blank" rel="noopener noreferrer">
+                  {link.replace("https://", "")}
+                </a>
+              </div>
+            )
+          })}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "tags",
+    header: "Categories",
+    cell: ({ row }) => {
+      const tags: string[] = row.getValue("tags")
+      return (
+        <div className="flex flex-wrap justify-between gap-2">
+          {tags.map((tag, i) => {
+            return (
+              <Badge key={i} variant="outline">
+                {tag}
+              </Badge>
+            )
+          })}
+        </div>
+      )
     },
   },
 

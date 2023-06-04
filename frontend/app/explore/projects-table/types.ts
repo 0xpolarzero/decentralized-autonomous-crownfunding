@@ -4,6 +4,8 @@ export type ProjectTable = {
   status: true | false
   collaborators: string[]
   totalRaised: string
+  links: string[]
+  tags: string[]
   // Indirect display (popover, modal, etc.)
   description: string
   createdAt: string

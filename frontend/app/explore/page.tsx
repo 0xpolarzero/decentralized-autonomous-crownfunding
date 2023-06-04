@@ -1,12 +1,13 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { useApolloClient, useQuery } from "@apollo/client"
+import { useQuery } from "@apollo/client"
 
 import { Project } from "@/types/queries"
 import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
 import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 
@@ -23,6 +24,7 @@ export default function ExplorePage() {
   })
 
   const [projects, setProjects] = useState<Project[]>([])
+  const [tags, setTags] = useState<OptionProps[]>([])
   const [searchValue, setSearchValue] = useState<string>("")
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,9 +56,37 @@ export default function ExplorePage() {
     setProjects(initialData.projects)
   }
 
+  const handleTagChange = (value: string) => {
+    if (!initialData || !initialData.projects) return
+
+    if (!value || value === "") {
+      setProjects(initialData.projects)
+      return
+    }
+
+    const filtered = initialData.projects.filter((project: Project) =>
+      project.tags.includes(value)
+    )
+
+    setProjects(filtered)
+  }
+
   useEffect(() => {
-    if (initialData && initialData.projects) setProjects(initialData.projects)
-    if (initialData) console.log(initialData)
+    if (initialData && initialData.projects) {
+      setProjects(initialData.projects)
+      setTags(
+        initialData.projects
+          // Gather all tags from all projects
+          .map((project: Project) => project.tags)
+          .flat()
+          // Remove duplicates
+          .filter((tag: string, index: number, self: string[]) => {
+            return self.indexOf(tag) === index
+          })
+          // Format it for the combobox
+          .map((tag: string) => ({ value: tag, label: tag }))
+      )
+    }
   }, [initialData])
 
   return (
@@ -89,6 +119,13 @@ export default function ExplorePage() {
         </p>
       </div>
       <div className="grow overflow-auto">
+        {tags ? (
+          <ComboboxComponent
+            options={tags}
+            type="tag"
+            onChange={handleTagChange}
+          />
+        ) : null}
         {loading ? (
           <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
         ) : error ? (

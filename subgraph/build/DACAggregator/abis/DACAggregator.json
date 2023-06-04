@@ -347,6 +347,16 @@
             "internalType": "string",
             "name": "description",
             "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "links",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "tags",
+            "type": "string"
           }
         ],
         "indexed": false,
@@ -544,6 +554,16 @@
           {
             "internalType": "string",
             "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "links",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "tags",
             "type": "string"
           }
         ],
@@ -800,6 +820,16 @@
       {
         "internalType": "string",
         "name": "_description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_links",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "_tags",
         "type": "string"
       }
     ],

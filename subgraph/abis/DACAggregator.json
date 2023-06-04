@@ -267,7 +267,9 @@
             "type": "uint256"
           },
           { "internalType": "string", "name": "name", "type": "string" },
-          { "internalType": "string", "name": "description", "type": "string" }
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "links", "type": "string" },
+          { "internalType": "string", "name": "tags", "type": "string" }
         ],
         "indexed": false,
         "internalType": "struct DACAggregator.Project",
@@ -397,7 +399,9 @@
             "type": "uint256"
           },
           { "internalType": "string", "name": "name", "type": "string" },
-          { "internalType": "string", "name": "description", "type": "string" }
+          { "internalType": "string", "name": "description", "type": "string" },
+          { "internalType": "string", "name": "links", "type": "string" },
+          { "internalType": "string", "name": "tags", "type": "string" }
         ],
         "internalType": "struct DACAggregator.Project",
         "name": "",
@@ -593,7 +597,9 @@
       },
       { "internalType": "uint256[]", "name": "_shares", "type": "uint256[]" },
       { "internalType": "string", "name": "_name", "type": "string" },
-      { "internalType": "string", "name": "_description", "type": "string" }
+      { "internalType": "string", "name": "_description", "type": "string" },
+      { "internalType": "string", "name": "_links", "type": "string" },
+      { "internalType": "string", "name": "_tags", "type": "string" }
     ],
     "name": "submitProject",
     "outputs": [],

@@ -2,6 +2,8 @@ type Project @entity {
   id: ID!
   name: String!
   description: String!
+  links: [String!]!
+  tags: [String!]!
   createdAt: BigInt!
   lastActivityAt: BigInt!
   projectContract: Bytes! # address

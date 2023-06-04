@@ -2,6 +2,8 @@ export interface Project {
   id: string
   name: string
   description: string
+  links: string[]
+  tags: string[]
   createdAt: number
   lastActivityAt: number
   projectContract: string

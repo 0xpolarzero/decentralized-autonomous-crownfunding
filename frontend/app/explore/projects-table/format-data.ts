@@ -6,6 +6,8 @@ export default function formatData(data: Project[]) {
       id,
       name,
       description,
+      links,
+      tags,
       createdAt,
       lastActivityAt,
       projectContract,
@@ -27,6 +29,8 @@ export default function formatData(data: Project[]) {
           : false,
       collaborators,
       totalRaised,
+      links,
+      tags,
       // Indirect display (popover, modal, etc.)
       description,
       createdAt: new Date(createdAt * 1000).toLocaleDateString(),

@@ -6,6 +6,8 @@ export const GET_PROJECTS = gql`
       id
       name
       description
+      links
+      tags
       createdAt
       lastActivityAt
       projectContract
@@ -40,6 +42,8 @@ export const GET_CONTRIBUTIONS_FOR_PROJECT = gql`
       id
       name
       description
+      links
+      tags
       createdAt
       lastActivityAt
       projectContract
@@ -66,6 +70,8 @@ export const GET_PROJECTS_FOR_USER = gql`
       id
       name
       description
+      links
+      tags
       createdAt
       lastActivityAt
       projectContract
@@ -86,6 +92,8 @@ export const GET_PROJECT_BY_SLUG_CONTRACT = gql`
       id
       name
       description
+      links
+      tags
       createdAt
       lastActivityAt
       projectContract
@@ -102,6 +110,8 @@ export const GET_PROJECT_BY_SLUG_NAME = gql`
       id
       name
       description
+      links
+      tags
       createdAt
       lastActivityAt
       projectContract

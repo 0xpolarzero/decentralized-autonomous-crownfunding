@@ -18,6 +18,8 @@ export function handleProjectSubmitted(event: ProjectSubmittedEvent): void {
   let project = new Project(getId(event.params.project.projectContract));
   project.name = event.params.project.name;
   project.description = event.params.project.description;
+  project.links = event.params.project.links.split(',');
+  project.tags = event.params.project.tags.split(',');
   project.createdAt = event.params.project.createdAt;
   project.lastActivityAt = event.params.project.lastActivityAt;
   project.projectContract = event.params.project.projectContract;
