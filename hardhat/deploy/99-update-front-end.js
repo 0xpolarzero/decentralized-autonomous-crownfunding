@@ -1,12 +1,16 @@
 const { ethers, network } = require('hardhat');
 const fs = require('fs');
+const { developmentChains } = require('../helper-hardhat-config');
 
 const frontEndContractsFile =
   '../frontend/config/constants/networkMapping.json';
 const frontEndAbiFolder = '../frontend/config/constants/abis/';
 
 module.exports = async () => {
-  if (process.env.UPDATE_FRONT_END) {
+  if (
+    process.env.UPDATE_FRONT_END === true &&
+    !developmentChains.includes(network.name)
+  ) {
     console.log('Updating front end...');
     await updateContractAddresses();
     await updateAbi();

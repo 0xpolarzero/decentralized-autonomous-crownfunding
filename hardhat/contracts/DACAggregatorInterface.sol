@@ -9,19 +9,19 @@ interface DACAggregatorInterface {
     ) external view returns (bool);
 
     function onContributionCreated(
-        address _accountContract,
+        address _sender,
         DACContributionSystem.Contribution memory _contribution
     ) external;
 
     function onContributionUpdated(
-        address _accountContract,
+        address _sender,
         DACContributionSystem.ContributionMinimal memory _contribution
     ) external;
 
     function onContributionsTransfered(
-        address _accountContract,
+        address _sender,
         DACContributionSystem.ContributionMinimal[] memory _contributions
     ) external;
 
-    function onAllContributionsCanceled(address _accountContract) external;
+    function onAllContributionsCanceled(address _sender) external;
 }

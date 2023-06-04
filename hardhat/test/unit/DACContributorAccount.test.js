@@ -48,6 +48,8 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           shares: [70, 30], // shares of 70% and 30%
           name: 'Project 1', // project name
           description: 'Project 1 description', // project description
+          links: 'https://project1.com', // project links
+          tags: 'tag1,tag2', // project tags
         };
         const txProject = await dacAggregatorContract.submitProject(
           ...Object.values(submitProjectArgs),

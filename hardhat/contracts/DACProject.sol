@@ -58,6 +58,10 @@ contract DACProject {
     string private s_name;
     /// @dev A short description of the project
     string private s_description;
+    /// @dev A list of urls to the project (separated by commas)
+    string private s_urls;
+    /// @dev A list of tags to describe the project (separated by commas)
+    string private s_tags;
 
     // Will be updated after each contribution
     /// @dev The amount of funds received from contributions
@@ -118,6 +122,8 @@ contract DACProject {
      * @param _initiator The address of the initiator
      * @param _name The name of the project
      * @param _description A short description of the project
+     * @param _urls A list of links to the project (separated by commas)
+     * @param _tags A list of tags to describe the project (separated by commas)
      * @dev All verifications have been done already in the factory contract, so we don't need to check them again
      * @dev This will register a new Chainlink Upkeep in the fly
      */
@@ -126,13 +132,17 @@ contract DACProject {
         uint256[] memory _shares,
         address _initiator,
         string memory _name,
-        string memory _description
+        string memory _description,
+        string memory _urls,
+        string memory _tags
     ) {
         // Initialize immutable variables
         i_initiator = _initiator;
         // (not marked immutable but can't be changed afterwards)
         s_name = _name;
         s_description = _description;
+        s_urls = _urls;
+        s_tags = _tags;
         i_createdAt = block.timestamp;
 
         // Initialize collaborators
@@ -363,5 +373,23 @@ contract DACProject {
 
     function getDescription() external view returns (string memory) {
         return s_description;
+    }
+
+    /**
+     * @notice Get the urls of the project
+     * @return string The list of urls of the project (separated by a comma)
+     */
+
+    function getUrls() external view returns (string memory) {
+        return s_urls;
+    }
+
+    /**
+     * @notice Get the tags of the project
+     * @return string The list of tags of the project (separated by a comma)
+     */
+
+    function getTags() external view returns (string memory) {
+        return s_tags;
     }
 }

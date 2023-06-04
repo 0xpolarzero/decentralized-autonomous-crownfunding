@@ -28,6 +28,8 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           shares: [70, 30], // shares of 70% and 30%
           name: 'Project 1', // project name
           description: 'Project 1 description', // project description
+          links: 'https://project1.com', // project links
+          tags: 'tag1,tag2', // project tags
         };
       });
 
@@ -151,7 +153,19 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             dacAggregatorContract.submitProject(...Object.values(args)),
           ).to.be.revertedWith(
             'DACAggregator__INVALID_NAME()',
-            'Should revert if the name is not between 2 and 50 characters',
+            'Should revert if the name is less than 2 characters',
+          );
+
+          const args2 = {
+            ...submitProjectArgs,
+            name: 'Project 1'.repeat(10), // name of 100 characters
+          };
+
+          await expect(
+            dacAggregatorContract.submitProject(...Object.values(args2)),
+          ).to.be.revertedWith(
+            'DACAggregator__INVALID_NAME()',
+            'Should revert if the name is more than 50 characters',
           );
         });
 
@@ -196,6 +210,16 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             project.description,
             submitProjectArgs.description,
             'The description should be the one submitted',
+          );
+          assert.equal(
+            project.links,
+            submitProjectArgs.links,
+            'The links should be the ones submitted',
+          );
+          assert.equal(
+            project.tags,
+            submitProjectArgs.tags,
+            'The tags should be the ones submitted',
           );
 
           // Check that the address of the child contract points to the right contract

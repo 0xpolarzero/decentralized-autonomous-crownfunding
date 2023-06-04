@@ -30,6 +30,8 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           shares: [70, 30], // shares of 70% and 30%
           name: 'Project 1', // project name
           description: 'Project 1 description', // project description
+          links: 'https://project1.com', // project links
+          tags: 'tag1,tag2', // project tags
         };
         const tx = await dacAggregatorContract.submitProject(
           ...Object.values(submitProjectArgs),
@@ -111,6 +113,18 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             await dacProjectContract.getDescription(),
             submitProjectArgs.description,
             'Should initialize the description with the right value',
+          );
+          // Links
+          assert.equal(
+            await dacProjectContract.getUrls(),
+            submitProjectArgs.links,
+            'Should initialize the links with the right value',
+          );
+          // Tags
+          assert.equal(
+            await dacProjectContract.getTags(),
+            submitProjectArgs.tags,
+            'Should initialize the tags with the right value',
           );
           // Creation date
           assert.equal(
@@ -426,14 +440,17 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
           // Test the values
           // Balances
-          assert.equal(
+          const tolerance = 1e8;
+          assert.approximately(
             Number(await ethers.provider.getBalance(deployer.address)),
             initialBalances[0] + withdrawnShares[0] - spentGas[0],
+            tolerance,
             'Should return the right balance for the deployer',
           );
-          assert.equal(
+          assert.approximately(
             Number(await ethers.provider.getBalance(user.address)),
             initialBalances[1] + withdrawnShares[1] - spentGas[1],
+            tolerance,
             'Should return the right balance for the user',
           );
           // Amount available

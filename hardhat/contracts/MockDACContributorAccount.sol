@@ -275,7 +275,7 @@ contract MockDACContributorAccount is
         s_contributions.push(contribution);
 
         // Update the contributions in the aggregator
-        DAC_AGGREGATOR.onContributionCreated(address(this), contribution);
+        DAC_AGGREGATOR.onContributionCreated(msg.sender, contribution);
 
         emit DACContributorAccount__ContributionCreated(
             _projectContract,
@@ -322,7 +322,7 @@ contract MockDACContributorAccount is
 
         // Update the contribution in the aggregator
         DAC_AGGREGATOR.onContributionUpdated(
-            address(this),
+            msg.sender,
             ContributionMinimal({
                 projectContract: contribution.projectContract,
                 amount: _amount,
@@ -352,7 +352,7 @@ contract MockDACContributorAccount is
         if (!success) revert DACContributorAccount__TRANSFER_FAILED();
 
         // Update the contributions in the aggregator
-        DAC_AGGREGATOR.onAllContributionsCanceled(address(this));
+        DAC_AGGREGATOR.onAllContributionsCanceled(msg.sender);
 
         emit DACContributorAccount__AllContributionsCanceled(
             contributions,
@@ -412,7 +412,7 @@ contract MockDACContributorAccount is
 
         // Update the contributions in the aggregator
         DAC_AGGREGATOR.onContributionsTransfered(
-            address(this),
+            msg.sender,
             _contributionsToSend
         );
 

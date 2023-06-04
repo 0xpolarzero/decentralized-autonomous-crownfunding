@@ -169,6 +169,8 @@ contract MockDACAggregator is DACContributionSystem {
     /// @param createdAt The timestamp of when the project was submitted
     /// @param name The name of the project
     /// @param description A short description of the project
+    /// @param links Links to the project, separated by commas
+    /// @param tags Tags for the project, separated by commas
     /// @dev See the `submitProject()` function for more details
     struct Project {
         address[] collaborators;
@@ -179,6 +181,8 @@ contract MockDACAggregator is DACContributionSystem {
         uint256 lastActivityAt;
         string name;
         string description;
+        string links;
+        string tags;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -196,11 +200,11 @@ contract MockDACAggregator is DACContributionSystem {
 
     /**
      * @notice Verifies that the call is made from a contributor account
-     * @param _accountContract The address of the contributor account contract
+     * @param _sender The address of the owner of the contributor account
      */
 
-    modifier verifyContributorAccount(address _accountContract) {
-        if (s_contributorAccounts[msg.sender] != _accountContract)
+    modifier verifyContributorAccount(address _sender) {
+        if (s_contributorAccounts[_sender] != msg.sender)
             revert DACAggregator__NOT_CONTRIBUTOR_ACCOUNT();
         _;
     }
@@ -254,6 +258,8 @@ contract MockDACAggregator is DACContributionSystem {
      * @param _shares The shares of each collaborator (in the same order as the collaborators array)
      * @param _name The name of the project
      * @param _description A short description of the project
+     * @param _links Links to the project, separated by commas
+     * @param _tags Tags for the project, separated by commas
      * @dev Note the following requirements:
      * - The initiator should be included in the collaborators array
      * - The shares should add up to 100
@@ -267,7 +273,9 @@ contract MockDACAggregator is DACContributionSystem {
         address[] memory _collaborators,
         uint256[] memory _shares,
         string memory _name,
-        string memory _description
+        string memory _description,
+        string memory _links,
+        string memory _tags
     ) external {
         // It should have a share for each collaborator
         if (_collaborators.length != _shares.length)
@@ -299,7 +307,9 @@ contract MockDACAggregator is DACContributionSystem {
             _shares,
             msg.sender,
             _name,
-            _description
+            _description,
+            _links,
+            _tags
         );
 
         Project memory project = Project(
@@ -310,7 +320,9 @@ contract MockDACAggregator is DACContributionSystem {
             block.timestamp,
             block.timestamp,
             _name,
-            _description
+            _description,
+            _links,
+            _tags
         );
 
         // Add it to the projects array and mapping
@@ -400,61 +412,63 @@ contract MockDACAggregator is DACContributionSystem {
 
     /**
      * @notice Called by a contributor account when the user creates a contribution
-     * @param _accountContract The address of the contributor account contract
+     * @param _sender The address of the owner of the contributor account
      * @param _contribution The contribution object
      */
 
     function onContributionCreated(
-        address _accountContract,
+        address _sender,
         Contribution memory _contribution
-    ) external verifyContributorAccount(_accountContract) {
+    ) external verifyContributorAccount(_sender) {
         emit DACAggregator__ContributionCreated(
-            _accountContract,
+            s_contributorAccounts[_sender],
             _contribution
         );
     }
 
     /**
      * @notice Called by a contributor account when the user updates or cancels a contribution
-     * @param _accountContract The address of the contributor account contract
+     * @param _sender The address of the owner of the contributor account
      * @param _contribution The new contribution object
      */
 
     function onContributionUpdated(
-        address _accountContract,
+        address _sender,
         ContributionMinimal memory _contribution
-    ) external verifyContributorAccount(_accountContract) {
+    ) external verifyContributorAccount(_sender) {
         emit DACAggregator__ContributionUpdated(
-            _accountContract,
+            s_contributorAccounts[_sender],
             _contribution
         );
     }
 
     /**
      * @notice Called by a contributor account when contributions have been transfered
-     * @param _accountContract The address of the contributor account contract
+     * @param _sender The address of the owner of the contributor account
      * @param _contributions The contributions that have been transfered
      */
 
     function onContributionsTransfered(
-        address _accountContract,
+        address _sender,
         ContributionMinimal[] memory _contributions
-    ) external verifyContributorAccount(_accountContract) {
+    ) external verifyContributorAccount(_sender) {
         emit DACAggregator__ContributionsTransfered(
-            _accountContract,
+            s_contributorAccounts[_sender],
             _contributions
         );
     }
 
     /**
      * @notice Called by a contributor account when the user cancels all contributions
-     * @param _accountContract The address of the contributor account contract
+     * @param _sender The address of the owner of the contributor account
      */
 
     function onAllContributionsCanceled(
-        address _accountContract
-    ) external verifyContributorAccount(_accountContract) {
-        emit DACAggregator__AllContributionsCanceled(_accountContract);
+        address _sender
+    ) external verifyContributorAccount(_sender) {
+        emit DACAggregator__AllContributionsCanceled(
+            s_contributorAccounts[_sender]
+        );
     }
 
     /* -------------------------------------------------------------------------- */

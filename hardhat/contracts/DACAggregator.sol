@@ -164,6 +164,8 @@ contract DACAggregator is DACContributionSystem {
     /// @param createdAt The timestamp of when the project was submitted
     /// @param name The name of the project
     /// @param description A short description of the project
+    /// @param links Links to the project, separated by commas
+    /// @param tags Tags for the project, separated by commas
     /// @dev See the `submitProject()` function for more details
     struct Project {
         address[] collaborators;
@@ -174,6 +176,8 @@ contract DACAggregator is DACContributionSystem {
         uint256 lastActivityAt;
         string name;
         string description;
+        string links;
+        string tags;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -249,12 +253,15 @@ contract DACAggregator is DACContributionSystem {
      * @param _shares The shares of each collaborator (in the same order as the collaborators array)
      * @param _name The name of the project
      * @param _description A short description of the project
+     * @param _links Links to the project, separated by commas
+     * @param _tags Tags for the project, separated by commas
      * @dev Note the following requirements:
      * - The initiator should be included in the collaborators array
      * - The shares should add up to 100
      * - The timespan should be at least 30 days
      * - The name should be at least 2 characters and at most 50 characters
      * - The description is optional
+     * - The links and tags are optional and not verified here
      * @dev This will create a child contract for the project with the current parameters
      */
 
@@ -262,7 +269,9 @@ contract DACAggregator is DACContributionSystem {
         address[] memory _collaborators,
         uint256[] memory _shares,
         string memory _name,
-        string memory _description
+        string memory _description,
+        string memory _links,
+        string memory _tags
     ) external {
         // It should have a share for each collaborator
         if (_collaborators.length != _shares.length)
@@ -294,7 +303,9 @@ contract DACAggregator is DACContributionSystem {
             _shares,
             msg.sender,
             _name,
-            _description
+            _description,
+            _links,
+            _tags
         );
 
         Project memory project = Project(
@@ -305,7 +316,9 @@ contract DACAggregator is DACContributionSystem {
             block.timestamp,
             block.timestamp,
             _name,
-            _description
+            _description,
+            _links,
+            _tags
         );
 
         // Add it to the projects array and mapping
