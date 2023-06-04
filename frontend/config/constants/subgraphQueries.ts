@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client"
 
 export const GET_PROJECTS = gql`
-  query GetProjects($pageNumber: Int!, $amountPerPage: Int!) {
-    projects(first: $amountPerPage, skip: $pageNumber * $amountPerPage) {
+  query GetProjects($amountPerPage: Int!, $skip: Int!) {
+    projects(first: $amountPerPage, skip: $skip) {
       id
       name
       description
@@ -75,6 +75,31 @@ export const GET_PROJECTS_FOR_USER = gql`
       contributors {
         id
       }
+      totalRaised
+    }
+  }
+`
+
+export const GET_PROJECT_BY_SLUG = gql`
+  query GetProjectBySlug($slug: String!) {
+    projects(
+      where: {
+        OR: [
+          { name_contains: $slug }
+          { projectContract: $slug }
+          { collaborators_contains: $slug }
+        ]
+      }
+    ) {
+      id
+      name
+      description
+      createdAt
+      lastActivityAt
+      projectContract
+      initiator
+      collaborators
+      shares
       totalRaised
     }
   }
