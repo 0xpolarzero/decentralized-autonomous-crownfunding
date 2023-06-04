@@ -1,13 +1,25 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: "DeAC",
-  description: "Decentralized Autonomous Crowdfunding",
+  name: "Cascade",
+  description:
+    "Aour decentralized crowdfunding hub, enabling automated and flexible project support through blockchain technology.",
   url: "",
   mainNav: [
     {
       title: "Home",
+      slug: "home",
       href: "/",
+    },
+    {
+      title: "Explore projects",
+      slug: "projects",
+      href: "/projects",
+    },
+    {
+      title: "Contributor account",
+      slug: "account",
+      href: "/account",
     },
   ],
   links: {
