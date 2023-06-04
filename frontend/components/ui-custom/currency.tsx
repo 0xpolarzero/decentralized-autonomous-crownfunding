@@ -20,7 +20,6 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
   amount,
   currency,
 }) => {
-  console.log(amount)
   const formatAmount = (value: number) =>
     value ? (currency === "matic" ? value.toFixed(2) : value.toFixed(4)) : "0"
 
