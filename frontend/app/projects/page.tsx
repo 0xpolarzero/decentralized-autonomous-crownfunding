@@ -8,8 +8,8 @@ import {
   GET_PROJECT_BY_SLUG,
 } from "@/config/constants/subgraphQueries"
 import { buttonVariants } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
 import { Input } from "@/components/ui/input"
+import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 
 import { columns, columnsSkeleton } from "./projects-table/columns"

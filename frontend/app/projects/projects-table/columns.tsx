@@ -1,8 +1,26 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { LucideCheckCircle2, LucideXCircle } from "lucide-react"
+import {
+  ArrowUpDown,
+  LucideArrowDownRight,
+  LucideArrowUpRight,
+  LucideCheckCircle2,
+  LucideChevronDown,
+  LucideChevronUp,
+  LucideXCircle,
+  MoreHorizontal,
+} from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import AddressComponent from "@/components/ui-custom/address"
 import CurrencyComponent from "@/components/ui-custom/currency"
@@ -78,10 +96,57 @@ export const columns: ColumnDef<ProjectTable>[] = [
   },
   {
     accessorKey: "totalRaised",
-    header: "Raised",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => {
+            column.toggleSorting(column.getIsSorted() === "asc")
+            console.log(column.getIsSorted())
+          }}
+        >
+          Raised
+          {column.getIsSorted() === "asc" ? (
+            <LucideArrowUpRight className="ml-2 h-4 w-4" />
+          ) : column.getIsSorted() === "desc" ? (
+            <LucideArrowDownRight className="ml-2 h-4 w-4" />
+          ) : (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      )
+    },
     cell: ({ row }) => {
       const totalRaised: number = row.getValue("totalRaised")
       return <CurrencyComponent amount={Number(totalRaised)} currency="matic" />
+    },
+  },
+
+  {
+    // accessorKey: "actions",
+    // header: "Actions",
+    id: "actions",
+    cell: ({ row }) => {
+      // const payment = row.original
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => null}>
+              More about this project
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>View customer</DropdownMenuItem>
+            <DropdownMenuItem>View payment details</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
     },
   },
 ]
