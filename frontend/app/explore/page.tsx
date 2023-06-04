@@ -3,10 +3,8 @@
 import React, { useEffect, useState } from "react"
 import { useApolloClient, useQuery } from "@apollo/client"
 
-import {
-  GET_PROJECTS,
-  GET_PROJECT_BY_SLUG,
-} from "@/config/constants/subgraphQueries"
+import { Project } from "@/types/queries"
+import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/ui-custom/data-table"
@@ -15,8 +13,7 @@ import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 import { columns, columnsSkeleton } from "./projects-table/columns"
 import formatData from "./projects-table/format-data"
 
-export default function ProjectsPage() {
-  const client = useApolloClient()
+export default function ExplorePage() {
   const {
     data: initialData,
     error,
@@ -25,31 +22,35 @@ export default function ProjectsPage() {
     variables: { amountPerPage: 1000, skip: 0 },
   })
 
-  const [projects, setProjects] = useState([])
-  const [search, setSearch] = useState("")
-  const [searchLoading, setSearchLoading] = useState(false)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [searchValue, setSearchValue] = useState<string>("")
 
-  const handleSearchChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearch(value)
-
-    if (e.target.value) {
-      try {
-        const { data: searchData } = await client.query({
-          query: GET_PROJECT_BY_SLUG,
-          variables: { slug: e.target.value },
-        })
-        setProjects(searchData.projects)
-      } catch (error) {
-        console.error(error)
-      }
-    } else {
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value)
+    // We cannot perform 'OR' searches, or search an array of strings with The Graph
+    // so right now we're better off querying a large amount of projects and
+    // filtering them on the client side
+    if (!e.target.value || e.target.value.length < 1) {
       setProjects(initialData.projects)
+      return
     }
+
+    const filtered = initialData.projects.filter(
+      (project: Project) =>
+        project.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
+        project.projectContract
+          .toLowerCase()
+          .includes(e.target.value.toLowerCase()) ||
+        project.collaborators.some((c) =>
+          c.toLowerCase().includes(e.target.value.toLowerCase())
+        )
+    )
+
+    setProjects(filtered)
   }
 
   const clearSearch = () => {
-    setSearch("")
+    setSearchValue("")
     setProjects(initialData.projects)
   }
 
@@ -64,11 +65,13 @@ export default function ProjectsPage() {
         <div className="my-4 flex w-full items-center space-x-2">
           <Input
             type="search"
-            value={search}
-            onChange={handleSearchChange}
-            placeholder="Search a project by name, address or collaborator address"
+            value={searchValue}
+            onChange={handleSearch}
+            placeholder="Search a project by name, address or projects involving a collaborator"
           />
-          {/* <button className={buttonVariants()}>Search</button> */}
+          {/* <button className={buttonVariants()} onClick={onSearch}>
+            Search
+          </button> */}
           <button
             className={buttonVariants({
               variant: "outline",
@@ -79,18 +82,17 @@ export default function ProjectsPage() {
           </button>
         </div>
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-          Latest Projects
+          Latest projects
         </h1>
         <p className="max-w-[700px] text-lg text-muted-foreground">
-          Explore the latest projects on our platform. Use the search function
-          to find specific projects or collaborators.
+          Explore the latest projects campaigns listed on our platform.
         </p>
       </div>
       <div className="grow overflow-auto">
         {loading ? (
           <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
         ) : error ? (
-          "error skeleton"
+          "error"
         ) : (
           <DataTable columns={columns} data={formatData(projects)} />
         )}

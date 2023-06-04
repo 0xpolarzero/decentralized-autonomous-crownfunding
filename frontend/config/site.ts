@@ -13,8 +13,8 @@ export const siteConfig = {
     },
     {
       title: "Explore projects",
-      slug: "projects",
-      href: "/projects",
+      slug: "explore",
+      href: "/explore",
     },
     {
       title: "Contributor account",

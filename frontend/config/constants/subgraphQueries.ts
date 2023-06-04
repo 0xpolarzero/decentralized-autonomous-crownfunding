@@ -80,17 +80,25 @@ export const GET_PROJECTS_FOR_USER = gql`
   }
 `
 
-export const GET_PROJECT_BY_SLUG = gql`
+export const GET_PROJECT_BY_SLUG_CONTRACT = gql`
   query GetProjectBySlug($slug: String!) {
-    projects(
-      where: {
-        OR: [
-          { name_contains: $slug }
-          { projectContract: $slug }
-          { collaborators_contains: $slug }
-        ]
-      }
-    ) {
+    projects(where: { projectContract: $slug }) {
+      id
+      name
+      description
+      createdAt
+      lastActivityAt
+      projectContract
+      initiator
+      collaborators
+      shares
+      totalRaised
+    }
+  }
+`
+export const GET_PROJECT_BY_SLUG_NAME = gql`
+  query GetProjectBySlug($slug: String!) {
+    projects(where: { name_contains_nocase: $slug }) {
       id
       name
       description

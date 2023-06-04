@@ -25,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import AddressComponent from "@/components/ui-custom/address"
 import CurrencyComponent from "@/components/ui-custom/currency"
 import TooltipComponent from "@/components/ui-custom/tooltip"
-import { ProjectTable } from "@/app/projects/projects-table/types"
+import { ProjectTable } from "@/app/explore/projects-table/types"
 
 export const columns: ColumnDef<ProjectTable>[] = [
   {
@@ -139,11 +139,12 @@ export const columns: ColumnDef<ProjectTable>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => null}>
-              More about this project
+              Go to project&apos;s page
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>View customer</DropdownMenuItem>
             <DropdownMenuItem>View payment details</DropdownMenuItem>
+            {/* share this project, contribute, view on polygonscan */}
           </DropdownMenuContent>
         </DropdownMenu>
       )
