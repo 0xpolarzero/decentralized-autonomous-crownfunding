@@ -22,6 +22,11 @@ export const chainConfig = {
         name: "Polygonscan",
         url: "https://polygonscan.com/",
       },
+      currency: {
+        name: "MATIC",
+        symbol: "MATIC",
+        decimals: 18,
+      },
     },
     maticmum: {
       name: "Mumbai",
@@ -29,6 +34,11 @@ export const chainConfig = {
       blockExplorer: {
         name: "Polygonscan",
         url: "https://mumbai.polygonscan.com/",
+      },
+      currency: {
+        name: "MATIC",
+        symbol: "MATIC",
+        decimals: 18,
       },
     },
   },

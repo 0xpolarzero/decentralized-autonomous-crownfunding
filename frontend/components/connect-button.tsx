@@ -15,29 +15,24 @@ export function ConnectButton() {
 
   const {
     connected,
-    currentChain,
-    contributorAccountAddress,
+    currentNetwork,
     setConnected,
     setAddress,
-    setCurrentChain,
+    setCurrentNetwork,
     setContributorAccountAddress,
     setHasContributorAccount,
   } = useGlobalStore((state) => ({
     connected: state.connected,
-    currentChain: state.currentChain,
-    contributorAccountAddress: state.contributorAccountAddress,
+    currentNetwork: state.currentNetwork,
     setConnected: state.setConnected,
     setAddress: state.setAddress,
-    setCurrentChain: state.setCurrentChain,
+    setCurrentNetwork: state.setCurrentNetwork,
     setContributorAccountAddress: state.setContributorAccountAddress,
     setHasContributorAccount: state.setHasContributorAccount,
   }))
 
   const getContributorAccount = async () => {
-    console.log("here")
     try {
-      console.log("and here")
-
       const chainIdString = chain?.id.toString() || "0"
       if (!networkMapping[chainIdString]) {
         resetContributorAccount()
@@ -55,13 +50,6 @@ export function ConnectButton() {
         functionName: "getContributorAccount",
         args: [address],
       })
-
-      console.log(
-        "contract address",
-        contractAddress,
-        "contribiutor account",
-        contributorAccountAddress
-      )
 
       if (data && data !== zeroAddress) {
         setHasContributorAccount(true)
@@ -83,34 +71,27 @@ export function ConnectButton() {
   // Address & connected status
   useEffect(() => {
     if (address && isConnected) {
-      console.log("now connected")
       setConnected(true)
       setAddress(address || "0x")
     } else {
-      console.log("now disconnected")
       setConnected(false)
       setAddress("0x")
     }
-    console.log("switched address")
   }, [isConnected])
 
   // Chain
   useEffect(() => {
     if (chain) {
-      console.log("now on chain")
-      setCurrentChain({ name: chain.name, id: chain.id })
+      setCurrentNetwork({ name: chain.name, id: chain.id })
     } else {
-      console.log("now off chain")
-      setCurrentChain({ name: "", id: 0 })
+      setCurrentNetwork({ name: "", id: 0 })
     }
-    console.log("switched chain")
   }, [chain])
 
   // Contributor account
   useEffect(() => {
     getContributorAccount()
-    console.log("contributor account changed", contributorAccountAddress)
-  }, [connected, currentChain])
+  }, [connected, currentNetwork])
 
   return <ConnectKitButton />
 }

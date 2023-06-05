@@ -10,9 +10,9 @@ export default create<GlobalStore>((set, get) => ({
   setAddress: (address: `0x${string}`) => set({ address }),
 
   // Network
-  currentChain: { name: "", id: 0 },
-  setCurrentChain: (currentChain: { name: string; id: number }) =>
-    set({ currentChain }),
+  currentNetwork: { name: "", id: 0 },
+  setCurrentNetwork: (currentNetwork: { name: string; id: number }) =>
+    set({ currentNetwork }),
 
   // Contributor account
   contributorAccountAddress: "0x",

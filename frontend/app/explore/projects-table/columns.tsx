@@ -1,9 +1,10 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import useCopyToClipboard from "@/utils/copy-to-clipboard"
-import { ColumnDef } from "@tanstack/react-table"
+import { Cell, ColumnDef, Row } from "@tanstack/react-table"
 import {
   ArrowUpDown,
   LucideArrowDownRight,
@@ -21,6 +22,7 @@ import { chainConfig } from "@/config/network"
 import { siteConfig } from "@/config/site"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,22 +32,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import ContributeDialogComponent from "@/components/contribute-dialog"
 import AddressComponent from "@/components/ui-custom/address"
 import CurrencyComponent from "@/components/ui-custom/currency"
 import TooltipComponent from "@/components/ui-custom/tooltip"
 import { ProjectTable } from "@/app/explore/projects-table/types"
 
+type CellProps = {
+  row: Row<ProjectTable>
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                    name                                    */
 /* -------------------------------------------------------------------------- */
 
-const NameCell = ({ row }: { row: any }) => row.getValue("name")
+const NameCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) =>
+  row.getValue("name")
 
 /* -------------------------------------------------------------------------- */
 /*                                   status                                   */
 /* -------------------------------------------------------------------------- */
 
-const StatusCell = ({ row }: { row: any }) => {
+const StatusCell: React.FC<CellProps> = ({
+  row,
+}: {
+  row: Row<ProjectTable>
+}) => {
   const status: string = row.getValue("status")
   const lastActivityAt: string = row.original.lastActivityAt
   const timeSinceLastActivity = Date.now() - Date.parse(lastActivityAt)
@@ -82,7 +94,11 @@ const StatusCell = ({ row }: { row: any }) => {
 /*                                collaborators                               */
 /* -------------------------------------------------------------------------- */
 
-const CollaboratorsCell = ({ row }: { row: any }) => {
+const CollaboratorsCell: React.FC<CellProps> = ({
+  row,
+}: {
+  row: Row<ProjectTable>
+}) => {
   const addresses: `0x${string}`[] = row.getValue("collaborators")
   return (
     <div className="space-y-2">
@@ -101,7 +117,11 @@ const CollaboratorsCell = ({ row }: { row: any }) => {
 /*                                 totalRaised                                */
 /* -------------------------------------------------------------------------- */
 
-const TotalRaisedCell = ({ row }: { row: any }) => {
+const TotalRaisedCell: React.FC<CellProps> = ({
+  row,
+}: {
+  row: Row<ProjectTable>
+}) => {
   const totalRaised: number = row.getValue("totalRaised")
   return <CurrencyComponent amount={Number(totalRaised)} currency="matic" />
 }
@@ -110,7 +130,11 @@ const TotalRaisedCell = ({ row }: { row: any }) => {
 /*                                    links                                   */
 /* -------------------------------------------------------------------------- */
 
-const LinksCell = ({ row }: { row: any }) => {
+const LinksCell: React.FC<CellProps> = ({
+  row,
+}: {
+  row: Row<ProjectTable>
+}) => {
   const links: string[] = row.getValue("links")
   return (
     <div className="space-y-2">
@@ -131,7 +155,7 @@ const LinksCell = ({ row }: { row: any }) => {
 /*                                    tags                                    */
 /* -------------------------------------------------------------------------- */
 
-const TagsCell = ({ row }: { row: any }) => {
+const TagsCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) => {
   const tags: string[] = row.getValue("tags")
   return (
     <div className="flex flex-wrap justify-between gap-2">
@@ -150,7 +174,11 @@ const TagsCell = ({ row }: { row: any }) => {
 /*                                   actions                                  */
 /* -------------------------------------------------------------------------- */
 
-const ActionsCell = ({ row }: { row: any }) => {
+const ActionsCell: React.FC<CellProps> = ({
+  row,
+}: {
+  row: Row<ProjectTable>
+}) => {
   const networkInfo =
     chainConfig.networks[
       row.original.network as keyof typeof chainConfig.networks
@@ -159,49 +187,43 @@ const ActionsCell = ({ row }: { row: any }) => {
   const hasContributorAccount = useGlobalStore(
     (state) => state.hasContributorAccount
   )
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <Link href={`/project?address=${row.original.projectContract}`}>
-          <DropdownMenuItem>
-            <LucideInfo size={16} className="mr-2" />
-            Show project&apos;s page
+    <Dialog>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <Link href={`/project?address=${row.original.projectContract}`}>
+            <DropdownMenuItem>
+              <LucideInfo size={16} className="mr-2" />
+              Show project&apos;s page
+            </DropdownMenuItem>
+          </Link>
+          <Link href={row.original.blockExplorer} target="_blank">
+            <DropdownMenuItem>
+              <LucideExternalLink size={16} className="mr-2" />
+              Show on {networkInfo.blockExplorer.name}
+            </DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem
+            onClick={() =>
+              copyToClipboard(
+                `${siteConfig.url}/project?address=${row.original.projectContract}`
+              )
+            }
+          >
+            <LucideShare2 size={16} className="mr-2" />
+            Share this campain
           </DropdownMenuItem>
-        </Link>
-        <Link href={row.original.blockExplorer} target="_blank">
-          <DropdownMenuItem>
-            <LucideExternalLink size={16} className="mr-2" />
-            Show on {networkInfo.blockExplorer.name}
-          </DropdownMenuItem>
-        </Link>
-        <DropdownMenuItem
-          onClick={() =>
-            copyToClipboard(
-              `${siteConfig.url}/project?address=${row.original.projectContract}`
-            )
-          }
-        >
-          <LucideShare2 size={16} className="mr-2" />
-          Share this campain
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {hasContributorAccount ? (
-          <DropdownMenuItem>
-            <LucideBanknote size={16} className="mr-2" color="var(--green)" />
-            <span style={{ color: "var(--green)" }}>Contribute</span>
-          </DropdownMenuItem>
-        ) : (
-          <TooltipComponent
-            shownContent={
-              <DropdownMenuItem disabled>
+          <DropdownMenuSeparator />
+          <DialogTrigger asChild>
+            {hasContributorAccount ? (
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                 <LucideBanknote
                   size={16}
                   className="mr-2"
@@ -209,20 +231,34 @@ const ActionsCell = ({ row }: { row: any }) => {
                 />
                 <span style={{ color: "var(--green)" }}>Contribute</span>
               </DropdownMenuItem>
-            }
-            tooltipContent={
-              <>
-                <p>You need to connect your wallet to contribute.</p>
-                <p>
-                  Make sure you are on a supported chain and you have a
-                  contributor account.
-                </p>
-              </>
-            }
-          />
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            ) : (
+              <TooltipComponent
+                shownContent={
+                  <DropdownMenuItem disabled>
+                    <LucideBanknote
+                      size={16}
+                      className="mr-2"
+                      color="var(--green)"
+                    />
+                    <span style={{ color: "var(--green)" }}>Contribute</span>
+                  </DropdownMenuItem>
+                }
+                tooltipContent={
+                  <>
+                    <p>You need to connect your wallet to contribute.</p>
+                    <p>
+                      Make sure you are on a supported chain and you have a
+                      contributor account.
+                    </p>
+                  </>
+                }
+              />
+            )}
+          </DialogTrigger>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ContributeDialogComponent data={row} />
+    </Dialog>
   )
 }
 
