@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import useGlobalStore from "@/stores/useGlobalStore"
 import useCopyToClipboard from "@/utils/copy-to-clipboard"
 import { ColumnDef } from "@tanstack/react-table"
 import {
@@ -155,6 +156,9 @@ const ActionsCell = ({ row }: { row: any }) => {
       row.original.network as keyof typeof chainConfig.networks
     ]
   const copyToClipboard = useCopyToClipboard()
+  const hasContributorAccount = useGlobalStore(
+    (state) => state.hasContributorAccount
+  )
 
   return (
     <DropdownMenu>
@@ -189,10 +193,34 @@ const ActionsCell = ({ row }: { row: any }) => {
           Share this campain
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <LucideBanknote size={16} className="mr-2" color="var(--green)" />
-          <span style={{ color: "var(--green)" }}>Contribute</span>
-        </DropdownMenuItem>
+        {hasContributorAccount ? (
+          <DropdownMenuItem>
+            <LucideBanknote size={16} className="mr-2" color="var(--green)" />
+            <span style={{ color: "var(--green)" }}>Contribute</span>
+          </DropdownMenuItem>
+        ) : (
+          <TooltipComponent
+            shownContent={
+              <DropdownMenuItem disabled>
+                <LucideBanknote
+                  size={16}
+                  className="mr-2"
+                  color="var(--green)"
+                />
+                <span style={{ color: "var(--green)" }}>Contribute</span>
+              </DropdownMenuItem>
+            }
+            tooltipContent={
+              <>
+                <p>You need to connect your wallet to contribute.</p>
+                <p>
+                  Make sure you are on a supported chain and you have a
+                  contributor account.
+                </p>
+              </>
+            }
+          />
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )
