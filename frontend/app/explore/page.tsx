@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
-import { useNetwork } from "wagmi"
 
 import { Project } from "@/types/queries"
 import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
-import { NetworkName, chainConfig } from "@/config/network"
+import { networkConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
@@ -24,7 +24,7 @@ export default function ExplorePage() {
   } = useQuery(GET_PROJECTS, {
     variables: { amountPerPage: 1000, skip: 0 },
   })
-  const { chain } = useNetwork()
+  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
 
   const [projects, setProjects] = useState<Project[]>([])
   const [tags, setTags] = useState<OptionProps[]>([])
@@ -79,14 +79,12 @@ export default function ExplorePage() {
   }
 
   const withNetworkAppened = (data: Project[]) => {
-    const network: NetworkName =
-      (chain?.network as NetworkName) || chainConfig.defaultNetwork
     const networkInfo =
-      chainConfig.networks[network as keyof typeof chainConfig.networks]
+      currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
     return data.map((project) => ({
       ...project,
-      network,
+      network: networkInfo.name,
       blockExplorer: `${networkInfo.blockExplorer.url}/address/${project.projectContract}`,
     }))
   }

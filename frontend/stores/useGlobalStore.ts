@@ -1,5 +1,6 @@
 import { create } from "zustand"
 
+import { NetworkInfo } from "@/types/network"
 import { GlobalStore } from "@/types/stores"
 
 export default create<GlobalStore>((set, get) => ({
@@ -10,8 +11,8 @@ export default create<GlobalStore>((set, get) => ({
   setAddress: (address: `0x${string}`) => set({ address }),
 
   // Network
-  currentNetwork: { name: "", id: 0 },
-  setCurrentNetwork: (currentNetwork: { name: string; id: number }) =>
+  currentNetwork: null,
+  setCurrentNetwork: (currentNetwork: NetworkInfo | null) =>
     set({ currentNetwork }),
 
   // Contributor account

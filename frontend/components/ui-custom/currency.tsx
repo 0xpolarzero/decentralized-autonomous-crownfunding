@@ -1,9 +1,8 @@
 import React from "react"
 import Image from "next/image"
-import EthIcon from "@/assets/icons/eth.svg"
-import LinkIcon from "@/assets/icons/link.svg"
-import MaticIcon from "@/assets/icons/matic.svg"
+import useGlobalStore from "@/stores/useGlobalStore"
 
+import { currencies, networkConfig } from "@/config/network"
 import {
   Tooltip,
   TooltipContent,
@@ -13,39 +12,49 @@ import {
 
 interface CurrencyComponentProps {
   amount: number
-  currency: "matic" | "link" | "eth"
+  currency: "native" | "link"
 }
 
 const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
   amount,
   currency,
 }) => {
-  const formatAmount = (value: number) =>
-    value ? (currency === "matic" ? value.toFixed(2) : value.toFixed(4)) : "0"
+  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+  const actualCurrency =
+    currency === "native" ? currentNetwork?.currency.symbol : currency
+
+  const formatAmount = (value: number) => (value ? value.toFixed(4) : "0")
 
   const getCurrencyIcon = () => {
-    if (currency === "matic") {
-      return <Image src={MaticIcon} alt="matic" width={16} height={16} />
+    if (currency === "native") {
+      return (
+        <Image src={currencies.matic.icon} alt="matic" width={16} height={16} />
+      )
     } else if (currency === "link") {
-      return <Image src={LinkIcon} alt="link" width={16} height={16} />
-    } else if (currency === "eth") {
-      return <Image src={EthIcon} alt="eth" width={16} height={16} />
+      return (
+        <Image src={currencies.link.icon} alt="link" width={16} height={16} />
+      )
+    } else {
+      return (
+        <Image src={currencies.eth.icon} alt="eth" width={16} height={16} />
+      )
     }
-
-    return null
   }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             {getCurrencyIcon()}
             <span>{formatAmount(amount)}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          {amount} {currency.toUpperCase()}
+          {amount}{" "}
+          {currency === "native"
+            ? actualCurrency
+            : networkConfig.defaultCurrency.symbol}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

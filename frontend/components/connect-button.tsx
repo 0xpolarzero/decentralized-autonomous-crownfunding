@@ -7,7 +7,7 @@ import { ConnectKitButton } from "connectkit"
 import { zeroAddress } from "viem"
 import { useAccount, useContractRead, useNetwork } from "wagmi"
 
-import { abi, networkMapping } from "@/config/network"
+import { abi, networkConfig, networkMapping } from "@/config/network"
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount()
@@ -82,9 +82,13 @@ export function ConnectButton() {
   // Chain
   useEffect(() => {
     if (chain) {
-      setCurrentNetwork({ name: chain.name, id: chain.id })
+      setCurrentNetwork(
+        networkConfig.networks[
+          chain.name as keyof typeof networkConfig.networks
+        ]
+      )
     } else {
-      setCurrentNetwork({ name: "", id: 0 })
+      setCurrentNetwork(null)
     }
   }, [chain])
 

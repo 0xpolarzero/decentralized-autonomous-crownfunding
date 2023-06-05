@@ -18,7 +18,7 @@ import {
   MoreHorizontal,
 } from "lucide-react"
 
-import { chainConfig } from "@/config/network"
+import { networkConfig } from "@/config/network"
 import { siteConfig } from "@/config/site"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -123,7 +123,7 @@ const TotalRaisedCell: React.FC<CellProps> = ({
   row: Row<ProjectTable>
 }) => {
   const totalRaised: number = row.getValue("totalRaised")
-  return <CurrencyComponent amount={Number(totalRaised)} currency="matic" />
+  return <CurrencyComponent amount={Number(totalRaised)} currency="native" />
 }
 
 /* -------------------------------------------------------------------------- */
@@ -179,10 +179,10 @@ const ActionsCell: React.FC<CellProps> = ({
 }: {
   row: Row<ProjectTable>
 }) => {
+  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
   const networkInfo =
-    chainConfig.networks[
-      row.original.network as keyof typeof chainConfig.networks
-    ]
+    currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
+
   const copyToClipboard = useCopyToClipboard()
   const hasContributorAccount = useGlobalStore(
     (state) => state.hasContributorAccount
@@ -286,22 +286,25 @@ export const columns: ColumnDef<ProjectTable>[] = [
     accessorKey: "totalRaised",
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            column.toggleSorting(column.getIsSorted() === "asc")
-            console.log(column.getIsSorted())
-          }}
-        >
-          Raised
-          {column.getIsSorted() === "asc" ? (
-            <LucideArrowUpRight className="ml-2 h-4 w-4" />
-          ) : column.getIsSorted() === "desc" ? (
-            <LucideArrowDownRight className="ml-2 h-4 w-4" />
-          ) : (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </Button>
+        <div className="flex items-center justify-between gap-2">
+          <span>Raised</span>
+          <Button
+            variant="ghost"
+            className="pl-1 pr-3"
+            onClick={() => {
+              column.toggleSorting(column.getIsSorted() === "asc")
+              console.log(column.getIsSorted())
+            }}
+          >
+            {column.getIsSorted() === "asc" ? (
+              <LucideArrowUpRight className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+              <LucideArrowDownRight className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        </div>
       )
     },
     cell: ({ row }) => <TotalRaisedCell row={row} />,
