@@ -38,12 +38,7 @@ import { ProjectTable } from "@/app/explore/projects-table/types"
 /*                                    name                                    */
 /* -------------------------------------------------------------------------- */
 
-const NameCell = ({ row }: { row: any }) => {
-  const name: string = row.getValue("name")
-  const projectContract: string = row.getValue("projectContract")
-
-  return <Link href={`/project?address=${projectContract}`}>{name}</Link>
-}
+const NameCell = ({ row }: { row: any }) => row.getValue("name")
 
 /* -------------------------------------------------------------------------- */
 /*                                   status                                   */

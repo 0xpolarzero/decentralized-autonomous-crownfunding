@@ -4,7 +4,8 @@ import dacContributorAccountAbi from "@/config/constants/abis/DACContributorAcco
 import dacProjectAbi from "@/config/constants/abis/DACProject.json"
 import networkMappingJson from "@/config/constants/networkMapping.json"
 
-export const networkMapping: NetworkMapping = networkMappingJson
+export const networkMapping: NetworkMapping =
+  networkMappingJson as NetworkMapping
 
 export type ChainConfig = typeof chainConfig
 
@@ -14,7 +15,7 @@ export const chainConfig = {
   defaultNetwork: "polygon" as NetworkName,
 
   networks: {
-    polygon: {
+    matic: {
       name: "Polygon",
       chainId: 137,
       blockExplorer: {
