@@ -4,7 +4,7 @@ export const siteConfig = {
   name: "Cascade",
   description:
     "Aour decentralized crowdfunding hub, enabling automated and flexible project support through blockchain technology.",
-  url: "",
+  url: "https://cascade.polarzero.xyz",
   mainNav: [
     {
       title: "Home",

@@ -16,6 +16,8 @@ export default function formatData(data: Project[]) {
       shares,
       contributors,
       totalRaised,
+      network,
+      blockExplorer,
     } = project
     return {
       // Direct display
@@ -39,6 +41,8 @@ export default function formatData(data: Project[]) {
       initiator,
       shares,
       contributors,
+      network,
+      blockExplorer,
     }
   })
 }

@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react"
 import { useQuery } from "@apollo/client"
+import { useNetwork } from "wagmi"
 
 import { Project } from "@/types/queries"
 import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
+import { NetworkName, chainConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
@@ -22,6 +24,7 @@ export default function ExplorePage() {
   } = useQuery(GET_PROJECTS, {
     variables: { amountPerPage: 1000, skip: 0 },
   })
+  const { chain } = useNetwork()
 
   const [projects, setProjects] = useState<Project[]>([])
   const [tags, setTags] = useState<OptionProps[]>([])
@@ -32,12 +35,14 @@ export default function ExplorePage() {
     // We cannot perform 'OR' searches, or search an array of strings with The Graph
     // so right now we're better off querying a large amount of projects and
     // filtering them on the client side
+    const projectsAppended = withNetworkAppened(initialData.projects)
+
     if (!e.target.value || e.target.value.length < 1) {
-      setProjects(initialData.projects)
+      setProjects(projectsAppended)
       return
     }
 
-    const filtered = initialData.projects.filter(
+    const filtered = projectsAppended.filter(
       (project: Project) =>
         project.name.toLowerCase().includes(e.target.value.toLowerCase()) ||
         project.projectContract
@@ -53,40 +58,57 @@ export default function ExplorePage() {
 
   const clearSearch = () => {
     setSearchValue("")
-    setProjects(initialData.projects)
+    setProjects(withNetworkAppened(initialData.projects))
   }
 
   const handleTagChange = (value: string) => {
     if (!initialData || !initialData.projects) return
 
+    const projectsAppended = withNetworkAppened(initialData.projects)
+
     if (!value || value === "") {
-      setProjects(initialData.projects)
+      setProjects(projectsAppended)
       return
     }
 
-    const filtered = initialData.projects.filter((project: Project) =>
+    const filtered = projectsAppended.filter((project: Project) =>
       project.tags.includes(value)
     )
 
     setProjects(filtered)
   }
 
+  const withNetworkAppened = (data: Project[]) => {
+    const network: NetworkName =
+      (chain?.network as NetworkName) || chainConfig.defaultNetwork
+    const networkInfo =
+      chainConfig.networks[network as keyof typeof chainConfig.networks]
+
+    return data.map((project) => ({
+      ...project,
+      network,
+      blockExplorer: `${networkInfo.blockExplorer.url}/address/${project.projectContract}`,
+    }))
+  }
+
+  const initProjects = () => {
+    setProjects(withNetworkAppened(initialData.projects))
+    setTags(
+      initialData.projects
+        // Gather all tags from all projects
+        .map((project: Project) => project.tags)
+        .flat()
+        // Remove duplicates
+        .filter((tag: string, index: number, self: string[]) => {
+          return self.indexOf(tag) === index
+        })
+        // Format it for the combobox
+        .map((tag: string) => ({ value: tag, label: tag }))
+    )
+  }
+
   useEffect(() => {
-    if (initialData && initialData.projects) {
-      setProjects(initialData.projects)
-      setTags(
-        initialData.projects
-          // Gather all tags from all projects
-          .map((project: Project) => project.tags)
-          .flat()
-          // Remove duplicates
-          .filter((tag: string, index: number, self: string[]) => {
-            return self.indexOf(tag) === index
-          })
-          // Format it for the combobox
-          .map((tag: string) => ({ value: tag, label: tag }))
-      )
-    }
+    if (initialData && initialData.projects) initProjects()
   }, [initialData])
 
   return (

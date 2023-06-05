@@ -14,4 +14,6 @@ export type ProjectTable = {
   initiator: string
   shares: string
   contributors: string
+  network: string
+  blockExplorer: string
 }

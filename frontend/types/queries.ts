@@ -12,6 +12,9 @@ export interface Project {
   shares: number[]
   contributors: { id: string }[]
   totalRaised: number
+  // We add these fields to the Project type after the query
+  network: string
+  blockExplorer: string
 }
 
 export interface GetProjectsData {
