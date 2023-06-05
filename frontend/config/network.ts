@@ -3,9 +3,9 @@ import LinkIcon from "@/assets/icons/link.svg"
 import MaticIcon from "@/assets/icons/matic.svg"
 
 import { NetworkConfig, NetworkMapping, NetworkName } from "@/types/network"
-import dacAggregatorAbi from "@/config/constants/abis/DACAggregator.json"
-import dacContributorAccountAbi from "@/config/constants/abis/DACContributorAccount.json"
-import dacProjectAbi from "@/config/constants/abis/DACProject.json"
+import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
+import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
+import { DACProjectAbi } from "@/config/constants/abis/DACProject"
 import networkMappingJson from "@/config/constants/networkMapping.json"
 
 export const networkMapping: NetworkMapping =
@@ -62,6 +62,11 @@ export const networkConfig: NetworkConfig = {
     },
   },
 }
+
+const dacAggregatorAbi: Readonly<typeof DACAggregatorAbi> = DACAggregatorAbi
+const dacProjectAbi: Readonly<typeof DACProjectAbi> = DACProjectAbi
+const dacContributorAccountAbi: Readonly<typeof DACContributorAccountAbi> =
+  DACContributorAccountAbi
 
 export const abi = {
   dacAggregator: dacAggregatorAbi,

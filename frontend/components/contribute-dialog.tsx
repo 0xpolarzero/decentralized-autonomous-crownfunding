@@ -4,6 +4,7 @@ import useGlobalStore from "@/stores/useGlobalStore"
 import { Row } from "@tanstack/react-table"
 import { waitForTransaction, writeContract } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
+import { etherUnits, parseUnits } from "viem"
 
 import { abi, currencies, networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
@@ -42,7 +43,7 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-  const [amount, setAmount] = useState<number>(0)
+  const [amount, setAmount] = useState<number | string>(0)
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
   const [isFormValid, setIsFormValid] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -52,13 +53,48 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
 
     setIsLoading(true)
 
+    console.log(
+      contributorAccountAddress,
+      data.original.projectContract,
+      parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
+      endDate.getTime() / 1000
+    )
+
     try {
       // Write to contract
       const { hash } = await writeContract({
         address: contributorAccountAddress,
-        abi: abi.dacContributorAccount,
+        abi: [
+          {
+            type: "function",
+            name: "createContribution",
+            constant: false,
+            stateMutability: "payable",
+            payable: true,
+            inputs: [
+              {
+                type: "address",
+                name: "_projectContract",
+              },
+              {
+                type: "uint256",
+                name: "_amount",
+              },
+              {
+                type: "uint256",
+                name: "_endDate",
+              },
+            ],
+            outputs: [],
+          },
+        ],
         functionName: "createContribution",
-        args: [data.original.projectContract, amount, endDate.getTime() / 1000],
+        args: [
+          data.original.projectContract,
+          parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
+          endDate.getTime() / 1000,
+        ],
+        value: parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
       })
       // Wait for completion
       const receipt = await waitForTransaction({
@@ -101,15 +137,15 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
   }
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isNaN(Number(e.target.value))) return
-    setAmount(Number(e.target.value))
+    setAmount(e.target.value)
   }
 
   useEffect(() => {
-    if (amount > 0 && !!endDate) {
-      setIsFormValid(true)
-    } else {
+    console.log(amount)
+    if (isNaN(Number(amount)) || Number(amount) <= 0 || !endDate) {
       setIsFormValid(false)
+    } else {
+      setIsFormValid(true)
     }
   }, [amount, endDate])
 
@@ -160,7 +196,11 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
       <DialogFooter>
         <TooltipWithConditionComponent
           shownContent={
-            <Button type="submit" disabled={!isFormValid || isLoading}>
+            <Button
+              type="submit"
+              disabled={!isFormValid || isLoading}
+              onClick={createContribution}
+            >
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}

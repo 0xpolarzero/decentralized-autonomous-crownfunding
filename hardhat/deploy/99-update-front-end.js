@@ -1,4 +1,5 @@
 const { ethers, network } = require('hardhat');
+const { format } = require('util');
 const fs = require('fs');
 const { developmentChains } = require('../helper-hardhat-config');
 
@@ -46,22 +47,47 @@ async function updateContractAddresses() {
 async function updateAbi() {
   const dacAggregator = await ethers.getContract('DACAggregator');
   fs.writeFileSync(
-    `${frontEndAbiFolder}DACAggregator.json`,
-    dacAggregator.interface.format(ethers.utils.FormatTypes.json),
+    `${frontEndAbiFolder}DACAggregator.ts`,
+    format(
+      'export const DACAggregatorAbi = %s',
+      JSON.stringify(
+        JSON.parse(
+          dacAggregator.interface.format(ethers.utils.FormatTypes.json),
+        ),
+        null,
+        2,
+      ),
+    ),
   );
 
   const dacProject = await ethers.getContractFactory('DACProject');
   fs.writeFileSync(
-    `${frontEndAbiFolder}DACProject.json`,
-    dacProject.interface.format(ethers.utils.FormatTypes.json),
+    `${frontEndAbiFolder}DACProject.ts`,
+    format(
+      'export const DACProjectAbi = %s',
+      JSON.stringify(
+        JSON.parse(dacProject.interface.format(ethers.utils.FormatTypes.json)),
+        null,
+        2,
+      ),
+    ),
   );
 
   const dacContributorAccount = await ethers.getContractFactory(
     'DACContributorAccount',
   );
   fs.writeFileSync(
-    `${frontEndAbiFolder}DACContributorAccount.json`,
-    dacContributorAccount.interface.format(ethers.utils.FormatTypes.json),
+    `${frontEndAbiFolder}DACContributorAccount.ts`,
+    format(
+      'export const DACContributorAccountAbi = %s',
+      JSON.stringify(
+        JSON.parse(
+          dacContributorAccount.interface.format(ethers.utils.FormatTypes.json),
+        ),
+        null,
+        2,
+      ),
+    ),
   );
 }
 
