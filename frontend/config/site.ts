@@ -17,9 +17,9 @@ export const siteConfig = {
       href: "/explore",
     },
     {
-      title: "Contributor account",
-      slug: "account",
-      href: "/account",
+      title: "Contributor dashboard",
+      slug: "dashboard",
+      href: "/dashboard",
     },
   ],
   links: {
