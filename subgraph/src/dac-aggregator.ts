@@ -130,7 +130,18 @@ export function handleContributionsTransfered(
       event.params.contributions[i].amount,
     );
 
+    // Update the total raised for the project
+    let project = Project.load(contribution.project);
+
+    // It should not be null, but just in case
+    if (!project) continue;
+
+    project.totalRaised = project.totalRaised.plus(
+      event.params.contributions[i].amount,
+    );
+
     contribution.save();
+    project.save();
   }
 }
 

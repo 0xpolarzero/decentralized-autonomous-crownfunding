@@ -32,4 +32,12 @@ type Contribution @entity {
   amountDistributed: BigInt!
   startedAt: BigInt!
   endsAt: BigInt!
+  # records: [ContributionRecord!]! @derivedFrom(field: "contribution")
 }
+
+# type ContributionRecord @entity {
+#   id: ID!
+#   contribution: Contribution!
+#   amount: BigInt!
+#   timestamp: BigInt!
+# }
