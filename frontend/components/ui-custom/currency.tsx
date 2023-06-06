@@ -1,6 +1,7 @@
 import React from "react"
 import Image from "next/image"
 import useGlobalStore from "@/stores/useGlobalStore"
+import { formatUnits } from "viem"
 
 import { currencies, networkConfig } from "@/config/network"
 import {
@@ -23,7 +24,12 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
   const actualCurrency =
     currency === "native" ? currentNetwork?.currency.symbol : currency
 
-  const formatAmount = (value: number) => (value ? value.toFixed(4) : "0")
+  const formatAmount = (value: number) =>
+    value
+      ? Number(
+          formatUnits(BigInt(value), currentNetwork?.currency.decimals || 18)
+        ).toFixed(4)
+      : "0"
 
   const getCurrencyIcon = () => {
     if (currency === "native") {
@@ -51,7 +57,7 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          {amount}{" "}
+          {formatUnits(BigInt(amount), currentNetwork?.currency.decimals || 18)}{" "}
           {currency === "native"
             ? actualCurrency
             : networkConfig.defaultCurrency.symbol}

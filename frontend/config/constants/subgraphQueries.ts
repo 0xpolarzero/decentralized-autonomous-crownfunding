@@ -14,9 +14,6 @@ export const GET_PROJECTS = gql`
       initiator
       collaborators
       shares
-      contributors {
-        id
-      }
       totalRaised
     }
   }
@@ -30,6 +27,11 @@ export const GET_CONTRIBUTOR_ACCOUNT = gql`
       createdAt
       contributions {
         id
+        project
+        amountStored
+        amountDistributed
+        startedAt
+        endsAt
       }
       totalContributed
     }
@@ -52,8 +54,7 @@ export const GET_CONTRIBUTIONS_FOR_PROJECT = gql`
       shares
       contributors {
         id
-        accountContract
-        projectContract
+        account
         amountStored
         amountDistributed
         startedAt
@@ -78,9 +79,6 @@ export const GET_PROJECTS_FOR_USER = gql`
       initiator
       collaborators
       shares
-      contributors {
-        id
-      }
       totalRaised
     }
   }
@@ -101,6 +99,14 @@ export const GET_PROJECT_BY_SLUG_CONTRACT = gql`
       collaborators
       shares
       totalRaised
+      contributors {
+        id
+        account
+        amountStored
+        amountDistributed
+        startedAt
+        endsAt
+      }
     }
   }
 `

@@ -17,6 +17,7 @@ import {
   MoreHorizontal,
 } from "lucide-react"
 
+import { ProjectTable } from "@/types/projects"
 import { networkConfig } from "@/config/network"
 import { siteConfig } from "@/config/site"
 import useCopyToClipboard from "@/hooks/copy-to-clipboard"
@@ -37,7 +38,6 @@ import AddressComponent from "@/components/ui-custom/address"
 import CurrencyComponent from "@/components/ui-custom/currency"
 import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
 import TooltipComponent from "@/components/ui-custom/tooltip"
-import { ProjectTable } from "@/app/explore/table-projects/types"
 
 type CellProps = {
   row: Row<ProjectTable>
@@ -54,11 +54,7 @@ const NameCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) =>
 /*                                   status                                   */
 /* -------------------------------------------------------------------------- */
 
-const StatusCell: React.FC<CellProps> = ({
-  row,
-}: {
-  row: Row<ProjectTable>
-}) => {
+const StatusCell: React.FC<CellProps> = ({ row }) => {
   const status: string = row.getValue("status")
   const lastActivityAt: string = row.original.lastActivityAt
 
@@ -108,11 +104,7 @@ const StatusCell: React.FC<CellProps> = ({
 /*                                collaborators                               */
 /* -------------------------------------------------------------------------- */
 
-const CollaboratorsCell: React.FC<CellProps> = ({
-  row,
-}: {
-  row: Row<ProjectTable>
-}) => {
+const CollaboratorsCell: React.FC<CellProps> = ({ row }) => {
   const addresses: `0x${string}`[] = row.getValue("collaborators")
   return (
     <div className="space-y-2">
@@ -131,11 +123,7 @@ const CollaboratorsCell: React.FC<CellProps> = ({
 /*                                 totalRaised                                */
 /* -------------------------------------------------------------------------- */
 
-const TotalRaisedCell: React.FC<CellProps> = ({
-  row,
-}: {
-  row: Row<ProjectTable>
-}) => {
+const TotalRaisedCell: React.FC<CellProps> = ({ row }) => {
   const totalRaised: number = row.getValue("totalRaised")
   return <CurrencyComponent amount={Number(totalRaised)} currency="native" />
 }
@@ -144,11 +132,7 @@ const TotalRaisedCell: React.FC<CellProps> = ({
 /*                                    links                                   */
 /* -------------------------------------------------------------------------- */
 
-const LinksCell: React.FC<CellProps> = ({
-  row,
-}: {
-  row: Row<ProjectTable>
-}) => {
+const LinksCell: React.FC<CellProps> = ({ row }) => {
   const links: string[] = row.getValue("links")
   return (
     <div className="space-y-2">
@@ -169,7 +153,7 @@ const LinksCell: React.FC<CellProps> = ({
 /*                                    tags                                    */
 /* -------------------------------------------------------------------------- */
 
-const TagsCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) => {
+const TagsCell: React.FC<CellProps> = ({ row }) => {
   const tags: string[] = row.getValue("tags")
   return (
     <div className="flex flex-wrap justify-between gap-2">
@@ -188,11 +172,7 @@ const TagsCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) => {
 /*                                   actions                                  */
 /* -------------------------------------------------------------------------- */
 
-const ActionsCell: React.FC<CellProps> = ({
-  row,
-}: {
-  row: Row<ProjectTable>
-}) => {
+const ActionsCell: React.FC<CellProps> = ({ row }) => {
   const currentNetwork = useGlobalStore((state) => state.currentNetwork)
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]

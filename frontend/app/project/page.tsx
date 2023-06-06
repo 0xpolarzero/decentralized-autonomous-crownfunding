@@ -5,7 +5,7 @@ import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { LucideBanknote } from "lucide-react"
 
-import { Project } from "@/types/queries"
+import { Project, ProjectTable } from "@/types/projects"
 import { client } from "@/config/apollo-client"
 import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraphQueries"
 import { Badge } from "@/components/ui/badge"
@@ -14,11 +14,14 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import ContributeDialogComponent from "@/components/contribute-dialog"
+import { columns } from "@/components/table-collaborators/columns"
+import formatData from "@/components/table-collaborators/format-data"
+import CurrencyComponent from "@/components/ui-custom/currency"
+import { DataTable } from "@/components/ui-custom/data-table"
+import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
 import InfoComponent from "@/components/ui-custom/info"
 import TooltipComponent from "@/components/ui-custom/tooltip"
-
-import { ProjectTable } from "../explore/table-projects/types"
 
 export default function ProjectPage() {
   const { currentNetwork, hasContributorAccount } = useGlobalStore((state) => ({
@@ -72,14 +75,12 @@ export default function ProjectPage() {
     fetchProject()
   }, [])
 
-  console.log(project?.contributors)
-
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="flex max-w-[980px] flex-col items-start gap-2">
         {loading ? (
           <Skeleton className="h-[200px] w-[100%]" />
-        ) : error ? (
+        ) : error || !project ? (
           <div className="text-muted-foreground">
             <p>
               There was an error retrieving the contract at the provided
@@ -221,6 +222,51 @@ export default function ProjectPage() {
               </Link>
             </div>
             <Separator />
+
+            {/* -------------------------------------------------------------------------- */
+            /*                                FUNDS RAISED                                */
+            /* -------------------------------------------------------------------------- */}
+            <div className="flex w-[100%] items-center justify-between gap-2">
+              <span className="text-lg opacity-80">Funds raised</span>
+              <span className="text-2xl font-medium">
+                <CurrencyComponent
+                  amount={Number(project?.totalRaised) || 0}
+                  currency="native"
+                />
+              </span>
+            </div>
+            {/**
+             * @dev A table with timed contributions can be done but needs to add records to contributions (see subgraph schema)
+             * @dev It can be added later
+             * @dev See @/components/table-raised for the table (to be continued)
+             */}
+
+            {/* <div className="w-[100%]">
+              {loading ? (
+                <DataTableSkeleton columns={columns} rowCount={10} />
+              ) : error ? (
+                "There was an error retrieving the data."
+              ) : (
+                <DataTable columns={columns} data={project?.contributors} />
+              )}
+            </div> */}
+
+            {/* -------------------------------------------------------------------------- */
+            /*                                COLLABORATORS                               */
+            /* -------------------------------------------------------------------------- */}
+            <span className="text-lg opacity-80">Collaborators</span>
+            <div className="w-[100%]">
+              {loading ? (
+                <DataTableSkeleton columns={columns} rowCount={10} />
+              ) : error ? (
+                "There was an error retrieving the data."
+              ) : (
+                <DataTable
+                  columns={columns}
+                  data={formatData(project?.collaborators, project?.shares)}
+                />
+              )}
+            </div>
           </div>
         )}
       </div>

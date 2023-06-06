@@ -1,4 +1,4 @@
-import { Project } from "@/types/queries"
+import { Project } from "@/types/projects"
 
 export default function formatData(data: Project[]) {
   return data.map((project) => {

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
 
-import { Project } from "@/types/queries"
+import { Project } from "@/types/projects"
 import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
 import { networkConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
@@ -13,8 +13,11 @@ import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
 import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 
-import { columns, columnsSkeleton } from "./table-projects/columns"
-import formatData from "./table-projects/format-data"
+import {
+  columns,
+  columnsSkeleton,
+} from "../../components/table-projects/columns"
+import formatData from "../../components/table-projects/format-data"
 
 export default function ExplorePage() {
   const {
@@ -149,7 +152,7 @@ export default function ExplorePage() {
         {loading ? (
           <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
         ) : error ? (
-          "error"
+          "There was an error fetching the projects. Please try again later."
         ) : (
           <DataTable columns={columns} data={formatData(projects)} />
         )}

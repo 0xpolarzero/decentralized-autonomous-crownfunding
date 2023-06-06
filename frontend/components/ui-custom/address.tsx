@@ -13,11 +13,13 @@ import {
 interface AddressComponentProps {
   address: `0x${string}`
   tryEns: boolean
+  large?: boolean
 }
 
 const AddressComponent: React.FC<AddressComponentProps> = ({
   address,
   tryEns,
+  large = false,
 }) => {
   const {
     data: ensName,
@@ -30,21 +32,28 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
     successDuration: 2000,
   })
 
-  const [displayAddress, setDisplayAddress] = useState("")
-
-  useEffect(() => {
-    if (tryEns && !isError && !isLoading && ensName) {
-      setDisplayAddress(ensName)
-    } else {
-      // slice the address to keep the first 5 letters and last 4 letters
-      setDisplayAddress(`${address.slice(0, 5)}...${address.slice(-4)}`)
-    }
-  }, [address, tryEns, isError, isLoading, ensName])
+  const renderAddress = (full = false) =>
+    full ? address : `${address.slice(0, 4)}...${address.slice(-4)}`
 
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>{displayAddress}</TooltipTrigger>
+        <TooltipTrigger>
+          {tryEns && !isError && !isLoading && ensName ? (
+            ensName
+          ) : (
+            <>
+              <div className="block sm:hidden">{renderAddress()}</div>
+              <div className="hidden sm:block md:hidden">
+                {renderAddress(large)}
+              </div>
+              <div className="hidden md:block 2xl:hidden">
+                {renderAddress(large)}
+              </div>
+              <div className="hidden 2xl:block">{address}</div>
+            </>
+          )}
+        </TooltipTrigger>
         <TooltipContent className="flex items-center space-x-2">
           {address}
           <button
