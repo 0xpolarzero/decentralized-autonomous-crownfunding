@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { Row } from "@tanstack/react-table"
-import { waitForTransaction, writeContract } from "@wagmi/core"
+import { waitForTransaction } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
-import { etherUnits, parseUnits } from "viem"
+import { parseUnits } from "viem"
+import { useContractWrite } from "wagmi"
 
+import { NetworkInfo } from "@/types/network"
+import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { abi, currencies, networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
 import {
@@ -40,109 +44,88 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
       currentNetwork: state.currentNetwork,
     })
   )
+
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
   const [amount, setAmount] = useState<number | string>(0)
   const [endDate, setEndDate] = useState<Date | undefined>(new Date())
   const [isFormValid, setIsFormValid] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isProcessingTransaction, setIsProcessingTransaction] =
+    useState<boolean>(false)
 
-  const createContribution = async () => {
-    if (!endDate) return
+  const { isLoading: isCreatingContribution, write: createContribution } =
+    useContractWrite({
+      address: contributorAccountAddress,
+      abi: DACContributorAccountAbi,
+      functionName: "createContribution",
+      args: [
+        data.original.projectContract,
+        parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
+        endDate ? endDate.getTime() / 1000 : 0,
+      ],
+      value: parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
+      enabled: Number(amount) > 0 && typeof endDate !== "undefined",
 
-    setIsLoading(true)
+      onSuccess: async (tx) => {
+        setIsProcessingTransaction(true)
 
-    console.log(
-      contributorAccountAddress,
-      data.original.projectContract,
-      parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
-      endDate.getTime() / 1000
-    )
-
-    try {
-      // Write to contract
-      const { hash } = await writeContract({
-        address: contributorAccountAddress,
-        abi: [
-          {
-            type: "function",
-            name: "createContribution",
-            constant: false,
-            stateMutability: "payable",
-            payable: true,
-            inputs: [
-              {
-                type: "address",
-                name: "_projectContract",
-              },
-              {
-                type: "uint256",
-                name: "_amount",
-              },
-              {
-                type: "uint256",
-                name: "_endDate",
-              },
-            ],
-            outputs: [],
-          },
-        ],
-        functionName: "createContribution",
-        args: [
-          data.original.projectContract,
-          parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
-          endDate.getTime() / 1000,
-        ],
-        value: parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
-      })
-      // Wait for completion
-      const receipt = await waitForTransaction({
-        hash,
-        timeout: networkInfo.timeout,
-      })
-
-      if (receipt.status === "success") {
-        toast({
-          title: "Contribution created",
-          description: "Your contribution was successfully created.",
-          action: (
-            <ToastAction
-              altText="See on explorer"
-              onClick={() =>
-                window.open(
-                  `${networkInfo.blockExplorer.url}/tx/${receipt.transactionHash}`
-                )
-              }
-            />
-          ),
+        const receipt = await waitForTransaction({
+          hash: tx.hash,
+          confirmations: 2,
         })
-      } else {
+        console.log(receipt)
+
+        if (receipt.status === "success") {
+          toast({
+            title: "Contribution created",
+            description: (
+              <>
+                <p>Your contribution was successfully created.</p>
+                <p>
+                  <Link
+                    href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    See on block explorer
+                  </Link>
+                </p>
+              </>
+            ),
+          })
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Something went wrong",
+            description: "Please try again.",
+          })
+        }
+
+        setIsProcessingTransaction(false)
+      },
+      onError: (err) => {
         toast({
           variant: "destructive",
-          title: "Contribution creation failed",
+          title: "Something went wrong",
           description: "Please try again.",
         })
-      }
-    } catch (err) {
-      console.error(err)
-      toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description: "Please try again.",
-      })
-    }
-
-    setIsLoading(false)
-  }
+        console.error(err)
+      },
+    })
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value)
   }
 
   useEffect(() => {
-    console.log(amount)
-    if (isNaN(Number(amount)) || Number(amount) <= 0 || !endDate) {
+    if (
+      isNaN(Number(amount)) ||
+      Number(amount) <= 0 ||
+      !endDate ||
+      endDate < new Date()
+    ) {
       setIsFormValid(false)
     } else {
       setIsFormValid(true)
@@ -194,22 +177,33 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <TooltipWithConditionComponent
-          shownContent={
-            <Button
-              type="submit"
-              disabled={!isFormValid || isLoading}
-              onClick={createContribution}
-            >
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Confirm
-            </Button>
-          }
-          tooltipContent="Please fill in all fields"
-          condition={!isFormValid}
-        />
+        <div
+          className={`flex grow items-center ${
+            isProcessingTransaction ? "justify-between" : "justify-end"
+          }`}
+        >
+          {isProcessingTransaction ? (
+            <span className="justify-self-start text-sm text-gray-400">
+              Your contribution is being submitted...
+            </span>
+          ) : null}
+          <TooltipWithConditionComponent
+            shownContent={
+              <Button
+                type="submit"
+                disabled={!isFormValid || isCreatingContribution}
+                onClick={() => createContribution()}
+              >
+                {isCreatingContribution ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Confirm
+              </Button>
+            }
+            tooltipContent="Please fill in all fields"
+            condition={!isFormValid}
+          />
+        </div>
       </DialogFooter>
     </DialogContent>
   )

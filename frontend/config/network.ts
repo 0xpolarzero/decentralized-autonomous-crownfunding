@@ -63,13 +63,8 @@ export const networkConfig: NetworkConfig = {
   },
 }
 
-const dacAggregatorAbi: Readonly<typeof DACAggregatorAbi> = DACAggregatorAbi
-const dacProjectAbi: Readonly<typeof DACProjectAbi> = DACProjectAbi
-const dacContributorAccountAbi: Readonly<typeof DACContributorAccountAbi> =
-  DACContributorAccountAbi
-
 export const abi = {
-  dacAggregator: dacAggregatorAbi,
-  dacProject: dacProjectAbi,
-  dacContributorAccount: dacContributorAccountAbi,
+  dacAggregator: DACAggregatorAbi,
+  dacProject: DACProjectAbi,
+  dacContributorAccount: DACContributorAccountAbi,
 }

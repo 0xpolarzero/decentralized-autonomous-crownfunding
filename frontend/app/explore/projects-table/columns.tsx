@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
-import useCopyToClipboard from "@/utils/copy-to-clipboard"
 import { Cell, ColumnDef, Row } from "@tanstack/react-table"
 import {
   ArrowUpDown,
@@ -20,6 +19,7 @@ import {
 
 import { networkConfig } from "@/config/network"
 import { siteConfig } from "@/config/site"
+import useCopyToClipboard from "@/hooks/copy-to-clipboard"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"

@@ -84,7 +84,7 @@ export function ConnectButton() {
     if (chain) {
       setCurrentNetwork(
         networkConfig.networks[
-          chain.name as keyof typeof networkConfig.networks
+          chain.network as keyof typeof networkConfig.networks
         ]
       )
     } else {

@@ -433,11 +433,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_accountContract",
-        "type": "address"
-      }
+      { "internalType": "address", "name": "_sender", "type": "address" }
     ],
     "name": "onAllContributionsCanceled",
     "outputs": [],
@@ -446,11 +442,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_accountContract",
-        "type": "address"
-      },
+      { "internalType": "address", "name": "_sender", "type": "address" },
       {
         "components": [
           {
@@ -483,11 +475,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_accountContract",
-        "type": "address"
-      },
+      { "internalType": "address", "name": "_sender", "type": "address" },
       {
         "components": [
           {
@@ -510,11 +498,7 @@
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "_accountContract",
-        "type": "address"
-      },
+      { "internalType": "address", "name": "_sender", "type": "address" },
       {
         "components": [
           {
