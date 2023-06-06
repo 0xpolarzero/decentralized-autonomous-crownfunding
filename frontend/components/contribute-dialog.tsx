@@ -8,9 +8,8 @@ import { Loader2 } from "lucide-react"
 import { parseUnits } from "viem"
 import { useContractWrite } from "wagmi"
 
-import { NetworkInfo } from "@/types/network"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
-import { abi, currencies, networkConfig } from "@/config/network"
+import { currencies, networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
 import {
   DialogContent,
@@ -21,7 +20,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import InfoComponent from "@/components/ui-custom/info"
 import { ProjectTable } from "@/app/explore/projects-table/types"
