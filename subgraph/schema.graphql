@@ -10,8 +10,8 @@ type Project @entity {
   initiator: Bytes! # address
   collaborators: [Bytes!]! # address[]
   shares: [BigInt!]! # uint256[]
-  contributors: [Contribution!]! # @derivedFrom(field: "projectContract")
-  totalRaised: BigInt! # @derivedFrom(field: "projectContract")
+  contributors: [Contribution!]! @derivedFrom(field: "project")
+  totalRaised: BigInt!
 }
 
 type ContributorAccount @entity {
@@ -19,14 +19,15 @@ type ContributorAccount @entity {
   owner: Bytes! # address
   accountContract: Bytes! # address
   createdAt: BigInt!
-  contributions: [Contribution!]! # @derivedFrom(field: "accountContract")
-  totalContributed: BigInt! # @derivedFrom(field: "accountContract")
+  contributions: [Contribution!]! @derivedFrom(field: "account")
+  contributionsCount: BigInt!
+  totalContributed: BigInt!
 }
 
 type Contribution @entity {
   id: ID!
-  accountContract: Bytes! # address
-  projectContract: Bytes! # address
+  account: ContributorAccount!
+  project: Project!
   amountStored: BigInt!
   amountDistributed: BigInt!
   startedAt: BigInt!

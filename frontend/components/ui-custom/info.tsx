@@ -1,16 +1,28 @@
 import React from "react"
-import { LucideInfo } from "lucide-react"
+import { LucideAlertCircle, LucideInfo, LucideXCircle } from "lucide-react"
 
 import TooltipComponent from "./tooltip"
 
 interface InfoComponentProps {
   content: React.ReactNode
+  type?: "info" | "warning" | "error"
 }
 
-const InfoComponent: React.FC<InfoComponentProps> = ({ content }) => {
+const InfoComponent: React.FC<InfoComponentProps> = ({
+  content,
+  type = "info",
+}) => {
   return (
     <TooltipComponent
-      shownContent={<LucideInfo size={16} />}
+      shownContent={
+        type === "warning" ? (
+          <LucideAlertCircle size={16} color="var(--yellow)" />
+        ) : type === "error" ? (
+          <LucideXCircle size={16} color="var(--red)" />
+        ) : (
+          <LucideInfo size={16} />
+        )
+      }
       tooltipContent={content}
     />
   )

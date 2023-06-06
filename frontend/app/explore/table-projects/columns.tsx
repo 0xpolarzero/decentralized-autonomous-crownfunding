@@ -35,8 +35,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import ContributeDialogComponent from "@/components/contribute-dialog"
 import AddressComponent from "@/components/ui-custom/address"
 import CurrencyComponent from "@/components/ui-custom/currency"
+import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
 import TooltipComponent from "@/components/ui-custom/tooltip"
-import { ProjectTable } from "@/app/explore/projects-table/types"
+import { ProjectTable } from "@/app/explore/table-projects/types"
 
 type CellProps = {
   row: Row<ProjectTable>
@@ -60,9 +61,6 @@ const StatusCell: React.FC<CellProps> = ({
 }) => {
   const status: string = row.getValue("status")
   const lastActivityAt: string = row.original.lastActivityAt
-  const timeSinceLastActivity = Date.now() - Date.parse(lastActivityAt)
-  const timeSinceLastActivityInDays =
-    timeSinceLastActivity / 1000 / 60 / 60 / 24
 
   if (status)
     return (
@@ -73,7 +71,15 @@ const StatusCell: React.FC<CellProps> = ({
             <span>Active</span>
           </span>
         }
-        tooltipContent={`Last activity ${timeSinceLastActivityInDays.toFixed()} days ago (${lastActivityAt})`}
+        tooltipContent={
+          <>
+            Last activity{" "}
+            <ElapsedTimeComponent
+              timestamp={new Date(lastActivityAt).getTime()}
+            />{" "}
+            ({lastActivityAt})
+          </>
+        }
       />
     )
 
@@ -85,7 +91,15 @@ const StatusCell: React.FC<CellProps> = ({
           <span>Inactive</span>
         </span>
       }
-      tooltipContent={`Last activity ${timeSinceLastActivityInDays.toFixed()} days ago (${lastActivityAt})`}
+      tooltipContent={
+        <>
+          Last activity{" "}
+          <ElapsedTimeComponent
+            timestamp={new Date(lastActivityAt).getTime()}
+          />{" "}
+          ({lastActivityAt})
+        </>
+      }
     />
   )
 }
@@ -183,6 +197,12 @@ const ActionsCell: React.FC<CellProps> = ({
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
+  console.log(new Date(row.original.lastActivityAt))
+
+  const isStillActive = (): boolean =>
+    new Date().getTime() - new Date(row.original.lastActivityAt).getTime() <
+    1000 * 60 * 60 * 24 * 30 // 30 days
+
   const copyToClipboard = useCopyToClipboard()
   const hasContributorAccount = useGlobalStore(
     (state) => state.hasContributorAccount
@@ -222,7 +242,7 @@ const ActionsCell: React.FC<CellProps> = ({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DialogTrigger asChild>
-            {hasContributorAccount ? (
+            {hasContributorAccount && isStillActive() ? (
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                 <LucideBanknote
                   size={16}
@@ -244,20 +264,24 @@ const ActionsCell: React.FC<CellProps> = ({
                   </DropdownMenuItem>
                 }
                 tooltipContent={
-                  <>
-                    <p>You need to connect your wallet to contribute.</p>
-                    <p>
-                      Make sure you are on a supported chain and you have a
-                      contributor account.
-                    </p>
-                  </>
+                  isStillActive() ? (
+                    <>
+                      <p>You need to connect your wallet to contribute.</p>
+                      <p>
+                        Make sure you are on a supported chain and you have a
+                        contributor account.
+                      </p>
+                    </>
+                  ) : (
+                    <>This project is no longer active.</>
+                  )
                 }
               />
             )}
           </DialogTrigger>
         </DropdownMenuContent>
       </DropdownMenu>
-      <ContributeDialogComponent data={row} />
+      <ContributeDialogComponent data={row.original} />
     </Dialog>
   )
 }

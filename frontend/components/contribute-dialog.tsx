@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
-import { Row } from "@tanstack/react-table"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
 import { parseUnits } from "viem"
@@ -22,13 +21,13 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import InfoComponent from "@/components/ui-custom/info"
-import { ProjectTable } from "@/app/explore/projects-table/types"
+import { ProjectTable } from "@/app/explore/table-projects/types"
 
 import { DatePickerComponent } from "./ui-custom/date-picker"
 import TooltipWithConditionComponent from "./ui-custom/tooltip-with-condition"
 
 interface ContributeDialogComponentProps {
-  data: Row<ProjectTable>
+  data: ProjectTable | null
 }
 
 const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
@@ -58,7 +57,7 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
       abi: DACContributorAccountAbi,
       functionName: "createContribution",
       args: [
-        data.original.projectContract,
+        data?.projectContract,
         parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
         endDate ? endDate.getTime() / 1000 : 0,
       ],
@@ -133,7 +132,7 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Contribute to {data.original.name}</DialogTitle>
+        <DialogTitle>Contribute to {data?.name}</DialogTitle>
         <DialogDescription className="flex flex-col gap-2">
           <p className="mt-2 text-justify">
             This will{" "}

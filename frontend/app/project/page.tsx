@@ -1,15 +1,46 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import useGlobalStore from "@/stores/useGlobalStore"
+import { LucideBanknote } from "lucide-react"
 
+import { Project } from "@/types/queries"
 import { client } from "@/config/apollo-client"
 import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraphQueries"
+import { Badge } from "@/components/ui/badge"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import ContributeDialogComponent from "@/components/contribute-dialog"
+import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
+import InfoComponent from "@/components/ui-custom/info"
+import TooltipComponent from "@/components/ui-custom/tooltip"
+
+import { ProjectTable } from "../explore/table-projects/types"
 
 export default function ProjectPage() {
-  const [project, setProject] = useState(null)
-  const [error, setError] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { currentNetwork, hasContributorAccount } = useGlobalStore((state) => ({
+    currentNetwork: state.currentNetwork,
+    hasContributorAccount: state.hasContributorAccount,
+  }))
+
+  const [project, setProject] = useState<Project | null>(null)
+  const [error, setError] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
+
+  const createdAtFormatted = project?.createdAt
+    ? new Date(project?.createdAt * 1000)
+    : undefined
+  const lastActivityAtFormatted = project?.lastActivityAt
+    ? new Date(project?.lastActivityAt * 1000)
+    : undefined
+
+  const isStillActive = (): boolean => {
+    const lastActivity = lastActivityAtFormatted?.getTime() || 0
+    return new Date().getTime() - lastActivity < 1000 * 60 * 60 * 24 * 30 // 30 days
+  }
 
   const fetchProject = async () => {
     // 'https://.../project?address=0x1234'
@@ -41,6 +72,8 @@ export default function ProjectPage() {
     fetchProject()
   }, [])
 
+  console.log(project?.contributors)
+
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="flex max-w-[980px] flex-col items-start gap-2">
@@ -57,25 +90,137 @@ export default function ProjectPage() {
             <p>{new URLSearchParams(window.location.search).get("address")}</p>
           </div>
         ) : (
-          <div className="flex flex-col items-start gap-2">
-            <div className="flex items-center gap-2">
-              <div className="text-4xl font-bold">{project?.name}</div>
-              <div className="text-sm text-gray-500">{project?.status}</div>
+          <div className="flex w-[100%] flex-col items-start gap-2">
+            {/* -------------------------------------------------------------------------- */
+            /*                                   HEADER                                   */
+            /* -------------------------------------------------------------------------- */}
+            <div className="flex w-[100%] items-center justify-between gap-2">
+              <div className="text-3xl">{project?.name}</div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  {hasContributorAccount && isStillActive() ? (
+                    <Button>
+                      <LucideBanknote size={16} className="mr-2" />
+                      <span>Contribute</span>
+                    </Button>
+                  ) : (
+                    <TooltipComponent
+                      shownContent={
+                        <Button disabled>
+                          <LucideBanknote size={16} className="mr-2" />
+                          <span>Contribute</span>
+                        </Button>
+                      }
+                      tooltipContent={
+                        isStillActive() ? (
+                          <>
+                            <p>
+                              You need to connect your wallet to contribute.
+                            </p>
+                            <p>
+                              Make sure you are on a supported chain and you
+                              have a contributor account.
+                            </p>
+                          </>
+                        ) : (
+                          <>This project is no longer active.</>
+                        )
+                      }
+                    />
+                  )}
+                </DialogTrigger>
+                <ContributeDialogComponent
+                  data={project as ProjectTable | null}
+                />
+              </Dialog>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold">{project?.description}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold">{project?.address}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold">{project?.createdAt}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold">
-                {project?.lastActivityAt}
+            {/* -------------------------------------------------------------------------- */
+            /*                                   CONTENT                                  */
+            /* -------------------------------------------------------------------------- */}
+            <blockquote className="my-2 border-l-2 pl-6 italic">
+              {project?.description}
+            </blockquote>
+
+            <div>
+              <span className="flex items-center gap-2 text-lg opacity-80">
+                Links{" "}
+                <InfoComponent
+                  type="warning"
+                  content="The links provided are not verified by the platform. Please proceed with caution."
+                />
+              </span>
+              <div className="mb-2 flex w-[100%] items-center text-sm text-muted-foreground">
+                {project?.links?.length === 0 ? (
+                  <span className="opacity-50">No links provided</span>
+                ) : (
+                  project?.links.map((link, index) => (
+                    <>
+                      <Link
+                        key={index}
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        {link.replace("https://", "").replace("http://", "")}
+                      </Link>
+                      {index < project?.links?.length - 1 && (
+                        <span className="mx-2 opacity-50">|</span>
+                      )}
+                    </>
+                  ))
+                )}
               </div>
             </div>
+
+            <div>
+              <span className="text-lg opacity-80">Categories</span>
+              <div className="mb-2 mt-1 flex w-[100%] items-center text-sm text-muted-foreground">
+                {project?.tags?.length === 0 ? (
+                  <span className="opacity-50">No links provided</span>
+                ) : (
+                  project?.tags.map((tag, index) => (
+                    <Badge variant="outline" className="mr-2">
+                      {tag}
+                    </Badge>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="my-2 flex w-[100%] justify-between gap-4 text-sm text-muted-foreground">
+              <TooltipComponent
+                shownContent={
+                  <>
+                    Created{" "}
+                    <ElapsedTimeComponent
+                      timestamp={createdAtFormatted?.getTime()}
+                    />
+                  </>
+                }
+                tooltipContent={createdAtFormatted?.toLocaleDateString()}
+              />
+              <TooltipComponent
+                shownContent={
+                  <>
+                    Last active{" "}
+                    <ElapsedTimeComponent
+                      timestamp={lastActivityAtFormatted?.getTime()}
+                    />
+                  </>
+                }
+                tooltipContent={lastActivityAtFormatted?.toLocaleDateString()}
+              />
+              <Link
+                className="text-sm text-muted-foreground underline"
+                href={`${currentNetwork?.blockExplorer.url}address/${project?.projectContract}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                See contract on block explorer
+              </Link>
+            </div>
+            <Separator />
           </div>
         )}
       </div>

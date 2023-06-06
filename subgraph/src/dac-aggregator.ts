@@ -28,7 +28,6 @@ export function handleProjectSubmitted(event: ProjectSubmittedEvent): void {
     (e: Bytes) => e,
   );
   project.shares = event.params.project.shares;
-  project.contributors = [];
   project.totalRaised = BigInt.fromI32(0);
 
   project.save();
@@ -58,8 +57,8 @@ export function handleContributorAccountCreated(
   account.owner = event.params.owner;
   account.accountContract = event.params.contributorAccountContract;
   account.createdAt = event.params._event.block.timestamp;
-  account.contributions = [];
   account.totalContributed = BigInt.fromI32(0);
+  account.contributionsCount = BigInt.fromI32(0);
 
   account.save();
 }
@@ -76,24 +75,23 @@ export function handleContributionCreated(
   let contribution = new Contribution(
     getIdForContribution(
       event.params.accountContract,
-      BigInt.fromI32(account.contributions.length || 0),
+      account.contributionsCount,
     ),
   );
 
-  contribution.accountContract = event.params.accountContract;
-  contribution.projectContract = event.params.contribution.projectContract;
+  contribution.account = account.id;
+  contribution.project = project.id;
   contribution.amountStored = event.params.contribution.amountStored;
   contribution.amountDistributed = event.params.contribution.amountDistributed;
   contribution.startedAt = event.params.contribution.startedAt;
   contribution.endsAt = event.params.contribution.endsAt;
 
-  // Update
-  account.contributions.push(contribution.id);
-  project.contributors.push(contribution.id);
+  account.contributionsCount = account.contributionsCount.plus(
+    BigInt.fromI32(1),
+  );
 
   contribution.save();
   account.save();
-  project.save();
 }
 
 export function handleContributionUpdated(
@@ -145,44 +143,23 @@ export function handleAllContributionsCanceled(
   if (!account) return;
 
   // Find all the contributions and update them
-  for (let i = 0; i < account.contributions.length; i++) {
+  for (
+    let i = BigInt.fromI32(0);
+    i.lt(account.contributionsCount);
+    i = i.plus(BigInt.fromI32(1))
+  ) {
     let contribution = Contribution.load(
-      getIdForContribution(event.params.accountContract, BigInt.fromI32(i)),
+      getIdForContribution(event.params.accountContract, i),
     );
 
     if (!contribution) continue;
 
-    // Find the reference in the project and account to remove it
-    let project = Project.load(
-      getId(Address.fromBytes(contribution.projectContract)),
-    );
-
-    if (!project) continue;
-
-    const id = contribution.id;
-    let projectContributors: string[] = [];
-    for (let i = 0; i < project.contributors.length; i++) {
-      if (project.contributors[i] != id) {
-        projectContributors.push(project.contributors[i]);
-      }
-    }
-
-    let accountContributions: string[] = [];
-    for (let i = 0; i < account.contributions.length; i++) {
-      if (account.contributions[i] != id) {
-        accountContributions.push(account.contributions[i]);
-      }
-    }
-
-    project.contributors = projectContributors;
-    account.contributions = accountContributions;
-
-    // Update storage
-    account.save();
-    project.save();
-
     store.remove('Contribution', contribution.id);
   }
+
+  // Reset the contributions count
+  account.contributionsCount = BigInt.fromI32(0);
+  account.save();
 }
 
 /* -------------------------------------------------------------------------- */

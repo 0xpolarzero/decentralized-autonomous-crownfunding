@@ -13,8 +13,8 @@ import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
 import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 
-import { columns, columnsSkeleton } from "./projects-table/columns"
-import formatData from "./projects-table/format-data"
+import { columns, columnsSkeleton } from "./table-projects/columns"
+import formatData from "./table-projects/format-data"
 
 export default function ExplorePage() {
   const {
