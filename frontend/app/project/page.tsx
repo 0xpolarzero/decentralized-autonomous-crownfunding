@@ -79,7 +79,7 @@ export default function ProjectPage() {
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      <div className="flex max-w-[980px] flex-col items-start gap-2">
+      <div className="flex max-w-[1400px] flex-col items-start gap-2">
         {loading ? (
           <Skeleton className="h-[200px] w-[100%]" />
         ) : error || !project ? (
@@ -137,6 +137,7 @@ export default function ProjectPage() {
                 />
               </Dialog>
             </div>
+
             {/* -------------------------------------------------------------------------- */
             /*                                   CONTENT                                  */
             /* -------------------------------------------------------------------------- */}
@@ -191,6 +192,37 @@ export default function ProjectPage() {
               </div>
             </div>
 
+            {/* -------------------------------------------------------------------------- */
+            /*                                FUNDS RAISED                                */
+            /* -------------------------------------------------------------------------- */}
+            <div className="flex w-[100%] items-center justify-between gap-2">
+              <span className="text-lg opacity-80">Funds raised</span>
+              <span className="text-2xl font-medium">
+                <CurrencyComponent
+                  amount={Number(project?.totalRaised) || 0}
+                  currency="native"
+                />
+              </span>
+            </div>
+            {/**
+             * @dev A table with timed contributions can be done but needs to add records to contributions (see subgraph schema)
+             * @dev It can be added later
+             * @dev See @/components/table-raised for the table (to be continued)
+             */}
+
+            {/* <div className="w-[100%]">
+              {loading ? (
+                <DataTableSkeleton columns={columns} rowCount={10} />
+              ) : error ? (
+                "There was an error retrieving the data."
+              ) : (
+                <DataTable columns={columns} data={project?.contributors} />
+              )}
+            </div> */}
+
+            {/* -------------------------------------------------------------------------- */
+            /*                                   FOOTER                                   */
+            /* -------------------------------------------------------------------------- */}
             <div className="my-2 flex w-[100%] justify-between gap-4 text-sm text-muted-foreground">
               <TooltipComponent
                 shownContent={
@@ -224,34 +256,6 @@ export default function ProjectPage() {
               </Link>
             </div>
             <Separator />
-
-            {/* -------------------------------------------------------------------------- */
-            /*                                FUNDS RAISED                                */
-            /* -------------------------------------------------------------------------- */}
-            <div className="flex w-[100%] items-center justify-between gap-2">
-              <span className="text-lg opacity-80">Funds raised</span>
-              <span className="text-2xl font-medium">
-                <CurrencyComponent
-                  amount={Number(project?.totalRaised) || 0}
-                  currency="native"
-                />
-              </span>
-            </div>
-            {/**
-             * @dev A table with timed contributions can be done but needs to add records to contributions (see subgraph schema)
-             * @dev It can be added later
-             * @dev See @/components/table-raised for the table (to be continued)
-             */}
-
-            {/* <div className="w-[100%]">
-              {loading ? (
-                <DataTableSkeleton columns={columns} rowCount={10} />
-              ) : error ? (
-                "There was an error retrieving the data."
-              ) : (
-                <DataTable columns={columns} data={project?.contributors} />
-              )}
-            </div> */}
 
             {/* -------------------------------------------------------------------------- */
             /*                                COLLABORATORS                               */
