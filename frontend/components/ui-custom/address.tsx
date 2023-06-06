@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import useGlobalStore from "@/stores/useGlobalStore"
 import { LucideClipboard, LucideClipboardCheck } from "lucide-react"
 import useClipboard from "react-use-clipboard"
 import { useEnsName } from "wagmi"
@@ -28,6 +30,8 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
   } = useEnsName({
     address: address,
   })
+  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+
   const [isCopied, setCopied] = useClipboard(address, {
     successDuration: 2000,
   })
@@ -42,7 +46,12 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
           {tryEns && !isError && !isLoading && ensName ? (
             ensName
           ) : (
-            <>
+            <Link
+              href={`${currentNetwork?.blockExplorer.url}address/${address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
               <div className="block sm:hidden">{renderAddress()}</div>
               <div className="hidden sm:block md:hidden">
                 {renderAddress(large)}
@@ -51,7 +60,7 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
                 {renderAddress(large)}
               </div>
               <div className="hidden 2xl:block">{address}</div>
-            </>
+            </Link>
           )}
         </TooltipTrigger>
         <TooltipContent className="flex items-center space-x-2">
