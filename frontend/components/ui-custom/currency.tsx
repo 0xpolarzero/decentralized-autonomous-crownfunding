@@ -53,7 +53,7 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
         <TooltipTrigger>
           <div className="flex items-center gap-2">
             {getCurrencyIcon()}
-            <span>{formatAmount(amount)}</span>
+            <span>{Number(formatAmount(amount))}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent>

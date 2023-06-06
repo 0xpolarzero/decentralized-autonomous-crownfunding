@@ -101,7 +101,11 @@ export const GET_PROJECT_BY_SLUG_CONTRACT = gql`
       totalRaised
       contributors {
         id
-        account
+        account {
+          id
+          owner
+          accountContract
+        }
         amountStored
         amountDistributed
         startedAt

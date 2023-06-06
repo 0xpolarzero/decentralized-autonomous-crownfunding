@@ -12,13 +12,13 @@ import {
 
 interface AddressComponentProps {
   address: `0x${string}`
-  tryEns: boolean
+  tryEns?: boolean
   large?: boolean
 }
 
 const AddressComponent: React.FC<AddressComponentProps> = ({
   address,
-  tryEns,
+  tryEns = false,
   large = false,
 }) => {
   const {
@@ -33,7 +33,7 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
   })
 
   const renderAddress = (full = false) =>
-    full ? address : `${address.slice(0, 4)}...${address.slice(-4)}`
+    full ? address : `${address?.slice(0, 4)}...${address?.slice(-4)}`
 
   return (
     <TooltipProvider>

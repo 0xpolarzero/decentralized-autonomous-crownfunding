@@ -9,13 +9,15 @@ import { Project, ProjectTable } from "@/types/projects"
 import { client } from "@/config/apollo-client"
 import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraphQueries"
 import { Badge } from "@/components/ui/badge"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import ContributeDialogComponent from "@/components/contribute-dialog"
-import { columns } from "@/components/table-collaborators/columns"
-import formatData from "@/components/table-collaborators/format-data"
+import { columns as columnsCollaborators } from "@/components/table-collaborators/columns"
+import formatDataCollaborators from "@/components/table-collaborators/format-data"
+import { columns as columnsContributors } from "@/components/table-contributors/columns"
+import formatDataContributors from "@/components/table-contributors/format-data"
 import CurrencyComponent from "@/components/ui-custom/currency"
 import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
@@ -257,13 +259,42 @@ export default function ProjectPage() {
             <span className="text-lg opacity-80">Collaborators</span>
             <div className="w-[100%]">
               {loading ? (
-                <DataTableSkeleton columns={columns} rowCount={10} />
+                <DataTableSkeleton
+                  columns={columnsCollaborators}
+                  rowCount={10}
+                />
               ) : error ? (
                 "There was an error retrieving the data."
               ) : (
                 <DataTable
-                  columns={columns}
-                  data={formatData(project?.collaborators, project?.shares)}
+                  columns={columnsCollaborators}
+                  data={formatDataCollaborators(
+                    project?.collaborators,
+                    project?.shares
+                  )}
+                />
+              )}
+            </div>
+
+            {/* -------------------------------------------------------------------------- */
+            /*                                CONTRIBUTORS                                */
+            /* -------------------------------------------------------------------------- */}
+            <span className="text-lg opacity-80">Contributors</span>
+            <div className="w-[100%]">
+              {loading ? (
+                <DataTableSkeleton
+                  columns={columnsContributors}
+                  rowCount={10}
+                />
+              ) : error ? (
+                "There was an error retrieving the data."
+              ) : (
+                <DataTable
+                  columns={columnsContributors}
+                  data={formatDataContributors(
+                    project?.contributors,
+                    project?.totalRaised
+                  )}
                 />
               )}
             </div>

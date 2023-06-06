@@ -5,6 +5,8 @@ import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { Cell, ColumnDef, Row } from "@tanstack/react-table"
 import {
+  ArrowDown01,
+  ArrowDown10,
   ArrowUpDown,
   LucideArrowDownRight,
   LucideArrowUpRight,
@@ -292,22 +294,32 @@ export const columns: ColumnDef<ProjectTable>[] = [
       return (
         <div className="flex items-center justify-between gap-2">
           <span>Raised</span>
-          <Button
-            variant="ghost"
-            className="pl-1 pr-3"
-            onClick={() => {
-              column.toggleSorting(column.getIsSorted() === "asc")
-              console.log(column.getIsSorted())
-            }}
-          >
-            {column.getIsSorted() === "asc" ? (
-              <LucideArrowUpRight className="ml-2 h-4 w-4" />
-            ) : column.getIsSorted() === "desc" ? (
-              <LucideArrowDownRight className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            )}
-          </Button>
+          <TooltipComponent
+            shownContent={
+              <Button
+                variant="ghost"
+                className="pl-1 pr-3"
+                onClick={() => {
+                  column.toggleSorting(column.getIsSorted() === "asc")
+                }}
+              >
+                {column.getIsSorted() === "asc" ? (
+                  <ArrowDown01 className="ml-2 h-4 w-4" />
+                ) : column.getIsSorted() === "desc" ? (
+                  <ArrowDown10 className="ml-2 h-4 w-4" />
+                ) : (
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+            }
+            tooltipContent={
+              column.getIsSorted() === "asc"
+                ? "Showing lowest first"
+                : column.getIsSorted() === "desc"
+                ? "Showing highest first"
+                : "Sort by amount raised"
+            }
+          />
         </div>
       )
     },

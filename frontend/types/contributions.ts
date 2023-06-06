@@ -7,6 +7,18 @@ export interface Contribution {
   project: Project
   amountStored: number
   amountDistributed: number
-  startedAt: number
-  endsAt: number
+  startedAt: string
+  endsAt: string
+}
+
+export interface ContributionTable {
+  id: string
+  accountContract: string
+  owner: string
+  amountStored: number
+  amountDistributed: number
+  startedAt: string
+  endsAt: string
+  totalRaised: number
+  totalStored: number
 }
