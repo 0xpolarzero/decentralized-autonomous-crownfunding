@@ -25,13 +25,19 @@ export interface OptionProps {
 
 interface ComboboxComponentProps {
   options: OptionProps[]
+  header: string | React.ReactNode
   type: string
+  canClear?: boolean
+  closeAfterSelect?: boolean
   onChange: (value: string) => void
 }
 
 const ComboboxComponent: React.FC<ComboboxComponentProps> = ({
   options,
+  header,
   type,
+  canClear = false,
+  closeAfterSelect = true,
   onChange,
 }) => {
   const [open, setOpen] = React.useState(false)
@@ -40,7 +46,7 @@ const ComboboxComponent: React.FC<ComboboxComponentProps> = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <div className="mb-4 flex items-center gap-4">
-        <span>Tags</span>
+        <span>{header}</span>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -64,10 +70,9 @@ const ComboboxComponent: React.FC<ComboboxComponentProps> = ({
                   key={option.value}
                   onSelect={(currentValue: string) => {
                     const newValue = currentValue === value ? "" : currentValue
-                    console.log(newValue)
                     setValue(newValue)
                     onChange(newValue)
-                    setOpen(false)
+                    if (closeAfterSelect) setOpen(false)
                   }}
                 >
                   <Check
@@ -82,15 +87,17 @@ const ComboboxComponent: React.FC<ComboboxComponentProps> = ({
             </CommandGroup>
           </Command>
         </PopoverContent>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setValue("")
-            onChange("")
-          }}
-        >
-          Clear
-        </Button>
+        {canClear ? (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setValue("")
+              onChange("")
+            }}
+          >
+            Clear
+          </Button>
+        ) : null}
       </div>
     </Popover>
   )

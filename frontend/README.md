@@ -1,3 +1,10 @@
+# TODO
+
+- Complete project submission
+- Dashboard -> sub dropdown with Projects & Contributor account (/dashboard/projects & /dashboard/contributor)
+- Projects: Table of projects with additional columns (withdrawable amount) & action (withdraw)
+- Contributor: Table of contributions with additional columns (expected next payment) ; Expected next overall payment to projects, time of next payment, button to trigger payments ; Status of upkeep (enough funds) & button to fund it + link to the ui (to cancel + withdraw) - MAYBE FUND IT ALSO IN UI BC NO TIME
+
 [ ] Add footer with shadcn ui link
 
 # Home page

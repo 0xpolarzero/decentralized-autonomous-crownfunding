@@ -157,6 +157,8 @@ const LinksCell: React.FC<CellProps> = ({ row }) => {
 
 const TagsCell: React.FC<CellProps> = ({ row }) => {
   const tags: string[] = row.getValue("tags")
+  if (!tags || !tags.length) return null
+
   return (
     <div className="flex flex-wrap justify-between gap-2">
       {tags.map((tag, i) => {

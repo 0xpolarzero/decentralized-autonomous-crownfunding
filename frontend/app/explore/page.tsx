@@ -173,8 +173,10 @@ export default function ExplorePage() {
         {tags ? (
           <ComboboxComponent
             options={tags}
+            header="Tags"
             type="tag"
             onChange={handleTagChange}
+            canClear
           />
         ) : null}
         {loading ? (

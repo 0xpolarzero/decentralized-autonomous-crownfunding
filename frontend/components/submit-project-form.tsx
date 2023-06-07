@@ -1,18 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
+import { useQuery } from "@apollo/client"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2, LucideAsterisk } from "lucide-react"
-import { useForm } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 import { useContractWrite } from "wagmi"
 import * as z from "zod"
 
+import { Project } from "@/types/projects"
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
+import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
 import { networkConfig, networkMapping } from "@/config/network"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -24,59 +28,42 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui-extended/form"
-
-import { Checkbox } from "./ui/checkbox"
+import TagInput from "@/components/ui-extended/tag-input"
 
 /* -------------------------------------------------------------------------- */
 /*                                   SCHEMA                                   */
 /* -------------------------------------------------------------------------- */
 
-const isValidUrl = (url: string) => {
-  try {
-    new URL(url)
-    return true
-  } catch (e) {
-    return false
-  }
-}
+const formSchema = z.object({
+  // Project name must be between 2 and 50 characters
+  projectName: z.string().min(2).max(50),
+  // Description is optional
+  projectDescription: z.string().optional(),
+  // Links are optional, but should be an array of strings of valid urls
+  // We need to use an object for the field array to work
+  projectLinks: z.array(z.object({ url: z.string().url() })).optional(),
+  // Tags are optional, but should be an array of strings
+  projectTags: z.array(z.string()).optional(),
+  // Collaborators should be at least 1 address long
+  // Same for shares with a total of 100
+  projectCollaborators: z
+    .array(
+      z.object({
+        address: z.string(),
+        share: z.number(),
+      })
+    )
+    .min(1)
+    .refine((val) => val.reduce((a, b) => a + b.share, 0) === 100),
 
-const formSchema = z
-  .object({
-    // Project name must be between 2 and 50 characters
-    projectName: z.string().min(2).max(50),
-    // Description is optional
-    projectDescription: z.string().optional(),
-    // Links are optional, but should be an array of strings of valid urls
-    projectLinks: z
-      .array(z.string())
-      .optional()
-      .refine((val) => {
-        if (!val) return true
-        return val.every(isValidUrl)
-      }),
-    // Tags are optional, but should be an array of strings
-    projectTags: z.array(z.string()).optional(),
-    // Collaborators should be at least 1 address long
-    projectCollaborators: z.array(z.string()).min(1),
-    // Same for shares with a total of 100
-    projectShares: z
-      .array(z.number())
-      .min(1)
-      .refine((val) => val.reduce((a, b) => a + b, 0) === 100),
-    // Must accept terms and conditions
-    conditions: z
-      .boolean()
-      .default(false)
-      .refine((val) => val === true),
-  })
-  // Collaborators & shares should be the same length
-  .refine(
-    (data) => data.projectCollaborators.length === data.projectShares.length,
-    {
-      message: "Collaborators and shares should be the same length",
-      path: ["projectCollaborators", "projectShares"],
-    }
-  )
+  // Must accept terms and conditions
+  conditions: z
+    .boolean()
+    .default(false)
+    .refine((val) => val === true),
+})
+
+type FormSchema = z.infer<typeof formSchema>
 
 /* -------------------------------------------------------------------------- */
 /*                                    FORM                                    */
@@ -89,35 +76,72 @@ const Required = () => (
 )
 
 export function SubmitProjectForm() {
+  // Store
   const { address, currentNetwork } = useGlobalStore((state) => ({
     address: state.address,
     currentNetwork: state.currentNetwork,
   }))
 
+  // Queries
+  const { data: projectsData } = useQuery(GET_PROJECTS, {
+    variables: { amountPerPage: 1000, skip: 0 },
+  })
+
   const { toast } = useToast()
-  const form = useForm<z.infer<typeof formSchema>>({
+
+  // Form (zod & react-hook-form)
+  const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       projectName: "",
       projectDescription: "",
-      projectLinks: [],
+      projectLinks: [{ url: "" }],
       projectTags: [],
-      projectCollaborators: [address],
-      projectShares: [],
+      projectCollaborators: [{ address: address, share: 100 }],
       conditions: false,
     },
+    mode: "onChange",
+  })
+  const {
+    fields: linkFields,
+    append: appendLink,
+    remove: removeLink,
+  } = useFieldArray({
+    control: form.control,
+    name: "projectLinks",
+  })
+  const {
+    fields: collaboratorsFields,
+    append: appendCollaborator,
+    remove: removeCollaborator,
+  } = useFieldArray({
+    control: form.control,
+    name: "projectCollaborators",
   })
 
+  const projectTags = form.watch("projectTags")
+
+  // Network & states
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
+  const [existingTags, setExistingTags] = useState<string[]>([])
 
+  // Functions (submit & tx)
   function onFormSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
-    // Transform links & tags to string
-    // submit
+    const args = [
+      values.projectCollaborators.map((collaborator) => collaborator.address),
+      values.projectCollaborators.map((collaborator) => collaborator.share),
+      values.projectName,
+      values.projectDescription,
+      values.projectLinks?.map((link) => link.url.trim()).join(",") || "",
+      values.projectTags?.join(",") || "",
+    ]
+
+    // submitProject({ args })
   }
 
   const { isLoading: isSubmittingProject, write: submitProject } =
@@ -125,14 +149,6 @@ export function SubmitProjectForm() {
       address: networkMapping[networkInfo.chainId]["DACAggregator"][0],
       abi: DACAggregatorAbi,
       functionName: "submitProject",
-      // args: [
-      //   projectCollaborators,
-      //   projectShares,
-      //   projectName,
-      //   projectDescription,
-      //   projectLinks,
-      //   projectTags,
-      // ],
 
       onSuccess: async (tx) => {
         setIsProcessingTransaction(true)
@@ -182,10 +198,23 @@ export function SubmitProjectForm() {
       },
     })
 
+  useEffect(() => {
+    if (projectsData && projectsData.projects) {
+      const gatheredTags = projectsData.projects.reduce(
+        (acc: string[], project: Project) => {
+          return [...acc, ...project.tags]
+        },
+        []
+      )
+
+      setExistingTags(gatheredTags)
+    }
+  }, [projectsData])
+
   return (
     <div className="w-full">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-4">
           {/* -------------------------------------------------------------------------- */
           /*                                 projectName                                */
           /* -------------------------------------------------------------------------- */}
@@ -219,9 +248,6 @@ export function SubmitProjectForm() {
                     {...field}
                   />
                 </FormControl>
-                {/* <FormDescription>
-                  This is the name of the project.
-                </FormDescription> */}
                 <FormMessage />
               </FormItem>
             )}
@@ -229,21 +255,138 @@ export function SubmitProjectForm() {
           {/* -------------------------------------------------------------------------- */
           /*                                projectLinks                                */
           /* -------------------------------------------------------------------------- */}
-          <FormField
-            control={form.control}
-            name="projectLinks"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Links</FormLabel>
-                <FormControl>
-                  {/* Can add multiple inputs for strings */}
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <div className="mt-4" />
+          <span className="text-sm font-medium leading-none">Links</span>
+
+          {linkFields.map((linkField, index) => (
+            <FormField
+              control={form.control}
+              name={`projectLinks.${index}.url`}
+              key={linkField.id}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl className="mt-0">
+                    <div>
+                      <div className="mb-2 flex w-[100%] items-center gap-2">
+                        <FormLabel className="text-muted-foreground">
+                          {index + 1}
+                        </FormLabel>
+                        <Input
+                          className="mt-0"
+                          {...field}
+                          placeholder="Enter a URL"
+                          defaultValue={linkField.url}
+                        />
+                        <Button
+                          variant="secondary"
+                          onClick={() => removeLink(index)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          ))}
+
+          <Button
+            className="w-[100%]"
+            variant="secondary"
+            onClick={() =>
+              appendLink({
+                url: "",
+              })
+            }
+          >
+            Add link
+          </Button>
+
+          {/* -------------------------------------------------------------------------- */
+          /*                                 projectTags                                */
+          /* -------------------------------------------------------------------------- */}
+          <TagInput
+            options={existingTags}
+            onChange={(newTags) => form.setValue("projectTags", newTags)}
           />
 
-          {/* ADD CHECKBOX 'You understand that EVERYTHING is stored onchain... will keep a transparent track of the project and its contributions' */}
+          {/* -------------------------------------------------------------------------- */
+          /*                            projectCollaborators                            */
+          /* -------------------------------------------------------------------------- */}
+          <div className="mt-4" />
+          <span className="text-sm font-medium leading-none">
+            Collaborators
+          </span>
+
+          {collaboratorsFields.map((collaboratorField, index) => (
+            <div key={collaboratorField.id} className="w-[100%]">
+              <div className="mb-2 flex w-[100%] items-center gap-2">
+                <FormLabel className="text-muted-foreground">
+                  {index + 1}
+                </FormLabel>
+                <FormField
+                  control={form.control}
+                  name={`projectCollaborators.${index}.address`}
+                  render={({ field }) => (
+                    <FormItem className="grow">
+                      <FormControl className="mt-0">
+                        <Input
+                          {...field}
+                          placeholder="Enter an address"
+                          defaultValue={collaboratorField.address}
+                          disabled={index === 0}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`projectCollaborators.${index}.share`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl className="mt-0">
+                        <Input
+                          {...field}
+                          placeholder="Enter a share"
+                          defaultValue={collaboratorField.share}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => removeCollaborator(index)}
+                  disabled={index === 0}
+                >
+                  Delete
+                </Button>
+              </div>
+              <FormMessage />
+              {index === 0 ? (
+                <FormDescription>
+                  The share will be a percentage of the revenue from the
+                  contributions.
+                </FormDescription>
+              ) : null}
+            </div>
+          ))}
+          <Button
+            className="w-[100%]"
+            variant="secondary"
+            onClick={() =>
+              appendCollaborator({
+                address: "",
+                share: 0,
+              })
+            }
+          >
+            Add collaborator
+          </Button>
+
           {/* -------------------------------------------------------------------------- */
           /*                                 conditions                                 */
           /* -------------------------------------------------------------------------- */}
