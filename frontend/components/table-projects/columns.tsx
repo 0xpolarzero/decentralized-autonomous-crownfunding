@@ -179,8 +179,6 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-  console.log(new Date(row.original.lastActivityAt))
-
   const isStillActive = (): boolean =>
     new Date().getTime() - new Date(row.original.lastActivityAt).getTime() <
     1000 * 60 * 60 * 24 * 30 // 30 days

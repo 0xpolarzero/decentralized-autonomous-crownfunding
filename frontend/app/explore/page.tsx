@@ -1,17 +1,20 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
+import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
+import { LucidePlus } from "lucide-react"
 
 import { Project } from "@/types/projects"
 import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
 import { networkConfig } from "@/config/network"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
 import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
+import TooltipComponent from "@/components/ui-custom/tooltip"
 
 import {
   columns,
@@ -27,7 +30,10 @@ export default function ExplorePage() {
   } = useQuery(GET_PROJECTS, {
     variables: { amountPerPage: 1000, skip: 0 },
   })
-  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+  const { currentNetwork, connected } = useGlobalStore((state) => ({
+    currentNetwork: state.currentNetwork,
+    connected: state.connected,
+  }))
 
   const [projects, setProjects] = useState<Project[]>([])
   const [tags, setTags] = useState<OptionProps[]>([])
@@ -114,7 +120,7 @@ export default function ExplorePage() {
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      <div className="flex max-w-[980px] flex-col items-start gap-2">
+      <div className="flex max-w-[1400px] flex-col items-start gap-2">
         <div className="my-4 flex w-full items-center space-x-2">
           <Input
             type="search"
@@ -122,9 +128,6 @@ export default function ExplorePage() {
             onChange={handleSearch}
             placeholder="Search a project by name, address or projects involving a collaborator"
           />
-          {/* <button className={buttonVariants()} onClick={onSearch}>
-            Search
-          </button> */}
           <button
             className={buttonVariants({
               variant: "outline",
@@ -134,9 +137,32 @@ export default function ExplorePage() {
             Clear
           </button>
         </div>
-        <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-          Latest projects
-        </h1>
+        <div className="flex w-[100%] items-center justify-between gap-2">
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
+            Latest projects
+          </h1>
+          {connected ? (
+            <Link className={buttonVariants()} href="/submit-project">
+              <LucidePlus size={16} className="mr-2" />
+              <span>Submit a project</span>
+            </Link>
+          ) : (
+            <TooltipComponent
+              shownContent={
+                <Button disabled>
+                  <LucidePlus size={16} className="mr-2" />
+                  <span>Submit a project</span>
+                </Button>
+              }
+              tooltipContent={
+                <>
+                  <p>You need to connect your wallet to contribute.</p>
+                  <p>Make sure you are on a supported chain.</p>
+                </>
+              }
+            />
+          )}
+        </div>
         <p className="max-w-[700px] text-lg text-muted-foreground">
           Explore the latest projects campaigns listed on our platform.
         </p>

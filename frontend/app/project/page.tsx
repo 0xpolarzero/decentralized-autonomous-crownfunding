@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
+import { Root as ScrollAreaRoot } from "@radix-ui/react-scroll-area"
 import { LucideBanknote } from "lucide-react"
 
 import { Project, ProjectTable } from "@/types/projects"
@@ -11,6 +12,7 @@ import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraphQueries
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import ContributeDialogComponent from "@/components/contribute-dialog"
@@ -34,6 +36,9 @@ export default function ProjectPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [error, setError] = useState<boolean>(false)
   const [loading, setLoading] = useState<boolean>(true)
+
+  const [scrollAreaHeight, setScrollAreaHeight] = useState<number>(200)
+  const scrollArea = useRef<React.ElementRef<typeof ScrollAreaRoot>>(null)
 
   const createdAtFormatted = project?.createdAt
     ? new Date(project?.createdAt * 1000)
@@ -72,6 +77,18 @@ export default function ProjectPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const textDiv = (
+      document.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLDivElement
+    )?.children[0] as HTMLDivElement
+
+    setScrollAreaHeight(
+      textDiv?.offsetHeight < 200 ? textDiv?.offsetHeight : 200
+    )
+  }, [project])
 
   useEffect(() => {
     fetchProject()
@@ -141,9 +158,12 @@ export default function ProjectPage() {
             {/* -------------------------------------------------------------------------- */
             /*                                   CONTENT                                  */
             /* -------------------------------------------------------------------------- */}
-            <blockquote className="my-2 border-l-2 pl-6 italic">
+            <ScrollArea
+              ref={scrollArea}
+              className={`h-[${scrollAreaHeight}px] my-2 border-l-2 pl-6 italic`}
+            >
               {project?.description}
-            </blockquote>
+            </ScrollArea>
 
             <div>
               <span className="flex items-center gap-2 text-lg opacity-80">
