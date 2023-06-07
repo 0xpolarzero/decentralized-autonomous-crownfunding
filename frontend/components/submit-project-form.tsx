@@ -23,7 +23,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui-custom/form"
+} from "@/components/ui-extended/form"
 
 import { Checkbox } from "./ui/checkbox"
 

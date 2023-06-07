@@ -17,11 +17,11 @@ import {
 
 import { Contribution, ContributionTable } from "@/types/contributions"
 
-import AddressComponent from "../ui-custom/address"
-import CurrencyComponent from "../ui-custom/currency"
-import DurationComponent from "../ui-custom/duration"
-import InfoComponent from "../ui-custom/info"
-import TooltipComponent from "../ui-custom/tooltip"
+import AddressComponent from "../ui-extended/address"
+import CurrencyComponent from "../ui-extended/currency"
+import DurationComponent from "../ui-extended/duration"
+import InfoComponent from "../ui-extended/info"
+import TooltipComponent from "../ui-extended/tooltip"
 import { Button } from "../ui/button"
 import { Skeleton } from "../ui/skeleton"
 

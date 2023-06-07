@@ -36,10 +36,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import ContributeDialogComponent from "@/components/contribute-dialog"
-import AddressComponent from "@/components/ui-custom/address"
-import CurrencyComponent from "@/components/ui-custom/currency"
-import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
-import TooltipComponent from "@/components/ui-custom/tooltip"
+import AddressComponent from "@/components/ui-extended/address"
+import CurrencyComponent from "@/components/ui-extended/currency"
+import ElapsedTimeComponent from "@/components/ui-extended/elapsed-time"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 type CellProps = {
   row: Row<ProjectTable>

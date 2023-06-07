@@ -23,9 +23,9 @@ const CollaboratorShareCell: React.FC<CellProps> = ({ row }) => {
   return row.getValue("share")
 }
 
-// const ActionsCell: React.FC<CellProps> = ({ row }) => {
-//   return null
-// }
+const ActionsCell: React.FC<CellProps> = ({ row }) => {
+  return null
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                   COLUMNS                                  */
@@ -42,10 +42,10 @@ export const columns: ColumnDef<Collaborator[] | undefined>[] = [
     header: "Share (%)",
     cell: ({ row }) => <CollaboratorShareCell row={row} />,
   },
-  // {
-  //   id: "actions",
-  //   cell: ({ row }) => <ActionsCell row={row} />,
-  // },
+  {
+    id: "actions",
+    cell: ({ row }) => <ActionsCell row={row} />,
+  },
 ]
 
 export const columnsSkeleton: ColumnDef<Collaborator[] | undefined>[] =

@@ -21,11 +21,11 @@ import { columns as columnsCollaborators } from "@/components/table-collaborator
 import formatDataCollaborators from "@/components/table-collaborators/format-data"
 import { columns as columnsContributors } from "@/components/table-contributors/columns"
 import formatDataContributors from "@/components/table-contributors/format-data"
-import CurrencyComponent from "@/components/ui-custom/currency"
-import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
-import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
-import InfoComponent from "@/components/ui-custom/info"
-import TooltipComponent from "@/components/ui-custom/tooltip"
+import CurrencyComponent from "@/components/ui-extended/currency"
+import { DataTableSkeleton } from "@/components/ui-extended/data-table-skeleton"
+import ElapsedTimeComponent from "@/components/ui-extended/elapsed-time"
+import InfoComponent from "@/components/ui-extended/info"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 export default function ProjectPage() {
   const { currentNetwork, hasContributorAccount } = useGlobalStore((state) => ({

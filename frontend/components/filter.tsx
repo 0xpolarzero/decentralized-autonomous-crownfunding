@@ -7,7 +7,7 @@ import {
 
 import { Contribution } from "@/types/contributions"
 import { Button } from "@/components/ui/button"
-import TooltipComponent from "@/components/ui-custom/tooltip"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 interface FilterComponentProps {
   column: HeaderContext<Contribution, any>

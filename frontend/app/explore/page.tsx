@@ -12,9 +12,11 @@ import { networkConfig } from "@/config/network"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
-import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
-import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
-import TooltipComponent from "@/components/ui-custom/tooltip"
+import ComboboxComponent, {
+  OptionProps,
+} from "@/components/ui-extended/combobox"
+import { DataTableSkeleton } from "@/components/ui-extended/data-table-skeleton"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 import {
   columns,
