@@ -6,20 +6,39 @@ export const siteConfig = {
     "Aour decentralized crowdfunding hub, enabling automated and flexible project support through blockchain technology.",
   url: "https://cascade.polarzero.xyz",
   mainNav: [
-    {
-      title: "Home",
-      slug: "home",
-      href: "/",
-    },
+    // {
+    //   title: "Home",
+    //   slug: "home",
+    //   href: "/",
+    // },
     {
       title: "Explore projects",
       slug: "explore",
       href: "/explore",
     },
     {
-      title: "Contributor dashboard",
+      title: "Dashboard",
       slug: "dashboard",
-      href: "/dashboard",
+      children: [
+        {
+          title: "Contributor account",
+          slug: "account-contributor",
+          href: "/account-contributor",
+          description:
+            "Manage your contributor account (contributions, payments).",
+        },
+        {
+          title: "Projects",
+          slug: "account-projects",
+          href: "/account-projects",
+          description: "Interact with the projects you're involved in.",
+        },
+      ],
+    },
+    {
+      title: "Documentation",
+      slug: "docs",
+      href: "/docs",
     },
   ],
   links: {
