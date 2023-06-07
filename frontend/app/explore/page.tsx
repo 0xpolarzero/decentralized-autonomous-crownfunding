@@ -9,8 +9,8 @@ import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
 import { networkConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DataTable } from "@/components/data-table"
 import ComboboxComponent, { OptionProps } from "@/components/ui-custom/combobox"
-import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 
 import {

@@ -14,12 +14,12 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import ContributeDialogComponent from "@/components/contribute-dialog"
+import { DataTable } from "@/components/data-table"
 import { columns as columnsCollaborators } from "@/components/table-collaborators/columns"
 import formatDataCollaborators from "@/components/table-collaborators/format-data"
 import { columns as columnsContributors } from "@/components/table-contributors/columns"
 import formatDataContributors from "@/components/table-contributors/format-data"
 import CurrencyComponent from "@/components/ui-custom/currency"
-import { DataTable } from "@/components/ui-custom/data-table"
 import { DataTableSkeleton } from "@/components/ui-custom/data-table-skeleton"
 import ElapsedTimeComponent from "@/components/ui-custom/elapsed-time"
 import InfoComponent from "@/components/ui-custom/info"
@@ -299,6 +299,9 @@ export default function ProjectPage() {
                     project?.contributors,
                     project?.totalRaised
                   )}
+                  filterable
+                  filterSelector="owner"
+                  filterPlaceholder="Filter by contributor address"
                 />
               )}
             </div>
