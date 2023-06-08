@@ -4,28 +4,28 @@ import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
-import { LucidePlus } from "lucide-react"
+import { LucideCompass } from "lucide-react"
 
 import { Contribution } from "@/types/contributions"
 import { ContributorAccount } from "@/types/contributor-account"
-import { Project, ProjectTable } from "@/types/projects"
-import {
-  GET_CONTRIBUTOR_ACCOUNT,
-  GET_PROJECTS,
-} from "@/config/constants/subgraphQueries"
+import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraphQueries"
 import { networkConfig } from "@/config/network"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import ContributorCreateAccount from "@/components/contributor-create-account"
 import ContributorUpkeepComponent from "@/components/contributor-upkeep"
 import { DataTable } from "@/components/data-table"
 import {
   columns,
   columnsSkeleton,
-} from "@/components/table-account-projects/columns"
-import formatData from "@/components/table-account-projects/format-data"
+} from "@/components/table-account-contributor/columns"
+import formatData from "@/components/table-account-contributor/format-data"
+import CurrencyComponent from "@/components/ui-extended/currency"
 import { DataTableSkeleton } from "@/components/ui-extended/data-table-skeleton"
+import { useContractRead } from "wagmi"
+import {DACContributorAccountAbi} from '@/config/constants/abis/DACContributorAccount'
 
 export default function AccountContributorPage() {
   const {
@@ -34,12 +34,14 @@ export default function AccountContributorPage() {
     currentNetwork,
     hasContributorAccount,
     contributorAccountAddress,
+    walletLoading,
   } = useGlobalStore((state) => ({
     address: state.address,
     connected: state.connected,
     currentNetwork: state.currentNetwork,
     hasContributorAccount: state.hasContributorAccount,
     contributorAccountAddress: state.contributorAccountAddress,
+    walletLoading: state.loading,
   }))
   const {
     data: contributorData,
@@ -61,6 +63,14 @@ export default function AccountContributorPage() {
   const [contributorAccount, setContributorAccount] =
     useState<ContributorAccount | null>(null)
   const [contributions, setContributions] = useState<Contribution[]>([])
+  const [totalDistributed, setTotalDistributed] = useState<number>(0)
+  const [totalStored, setTotalStored] = useState<number>(0)
+
+  const { data: , isError, isLoading }: any = useContractRead({
+    address: contributorAccountAddress,
+    abi: DACContributorAccountAbi,
+    functionName: "checkUpkeep",
+  })
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value)
@@ -101,22 +111,37 @@ export default function AccountContributorPage() {
       hasContributorAccount
     ) {
       setContributorAccount(contributorData.contributorAccounts[0])
-      setContributions(
-        contributorData.contributorAccounts
-          ? contributorData.contributorAccounts[0].contributions
-          : []
+
+      const contrib = contributorData.contributorAccounts?.length
+        ? contributorData.contributorAccounts[0].contributions
+        : []
+
+      setContributions(contrib)
+      setTotalDistributed(
+        contrib.reduce(
+          (acc: number, contribution: Contribution) =>
+            acc + Number(contribution.amountDistributed),
+          0
+        )
+      )
+      setTotalStored(
+        contrib.reduce(
+          (acc: number, contribution: Contribution) =>
+            acc + Number(contribution.amountStored),
+          0
+        )
       )
     }
   }, [contributorData, address, hasContributorAccount])
 
-  if (!connected || !address)
+  if (!loading && (!connected || !address))
     return (
       <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
         You need to connect your wallet to see your contributions.
       </section>
     )
 
-  if (!hasContributorAccount)
+  if (!loading && !contributorData?.contributorAccounts)
     return (
       <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
@@ -145,56 +170,80 @@ export default function AccountContributorPage() {
       </section>
     )
 
-  // TODO IF NO CONTRIBUTIONS, STILL SHOW THE CHAINLINK COMPONENTS
-
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <ContributorUpkeepComponent />
       <Separator />
-      {contributions.length > 0 ? (
-        <>
-          <div className="flex max-w-[1400px] flex-col items-start gap-2">
-            <div className="my-4 flex w-full items-center space-x-2">
-              <Input
-                type="search"
-                value={searchValue}
-                onChange={handleSearch}
-                placeholder="Search a contribution by project name, address or collaborator"
-              />
-              <button
-                className={buttonVariants({
-                  variant: "outline",
-                })}
-                onClick={clearSearch}
-              >
-                Clear
-              </button>
-            </div>
-            <div className="flex w-[100%] items-center justify-between gap-2">
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-                Your contributions
-              </h1>
-              <Link className={buttonVariants()} href="/submit-project">
-                <LucidePlus size={16} className="mr-2" />
-                <span>Submit a project</span>
-              </Link>
-            </div>
-            <p className="max-w-[700px] text-lg text-muted-foreground">
-              Interact with the projects you're involved in.
-            </p>
-          </div>
-          <div className="grow overflow-auto">
-            {loading ? (
-              <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
-            ) : error ? (
-              "There was an error fetching the projects. Please try again later."
-            ) : // <DataTable columns={columns} data={formatData(projects)} />
-            null}
-          </div>
-        </>
-      ) : (
-        "You have no contributions yet."
-      )}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col">
+          Total contributed
+          {loading || walletLoading ? (
+            <Skeleton className="h-6 w-20" />
+          ) : (
+            <CurrencyComponent amount={totalDistributed} currency="native" />
+          )}
+        </div>
+        <div className="flex flex-col">
+          Total stored
+          {loading || walletLoading ? (
+            <Skeleton className="h-6 w-20" />
+          ) : (
+            <CurrencyComponent amount={totalStored} currency="native" />
+          )}
+        </div>
+        <div className="flex flex-col">
+          Expected next payment
+          {loading || walletLoading ? (
+            <Skeleton className="h-6 w-20" />
+          ) : (
+            <CurrencyComponent amount={totalStored} currency="native" />
+          )}
+        </div>
+      </div>
+      <div className="flex max-w-[1400px] flex-col items-start gap-2">
+        <div className="my-4 flex w-full items-center space-x-2">
+          <Input
+            type="search"
+            value={searchValue}
+            onChange={handleSearch}
+            placeholder="Search a contribution by project name, address or collaborator"
+          />
+          <button
+            className={buttonVariants({
+              variant: "outline",
+            })}
+            onClick={clearSearch}
+          >
+            Clear
+          </button>
+        </div>
+        <div className="flex w-[100%] items-center justify-between gap-2">
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
+            Your contributions
+          </h1>
+          <Link className={buttonVariants()} href="/explore">
+            <LucideCompass size={16} className="mr-2" />
+            <span>Explore projects</span>
+          </Link>
+        </div>
+        <p className="max-w-[700px] text-lg text-muted-foreground">
+          Manage your contributions.
+        </p>
+      </div>
+      <div className="grow overflow-auto">
+        {loading || walletLoading ? (
+          <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
+        ) : error ? (
+          "There was an error fetching the projects. Please try again later."
+        ) : contributions.length ? (
+          <DataTable
+            columns={columns}
+            data={formatData(contributions, totalDistributed, totalStored, contributorData?.contributorAccounts[0].lastContributionsTransferedAt)}
+          />
+        ) : (
+          "You don't have any contributions yet."
+        )}
+      </div>
     </section>
   )
 }

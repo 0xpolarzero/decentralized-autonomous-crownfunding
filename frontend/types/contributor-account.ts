@@ -8,4 +8,5 @@ export interface ContributorAccount {
   contributions: Contribution[]
   contributionsCount: number
   totalContributed: number
+  lastContributionsTransferedAt: number
 }

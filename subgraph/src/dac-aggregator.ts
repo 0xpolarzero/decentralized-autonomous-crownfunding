@@ -59,6 +59,7 @@ export function handleContributorAccountCreated(
   account.createdAt = event.params._event.block.timestamp;
   account.totalContributed = BigInt.fromI32(0);
   account.contributionsCount = BigInt.fromI32(0);
+  account.lastContributionsTransferedAt = BigInt.fromI32(0);
 
   account.save();
 }
@@ -114,6 +115,11 @@ export function handleContributionUpdated(
 export function handleContributionsTransfered(
   event: ContributionsTransferedEvent,
 ): void {
+  // Update the last transfered at
+  let account = ContributorAccount.load(getId(event.params.accountContract));
+  if (account)
+    account.lastContributionsTransferedAt = event.params._event.block.timestamp;
+
   // Need to update all the contributions
   for (let i = 0; i < event.params.contributions.length; i++) {
     let contribution = Contribution.load(
@@ -143,6 +149,8 @@ export function handleContributionsTransfered(
     contribution.save();
     project.save();
   }
+
+  if (account) account.save();
 }
 
 export function handleAllContributionsCanceled(

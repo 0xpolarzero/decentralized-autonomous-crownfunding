@@ -21,6 +21,7 @@ export function ConnectButton() {
     setCurrentNetwork,
     setContributorAccountAddress,
     setHasContributorAccount,
+    setLoading,
   } = useGlobalStore((state) => ({
     connected: state.connected,
     currentNetwork: state.currentNetwork,
@@ -29,6 +30,7 @@ export function ConnectButton() {
     setCurrentNetwork: state.setCurrentNetwork,
     setContributorAccountAddress: state.setContributorAccountAddress,
     setHasContributorAccount: state.setHasContributorAccount,
+    setLoading: state.setLoading,
   }))
 
   const getContributorAccount = async () => {
@@ -39,13 +41,10 @@ export function ConnectButton() {
         return
       }
 
-      const contractAddress: `0x${string}` =
-        networkMapping[chainIdString]["DACAggregator"][0]
-
-      if (!contractAddress) return // Should not happen but just in case
-
       const data = await readContract({
-        address: contractAddress,
+        address: networkMapping[chainIdString][
+          "DACAggregator"
+        ][0] as `0x${string}`,
         abi: abi.dacAggregator,
         functionName: "getContributorAccount",
         args: [address],
@@ -61,6 +60,8 @@ export function ConnectButton() {
       console.log(err)
       resetContributorAccount()
     }
+
+    setLoading(false)
   }
 
   const resetContributorAccount = () => {

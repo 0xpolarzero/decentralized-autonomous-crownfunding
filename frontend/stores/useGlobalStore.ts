@@ -22,4 +22,8 @@ export default create<GlobalStore>((set, get) => ({
   hasContributorAccount: false,
   setHasContributorAccount: (hasContributorAccount: boolean) =>
     set({ hasContributorAccount }),
+
+  // Loading
+  loading: true,
+  setLoading: (loading: boolean) => set({ loading }),
 }))

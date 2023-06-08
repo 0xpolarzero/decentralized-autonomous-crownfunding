@@ -13,12 +13,12 @@ export interface Contribution {
 
 export interface ContributionTable {
   id: string
-  accountContract: string
-  owner: string
+  project: Project
+  projectStatus: true | false
   amountStored: number
   amountDistributed: number
   startedAt: string
   endsAt: string
-  totalRaised: number
+  totalDistributed: number
   totalStored: number
 }

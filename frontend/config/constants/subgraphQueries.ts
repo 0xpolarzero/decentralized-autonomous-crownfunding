@@ -27,13 +27,19 @@ export const GET_CONTRIBUTOR_ACCOUNT = gql`
       createdAt
       contributions {
         id
-        project
+        project {
+          id
+          name
+          projectContract
+          lastActivityAt
+        }
         amountStored
         amountDistributed
         startedAt
         endsAt
       }
       totalContributed
+      lastContributionsTransferedAt
     }
   }
 `
