@@ -17,6 +17,7 @@ export interface Project {
   // We add these fields to the Project type after the query
   network: string
   blockExplorer: string
+  userAddress?: string
 }
 
 export interface GetProjectsData {

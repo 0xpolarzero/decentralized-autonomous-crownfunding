@@ -4,28 +4,27 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { Cell, ColumnDef, Row } from "@tanstack/react-table"
+import { waitForTransaction } from "@wagmi/core"
 import {
   ArrowDown01,
   ArrowDown10,
   ArrowUpDown,
+  Loader2,
   LucideActivity,
   LucideAlertCircle,
-  LucideArrowDownRight,
-  LucideArrowUpRight,
-  LucideBanknote,
   LucideCheckCircle2,
   LucideExternalLink,
   LucideInfo,
   LucideShare2,
   LucideWallet,
-  LucideXCircle,
   MoreHorizontal,
 } from "lucide-react"
-import { useContractRead } from "wagmi"
+import { useContractRead, useContractWrite } from "wagmi"
 
 import { ProjectTable } from "@/types/projects"
+import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
 import { DACProjectAbi } from "@/config/constants/abis/DACProject"
-import { networkConfig } from "@/config/network"
+import { networkConfig, networkMapping } from "@/config/network"
 import { siteConfig } from "@/config/site"
 import useCopyToClipboard from "@/hooks/copy-to-clipboard"
 import { Badge } from "@/components/ui/badge"
@@ -40,14 +39,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
-import ContributeDialogComponent from "@/components/contribute-dialog"
 import AddressComponent from "@/components/ui-extended/address"
 import CurrencyComponent from "@/components/ui-extended/currency"
-import ElapsedTimeComponent from "@/components/ui-extended/elapsed-time"
 import TooltipComponent from "@/components/ui-extended/tooltip"
 
 import DurationComponent from "../ui-extended/duration"
 import InfoComponent from "../ui-extended/info"
+import { useToast } from "../ui/use-toast"
 
 type CellProps = {
   row: Row<ProjectTable>
@@ -212,23 +210,137 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
+  const [isPinging, setIsPinging] = useState<boolean>(false)
+  const [isWithdrawing, setIsWithdrawing] = useState<boolean>(false)
+
+  const { toast } = useToast()
+
   const isStillActive = (): boolean =>
     new Date().getTime() - new Date(row.original.lastActivityAt).getTime() <
     1000 * 60 * 60 * 24 * 30 // 30 days
 
   const copyToClipboard = useCopyToClipboard()
 
-  const pingProject = async (e: Event) => {
-    e.preventDefault()
-    if (row.original.onPingProject)
-      row.original.onPingProject(row.original.projectContract)
-  }
+  const { data: collaboratorData }: any = useContractRead({
+    address: row.original.projectContract as `0x${string}`,
+    abi: DACProjectAbi,
+    functionName: "getCollaborator",
+    args: [row.original.userAddress],
+  })
 
-  const withdrawShare = async (e: Event) => {
-    e.preventDefault()
-    if (row.original.onWithdrawShare)
-      row.original.onWithdrawShare(row.original.projectContract)
-  }
+  const { write: pingProject } = useContractWrite({
+    address: networkMapping[networkInfo.chainId]["DACAggregator"][0],
+    abi: DACAggregatorAbi,
+    functionName: "pingProject",
+    args: [row.original.projectContract],
+
+    onSuccess: async (tx) => {
+      setIsPinging(true)
+
+      const receipt = await waitForTransaction({
+        hash: tx.hash,
+        confirmations: 2,
+      })
+      console.log(receipt)
+
+      if (receipt.status === "success") {
+        toast({
+          title: "Project pinged",
+          description: (
+            <>
+              <p>Your project will stay active for another 30 days.</p>
+              <p>
+                <Link
+                  href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  See on block explorer
+                </Link>
+              </p>
+            </>
+          ),
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Something went wrong",
+          description: "Please try again.",
+        })
+      }
+
+      setIsPinging(false)
+    },
+    onError: (err) => {
+      toast({
+        variant: "destructive",
+        title: "Something went wrong",
+        description: "Please try again.",
+      })
+      console.error(err)
+    },
+  })
+
+  const { write: withdrawShare } = useContractWrite({
+    address: row.original.projectContract as `0x${string}`,
+    abi: DACProjectAbi,
+    functionName: "withdrawShare",
+    args: [collaboratorData.amountAvailable],
+
+    onSuccess: async (tx) => {
+      setIsWithdrawing(true)
+
+      const receipt = await waitForTransaction({
+        hash: tx.hash,
+        confirmations: 2,
+      })
+      console.log(receipt)
+
+      if (receipt.status === "success") {
+        toast({
+          title: "Share withdrawn",
+          description: (
+            <>
+              <p>
+                You've successfully withdrawn{" "}
+                <CurrencyComponent
+                  amount={Number(collaboratorData.amountAvailable)}
+                  currency="native"
+                />
+              </p>
+              <p>
+                <Link
+                  href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  See on block explorer
+                </Link>
+              </p>
+            </>
+          ),
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Something went wrong",
+          description: "Please try again.",
+        })
+      }
+
+      setIsWithdrawing(false)
+    },
+    onError: (err) => {
+      toast({
+        variant: "destructive",
+        title: "Something went wrong",
+        description: "Please try again.",
+      })
+      console.error(err)
+    },
+  })
 
   return (
     <DropdownMenu modal={false}>
@@ -264,9 +376,24 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {isStillActive() ? (
-          <DropdownMenuItem onSelect={(e) => pingProject(e)}>
-            <LucideActivity size={16} className="mr-2" color="var(--green)" />
-            <span style={{ color: "var(--green)" }}>Ping</span>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              pingProject()
+            }}
+          >
+            {isPinging ? (
+              <Loader2
+                className="mr-2 h-4 w-4 animate-spin"
+                size={16}
+                color="var(--yellow)"
+              />
+            ) : (
+              <LucideActivity size={16} className="mr-2" color="var(--green)" />
+            )}
+            <span style={{ color: "var(--green)" }}>
+              {isPinging ? "Pinging..." : "Ping"}
+            </span>
           </DropdownMenuItem>
         ) : (
           <TooltipComponent
@@ -284,9 +411,24 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
           />
         )}
         {Number(row.original.totalRaised) > 0 ? (
-          <DropdownMenuItem onSelect={(e) => withdrawShare(e)}>
-            <LucideWallet size={16} className="mr-2" color="var(--green)" />
-            <span style={{ color: "var(--green)" }}>Withdraw share</span>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              withdrawShare()
+            }}
+          >
+            {isWithdrawing ? (
+              <Loader2
+                className="mr-2 h-4 w-4 animate-spin"
+                size={16}
+                color="var(--yellow)"
+              />
+            ) : (
+              <LucideWallet size={16} className="mr-2" color="var(--green)" />
+            )}
+            <span style={{ color: "var(--green)" }}>
+              {isWithdrawing ? "Withdrawing share..." : "Withdraw share"}
+            </span>
           </DropdownMenuItem>
         ) : (
           <TooltipComponent

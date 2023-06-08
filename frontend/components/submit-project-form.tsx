@@ -141,7 +141,7 @@ export function SubmitProjectForm() {
       values.projectTags?.join(",") || "",
     ]
 
-    // submitProject({ args })
+    submitProject({ args })
   }
 
   const { isLoading: isSubmittingProject, write: submitProject } =

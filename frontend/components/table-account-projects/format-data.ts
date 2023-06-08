@@ -1,10 +1,6 @@
 import { Project } from "@/types/projects"
 
-export default function formatData(
-  data: Project[],
-  onPingProject: (projectContract: string) => Promise<void>,
-  onWithdrawShare: (projectContract: string) => Promise<void>
-) {
+export default function formatData(data: Project[]) {
   return data.map((project) => {
     const {
       id,
@@ -49,8 +45,6 @@ export default function formatData(
       network,
       blockExplorer,
       userAddress,
-      onPingProject,
-      onWithdrawShare,
     }
   })
 }

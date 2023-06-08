@@ -36,12 +36,6 @@ export default function AccountProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [searchValue, setSearchValue] = useState<string>("")
 
-  const pingProject = async (projectContract: string) => {
-    console.log(projectContract)
-  }
-
-  const withdrawShare = async (projectContract: string) => {}
-
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value)
     // We cannot perform 'OR' searches, or search an array of strings with The Graph
@@ -144,10 +138,7 @@ export default function AccountProjectsPage() {
         ) : error ? (
           "There was an error fetching the projects. Please try again later."
         ) : (
-          <DataTable
-            columns={columns}
-            data={formatData(projects, pingProject, withdrawShare)}
-          />
+          <DataTable columns={columns} data={formatData(projects)} />
         )}
       </div>
     </section>
