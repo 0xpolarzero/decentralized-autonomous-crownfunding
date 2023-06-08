@@ -239,7 +239,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
 
       const receipt = await waitForTransaction({
         hash: tx.hash,
-        confirmations: 2,
+        confirmations: 5,
       })
       console.log(receipt)
 
@@ -293,7 +293,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
 
       const receipt = await waitForTransaction({
         hash: tx.hash,
-        confirmations: 2,
+        confirmations: 5,
       })
       console.log(receipt)
 

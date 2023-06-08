@@ -155,7 +155,7 @@ export function SubmitProjectForm() {
 
         const receipt = await waitForTransaction({
           hash: tx.hash,
-          confirmations: 2,
+          confirmations: 5,
         })
         console.log(receipt)
 

@@ -53,3 +53,10 @@ No need to do too big, e.g. function to create a project, no need for adding add
 - When executed, button to propose to halt the process (if you're an investor or a founder)
 
 BUT hard to track events in these child contracts, still this issue
+
+# TODO LATER
+
+- Currently limited to 100 items (projects, contributions): need to handle more and fetch on different pages & on search (but limited with The Graph queries)
+- Can completely abstract Chainlink from the user (request some native tokens on creation, create the Upkeep, swap to LINK & fund it, don't use the UI and put everything in-app)
+- Can also abstract the wallet and let the usser connect with Web2 onboarding
+- Can use Account abstraction as well instead of contributor account with the right contract standard & sponsor gas fees for transactions & upkeep (only let pay with wallet/credit cart for contributing)
