@@ -6,7 +6,7 @@ import { NetworkConfig, NetworkMapping, NetworkName } from "@/types/network"
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { DACProjectAbi } from "@/config/constants/abis/DACProject"
-import networkMappingJson from "@/config/constants/networkMapping.json"
+import networkMappingJson from "@/config/constants/network-mapping.json"
 
 export const networkMapping: NetworkMapping =
   networkMappingJson as NetworkMapping

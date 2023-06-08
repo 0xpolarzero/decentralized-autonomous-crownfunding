@@ -8,7 +8,7 @@ import { LucideBanknote } from "lucide-react"
 
 import { Project, ProjectTable } from "@/types/projects"
 import { client } from "@/config/apollo-client"
-import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraphQueries"
+import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraph-queries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"

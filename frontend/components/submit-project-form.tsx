@@ -13,7 +13,7 @@ import * as z from "zod"
 
 import { Project } from "@/types/projects"
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
-import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
+import { GET_PROJECTS } from "@/config/constants/subgraph-queries"
 import { networkConfig, networkMapping } from "@/config/network"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"

@@ -4,7 +4,7 @@ const fs = require('fs');
 const { developmentChains } = require('../helper-hardhat-config');
 
 const frontEndContractsFile =
-  '../frontend/config/constants/networkMapping.json';
+  '../frontend/config/constants/network-mapping.json';
 const frontEndAbiFolder = '../frontend/config/constants/abis/';
 
 module.exports = async () => {

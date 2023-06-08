@@ -8,7 +8,7 @@ import { LucideCompass } from "lucide-react"
 
 import { Contribution } from "@/types/contributions"
 import { ContributorAccount } from "@/types/contributor-account"
-import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraphQueries"
+import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

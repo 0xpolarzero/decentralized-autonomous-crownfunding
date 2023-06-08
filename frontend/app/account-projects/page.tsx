@@ -7,7 +7,7 @@ import { useQuery } from "@apollo/client"
 import { LucidePlus } from "lucide-react"
 
 import { Project, ProjectTable } from "@/types/projects"
-import { GET_PROJECTS } from "@/config/constants/subgraphQueries"
+import { GET_PROJECTS } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
