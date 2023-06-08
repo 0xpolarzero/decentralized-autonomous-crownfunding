@@ -1,10 +1,11 @@
+import { calculate } from "@/helpers/calculate"
+
 import { Contribution } from "@/types/contributions"
 
 export default function formatData(
   contributions: Contribution[],
   totalDistributed: number,
   totalStored: number,
-  lastContributionsTransferedAt: number,
   paymentInterval: BigInt
 ) {
   return contributions
@@ -19,6 +20,8 @@ export default function formatData(
           } = contribution
 
           return {
+            id: contribution.id,
+            index: Number(contribution.id.split("-")[1]),
             project,
             projectStatus:
               new Date(Number(project.lastActivityAt) * 1000) >
@@ -31,10 +34,11 @@ export default function formatData(
             endsAt: Number(endsAt),
             totalDistributed: Number(totalDistributed),
             totalStored: Number(totalStored),
-            lastContributionsTransferedAt: Number(
-              lastContributionsTransferedAt
+            pending: calculate.totalContributions(
+              contributions,
+              Number(paymentInterval),
+              new Date().getTime() / 1000
             ),
-            paymentInterval: Number(paymentInterval),
           }
         })
         // Sort by most recent first

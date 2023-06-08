@@ -112,10 +112,6 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
       },
     })
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmount(e.target.value)
-  }
-
   useEffect(() => {
     if (
       isNaN(Number(amount)) ||
@@ -164,7 +160,7 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
             placeholder="0.0"
             className="mb-2"
             value={amount}
-            onChange={handleAmountChange}
+            onChange={(e) => setAmount(e.target.value)}
           />
           <span className="flex items-center gap-2">
             End date

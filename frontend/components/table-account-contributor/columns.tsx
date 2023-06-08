@@ -1,7 +1,8 @@
-// ! ADD FILTERING (address)
-// ! Add percentages
 "use client"
 
+import { useState } from "react"
+import Link from "next/link"
+import useGlobalStore from "@/stores/useGlobalStore"
 import { ColumnDef, Row } from "@tanstack/react-table"
 import {
   ArrowDown01,
@@ -10,23 +11,43 @@ import {
   LucideArrowDownRight,
   LucideArrowUpRight,
   LucideCheckCircle2,
+  LucideExternalLink,
   LucideHourglass,
+  LucideInfo,
   LucidePlus,
+  LucideShare2,
   LucideSparkle,
   LucideXCircle,
+  MoreHorizontal,
   Sparkles,
 } from "lucide-react"
+import { useContractWrite } from "wagmi"
 
 import { ContributionTable } from "@/types/contributions"
+import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
+import { networkConfig } from "@/config/network"
+import { siteConfig } from "@/config/site"
+import useCopyToClipboard from "@/hooks/copy-to-clipboard"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
+import AddressComponent from "@/components/ui-extended/address"
+import CurrencyComponent from "@/components/ui-extended/currency"
+import DurationComponent from "@/components/ui-extended/duration"
+import ElapsedTimeComponent from "@/components/ui-extended/elapsed-time"
+import InfoComponent from "@/components/ui-extended/info"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
-import AddressComponent from "../ui-extended/address"
-import CurrencyComponent from "../ui-extended/currency"
-import DurationComponent from "../ui-extended/duration"
-import ElapsedTimeComponent from "../ui-extended/elapsed-time"
-import InfoComponent from "../ui-extended/info"
-import TooltipComponent from "../ui-extended/tooltip"
-import { Button } from "../ui/button"
-import { Skeleton } from "../ui/skeleton"
+import { Dialog } from "../ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu"
+import ButtonEditContributionComponent from "./button-edit-contribution"
 
 type CellProps = {
   row: Row<ContributionTable>
@@ -53,7 +74,7 @@ const ProjectInfo: React.FC<CellProps> = ({ row }) => {
 const StatusCell: React.FC<CellProps> = ({ row }) => {
   const status: string = row.getValue("projectStatus")
   const lastActivityAt: string = new Date(
-    row.original.project.lastActivityAt * 1000
+    Number(row.original.project.lastActivityAt) * 1000
   ).toLocaleDateString()
 
   if (status)
@@ -136,6 +157,26 @@ const ContributionAmountDistributed: React.FC<CellProps> = ({ row }) => {
   )
 }
 
+const ContributionAmountPending: React.FC<CellProps> = ({ row }) => {
+  const pending = row.original.pending.find((c) => c.id === row.original.id)
+  const pendingAmount = pending?.amount || 0
+  const percentage = (pendingAmount / row.original.amountStored) * 100
+
+  if (!pending) return <span className="text-muted-foreground">-</span>
+
+  return (
+    <>
+      <p>
+        <CurrencyComponent amount={pending.amount} currency="native" />
+      </p>
+      <p className="flex items-center text-sm text-muted-foreground gap-2">
+        {percentage.toFixed(2)}%
+        <InfoComponent content="The percentage of the total amount stored that should be sent to the project at the current time." />
+      </p>
+    </>
+  )
+}
+
 const ContributionAmountStored: React.FC<CellProps> = ({ row }) => {
   const amountStored = row.original?.amountStored || 0
   const totalStored = row.original?.totalStored || 0
@@ -157,8 +198,58 @@ const ContributionAmountStored: React.FC<CellProps> = ({ row }) => {
 }
 
 const ActionsCell: React.FC<CellProps> = ({ row }) => {
-  // Projects page
-  return null
+  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+  const networkInfo =
+    currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
+
+  const [isCanceling, setIsCanceling] = useState<boolean>(false)
+
+  const { toast } = useToast()
+
+  const copyToClipboard = useCopyToClipboard()
+
+  return (
+    <Dialog>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <Link
+            href={`/project?address=${row.original.project.projectContract}`}
+          >
+            <DropdownMenuItem>
+              <LucideInfo size={16} className="mr-2" />
+              Show project&apos;s page
+            </DropdownMenuItem>
+          </Link>
+          <DropdownMenuItem
+            onClick={() =>
+              copyToClipboard(
+                `${siteConfig.url}/project?address=${row.original.project.projectContract}`
+              )
+            }
+          >
+            <LucideShare2 size={16} className="mr-2" />
+            Share this campain
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <ButtonEditContributionComponent
+            amounts={{
+              stored: row.original.amountStored,
+              distributed: row.original.amountDistributed,
+            }}
+            contributionIndex={row.original.index}
+            projectLastActivityAt={Number(row.original.project.lastActivityAt)}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Dialog>
+  )
 }
 
 /* -------------------------------------------------------------------------- */
@@ -261,12 +352,52 @@ export const columns: ColumnDef<ContributionTable>[] = [
     cell: ({ row }) => <ContributionAmountDistributed row={row} />,
   },
   {
+    accessorKey: "amountPending",
+    header: ({ column }) => {
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span>Pending</span>
+            <InfoComponent content="The amount that should be distributed to the project at the current time." />
+          </div>
+          <TooltipComponent
+            shownContent={
+              <Button
+                variant="ghost"
+                className="pl-1 pr-3"
+                onClick={() => {
+                  column.toggleSorting(column.getIsSorted() === "asc")
+                }}
+              >
+                {column.getIsSorted() === "asc" ? (
+                  <ArrowDown01 className="ml-2 h-4 w-4" />
+                ) : column.getIsSorted() === "desc" ? (
+                  <ArrowDown10 className="ml-2 h-4 w-4" />
+                ) : (
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+            }
+            tooltipContent={
+              column.getIsSorted() === "asc"
+                ? "Showing lowest first"
+                : column.getIsSorted() === "desc"
+                ? "Showing highest first"
+                : "Sort by amount raised"
+            }
+          />
+        </div>
+      )
+    },
+    cell: ({ row }) => <ContributionAmountPending row={row} />,
+  },
+  {
     accessorKey: "amountStored",
     header: ({ column }) => {
       return (
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span>Expected</span>
+            <span>Stored</span>
             <InfoComponent content="The amount stored in the contributor account yet to be sent to the project." />
           </div>
           <TooltipComponent

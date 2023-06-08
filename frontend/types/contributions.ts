@@ -13,6 +13,7 @@ export interface Contribution {
 
 export interface ContributionTable {
   id: string
+  index: number
   project: Project
   projectStatus: true | false
   amountStored: number
@@ -21,8 +22,7 @@ export interface ContributionTable {
   endsAt: number
   totalDistributed: number
   totalStored: number
-  lastContributionsTransferedAt: number
-  paymentInterval: number | null
+  pending: ContributionToSend[]
 }
 
 export interface ContributionToSend {

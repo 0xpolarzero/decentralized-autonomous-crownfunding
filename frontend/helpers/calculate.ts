@@ -13,7 +13,6 @@ const calculateContributions = (
   paymentTimestamp: number
 ): ContributionToSend[] => {
   let contributionsToSend: ContributionToSend[] = []
-  console.log(contributions)
 
   for (let i = 0; i < contributions.length; i++) {
     if (
@@ -47,34 +46,15 @@ const calculateIndividualContribution = (
 ): number => {
   if (isContributionAlreadyDistributed(contribution)) return 0
 
-  if (Number(contribution.endsAt) < paymentTimestamp) {
-    console.log("contribution ended")
-    console.log(
-      Number(contribution.amountStored) - Number(contribution.amountDistributed)
-    )
-  }
-
   if (Number(contribution.endsAt) < paymentTimestamp)
     return (
       Number(contribution.amountStored) - Number(contribution.amountDistributed)
     ) // Send everything left
 
   const remainingDuration = Number(contribution.endsAt) - paymentTimestamp
-  console.log("remainingDuration")
-  console.log(remainingDuration)
-  console.log("ends at", contribution.endsAt)
-  console.log("paymentTimestamp", paymentTimestamp)
-  console.log(new Date(remainingDuration * 1000))
   const remainingIntervals = Math.floor(remainingDuration / paymentInterval)
-  console.log("remainingIntervals")
-  console.log(remainingIntervals)
   const remainingAmount =
     Number(contribution.amountStored) - Number(contribution.amountDistributed)
-  console.log("remainingAmount")
-  console.log(remainingAmount)
-
-  console.log("amount to send")
-  console.log(Math.floor(remainingAmount / (remainingIntervals + 2)))
 
   return Math.floor(remainingAmount / (remainingIntervals + 2))
 }

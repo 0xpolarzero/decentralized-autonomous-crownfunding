@@ -5,7 +5,7 @@ import Link from "next/link"
 import { calculate } from "@/helpers/calculate"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
-import { LucideCompass } from "lucide-react"
+import { LucideCompass, PauseCircle } from "lucide-react"
 import { useContractRead } from "wagmi"
 
 import { Contribution, ContributionToSend } from "@/types/contributions"
@@ -27,6 +27,7 @@ import {
 import formatData from "@/components/table-account-contributor/format-data"
 import CurrencyComponent from "@/components/ui-extended/currency"
 import { DataTableSkeleton } from "@/components/ui-extended/data-table-skeleton"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 export default function AccountContributorPage() {
   const {
@@ -171,22 +172,12 @@ export default function AccountContributorPage() {
       </section>
     )
 
-  console.log(
-    contributorData?.contributorAccounts[0],
-    contributorData?.contributorAccounts[0].lastContributionsTransferedAt +
-      Number(paymentInterval),
-    "=",
-    contributorData?.contributorAccounts[0].lastContributionsTransferedAt,
-    " + ",
-    Number(paymentInterval)
-  )
-
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <ContributorUpkeepComponent />
       <Separator />
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1">
           Total contributed
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
@@ -194,7 +185,7 @@ export default function AccountContributorPage() {
             <CurrencyComponent amount={totalDistributed} currency="native" />
           )}
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1">
           Total stored
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
@@ -202,18 +193,35 @@ export default function AccountContributorPage() {
             <CurrencyComponent amount={totalStored} currency="native" />
           )}
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1">
           Expected next payment
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
+          ) : Number(contributorAccount?.lastContributionsTransferedAt) +
+              Number(paymentInterval) <
+            new Date().getTime() / 1000 ? (
+            // The last payment was missed
+            <TooltipComponent
+              shownContent={
+                <span
+                  className="flex items-center gap-2 text-muted-foreground text-sm"
+                  style={{ color: "var(--yellow)" }}
+                >
+                  <PauseCircle size={16} /> N/A
+                </span>
+              }
+              tooltipContent="At least one payment was missed. Please make sure your Chainlink Automation is registered & funded."
+            />
           ) : paymentInterval ? (
             <CurrencyComponent
               amount={calculate
                 .totalContributions(
                   contributions,
                   Number(paymentInterval),
-                  contributorData?.contributorAccounts[0]
-                    .lastContributionsTransferedAt + Number(paymentInterval)
+                  Number(
+                    contributorData?.contributorAccounts[0]
+                      .lastContributionsTransferedAt
+                  ) + Number(paymentInterval)
                 )
                 .reduce(
                   (acc: number, contribution: ContributionToSend) =>
@@ -223,7 +231,7 @@ export default function AccountContributorPage() {
               currency="native"
             />
           ) : (
-            "N/A"
+            <span className="text-muted-foreground text-sm">N/A</span>
           )}
         </div>
       </div>
@@ -269,8 +277,6 @@ export default function AccountContributorPage() {
               contributions,
               totalDistributed,
               totalStored,
-              contributorData?.contributorAccounts[0]
-                .lastContributionsTransferedAt,
               paymentInterval
             )}
           />
