@@ -143,7 +143,7 @@ export default function AccountContributorPage() {
       </section>
     )
 
-  if (!loading && !contributorData?.contributorAccounts)
+  if (!loading && !contributorData?.contributorAccounts.length)
     return (
       <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
@@ -210,9 +210,10 @@ export default function AccountContributorPage() {
                   <PauseCircle size={16} /> N/A
                 </span>
               }
-              tooltipContent="At least one payment was missed. Please make sure your Chainlink Automation is registered & funded."
+              tooltipContent="Please make sure your Chainlink Automation is registered & funded."
             />
-          ) : paymentInterval ? (
+          ) : paymentInterval &&
+            contributorData?.contributorAccounts?.length ? (
             <CurrencyComponent
               amount={calculate
                 .totalContributions(

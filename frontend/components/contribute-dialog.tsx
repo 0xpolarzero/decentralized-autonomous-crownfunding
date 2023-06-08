@@ -21,10 +21,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
+import { DatePickerComponent } from "@/components/ui-extended/date-picker"
 import InfoComponent from "@/components/ui-extended/info"
-
-import { DatePickerComponent } from "./ui-extended/date-picker"
-import TooltipWithConditionComponent from "./ui-extended/tooltip-with-condition"
+import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with-condition"
 
 interface ContributeDialogComponentProps {
   data: ProjectTable | null

@@ -10,3 +10,16 @@ export interface ContributorAccount {
   totalContributed: string
   lastContributionsTransferedAt: string
 }
+
+export interface UpkeepInfo {
+  target: string
+  executeGas: string
+  checkData: string
+  balance: string
+  admin: string
+  maxValidBlocknumber: string
+  lastPerformBlockNumber: string
+  amountSpent: string
+  paused: boolean
+  offchainConfig: string
+}

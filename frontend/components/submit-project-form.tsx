@@ -50,11 +50,16 @@ const formSchema = z.object({
     .array(
       z.object({
         address: z.string(),
-        share: z.number(),
+        share: z.string(),
       })
     )
     .min(1)
-    .refine((val) => val.reduce((a, b) => a + b.share, 0) === 100),
+    .refine((val) => val.every((v) => !isNaN(Number(v.share))), {
+      message: "Shares must be valid numbers",
+    })
+    .refine((val) => val.reduce((a, b) => a + Number(b.share), 0) === 100, {
+      message: "Shares must add up to 100",
+    }),
 
   // Must accept terms and conditions
   conditions: z
@@ -97,7 +102,7 @@ export function SubmitProjectForm() {
       projectDescription: "",
       projectLinks: [{ url: "" }],
       projectTags: [],
-      projectCollaborators: [{ address: address, share: 100 }],
+      projectCollaborators: [{ address: address, share: "100" }],
       conditions: false,
     },
     mode: "onChange",
@@ -129,12 +134,12 @@ export function SubmitProjectForm() {
     useState<boolean>(false)
   const [existingTags, setExistingTags] = useState<string[]>([])
 
-  // Functions (submit & tx)
   function onFormSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
     const args = [
       values.projectCollaborators.map((collaborator) => collaborator.address),
-      values.projectCollaborators.map((collaborator) => collaborator.share),
+      values.projectCollaborators.map((collaborator) =>
+        Number(collaborator.share)
+      ),
       values.projectName,
       values.projectDescription,
       values.projectLinks?.map((link) => link.url.trim()).join(",") || "",
@@ -372,6 +377,12 @@ export function SubmitProjectForm() {
                   contributions.
                 </FormDescription>
               ) : null}
+              {index === collaboratorsFields.length - 1 &&
+              form.formState.errors.projectCollaborators ? (
+                <FormMessage>
+                  {form.formState.errors.projectCollaborators.message}
+                </FormMessage>
+              ) : null}
             </div>
           ))}
           <Button
@@ -380,7 +391,7 @@ export function SubmitProjectForm() {
             onClick={() =>
               appendCollaborator({
                 address: "",
-                share: 0,
+                share: "0",
               })
             }
           >

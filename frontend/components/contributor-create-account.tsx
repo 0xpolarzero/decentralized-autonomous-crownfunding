@@ -9,9 +9,11 @@ import { useContractWrite } from "wagmi"
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
 import { networkConfig, networkMapping } from "@/config/network"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/components/ui/use-toast"
+import InfoComponent from "@/components/ui-extended/info"
 
-import InfoComponent from "./ui-extended/info"
 import TooltipWithConditionComponent from "./ui-extended/tooltip-with-condition"
 import {
   Dialog,
@@ -22,8 +24,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog"
-import { Label } from "./ui/label"
-import { Slider } from "./ui/slider"
 
 export default function ContributorCreateAccount() {
   const currentNetwork = useGlobalStore((state) => state.currentNetwork)
@@ -33,71 +33,65 @@ export default function ContributorCreateAccount() {
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-  const [isCreatingAccount, setIsCreatingAccount] = useState<boolean>(false)
+  const [isProcessingTransaction, setIsProcessingTransaction] =
+    useState<boolean>(false)
   const [paymentInterval, setPaymentInterval] = useState<number>(604800) // 7 days
   const [isIntervalValid, setIsIntervalValid] = useState<boolean>(true)
 
-  const { write: createAccount } = useContractWrite({
-    address: networkMapping[networkInfo.chainId]["DACAggregator"][0],
-    abi: DACAggregatorAbi,
-    functionName: "createContributorAccount",
-    args: [paymentInterval],
+  const { isLoading: isCreatingAccount, write: createAccount } =
+    useContractWrite({
+      address: networkMapping[networkInfo.chainId]["DACAggregator"][0],
+      abi: DACAggregatorAbi,
+      functionName: "createContributorAccount",
+      args: [paymentInterval],
 
-    onSuccess: async (tx) => {
-      setIsCreatingAccount(true)
+      onSuccess: async (tx) => {
+        setIsProcessingTransaction(true)
 
-      const receipt = await waitForTransaction({
-        hash: tx.hash,
-        confirmations: 5,
-      })
-      console.log(receipt)
-
-      if (receipt.status === "success") {
-        toast({
-          title: "Account created",
-          description: (
-            <>
-              <p>Your contributor account was successfully created.</p>
-              <p>
-                <Link
-                  href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  See on block explorer
-                </Link>
-              </p>
-            </>
-          ),
+        const receipt = await waitForTransaction({
+          hash: tx.hash,
+          confirmations: 5,
         })
-      } else {
+        console.log(receipt)
+
+        if (receipt.status === "success") {
+          toast({
+            title: "Account created",
+            description: (
+              <>
+                <p>Your contributor account was successfully created.</p>
+                <p>
+                  <Link
+                    href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    See on block explorer
+                  </Link>
+                </p>
+              </>
+            ),
+          })
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Something went wrong",
+            description: "Please try again.",
+          })
+        }
+
+        setIsProcessingTransaction(false)
+      },
+      onError: (err) => {
         toast({
           variant: "destructive",
           title: "Something went wrong",
           description: "Please try again.",
         })
-      }
-
-      setIsCreatingAccount(false)
-    },
-    onError: (err) => {
-      toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description: "Please try again.",
-      })
-      console.error(err)
-    },
-  })
-
-  const handlePaymentIntervalChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const interval = Number(e.target.value)
-    setPaymentInterval(interval)
-    setIsIntervalValid(interval >= 86400 && interval <= 2592000)
-  }
+        console.error(err)
+      },
+    })
 
   return (
     <Dialog>
@@ -126,13 +120,6 @@ export default function ContributorCreateAccount() {
               Payment interval
               <InfoComponent content="The interval between automatic payments." />
             </span>
-            {/* <Input
-            type="number"
-            placeholder="0.0"
-            className="mb-2"
-            value={paymentInterval}
-            onChange={handlePaymentIntervalChange}
-          /> */}
             <Slider
               value={[paymentInterval]}
               min={86400}
@@ -149,10 +136,10 @@ export default function ContributorCreateAccount() {
         <DialogFooter>
           <div
             className={`flex grow items-center ${
-              isCreatingAccount ? "justify-between" : "justify-end"
+              isProcessingTransaction ? "justify-between" : "justify-end"
             }`}
           >
-            {isCreatingAccount ? (
+            {isProcessingTransaction ? (
               <span className="justify-self-start text-sm text-gray-400">
                 Your account is being created...
               </span>
