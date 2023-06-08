@@ -46,6 +46,10 @@ export type ProjectTable = {
   contributors: string
   network: string
   blockExplorer: string
+  userAddress?: string
+  // For projects page
+  onPingProject?: (projectContract: string) => void
+  onWithdrawShare?: (projectContract: string) => void
 }
 
 export type Collaborator = {

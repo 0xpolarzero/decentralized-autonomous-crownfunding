@@ -65,25 +65,6 @@ export const GET_CONTRIBUTIONS_FOR_PROJECT = gql`
   }
 `
 
-export const GET_PROJECTS_FOR_USER = gql`
-  query GetProjectsForUser($address: String!) {
-    projects(where: { initiator: $address }) {
-      id
-      name
-      description
-      links
-      tags
-      createdAt
-      lastActivityAt
-      projectContract
-      initiator
-      collaborators
-      shares
-      totalRaised
-    }
-  }
-`
-
 export const GET_PROJECT_BY_SLUG_CONTRACT = gql`
   query GetProjectBySlug($slug: String!) {
     projects(where: { projectContract: $slug }) {
