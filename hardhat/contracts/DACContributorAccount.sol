@@ -156,8 +156,6 @@ contract DACContributorAccount is
     /// @dev The interval between each payment
     // The owner of the account can change this value, knowing that a smaller value will require more LINK
     uint256 private s_upkeepInterval;
-    /// @dev Whether an upkeep is registered or not
-    bool private s_upkeepRegistered;
 
     /// @dev The projects the account is contributing to
     Contribution[] private s_contributions;
@@ -421,7 +419,7 @@ contract DACContributorAccount is
      */
 
     function registerNewUpkeep(uint96 _fundingAmount) public onlyOwner {
-        if (s_upkeepRegistered)
+        if (getUpkeep().admin != address(0))
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
         if (_fundingAmount < 0.1 * 10 ** 18)
@@ -448,7 +446,6 @@ contract DACContributorAccount is
             revert DACContributorAccount__UPKEEP_REGISTRATION_FAILED();
 
         s_upkeepId = upkeepId;
-        s_upkeepRegistered = true;
 
         emit DACContributorAccount__UpkeepRegistered(
             s_upkeepId,
@@ -462,13 +459,11 @@ contract DACContributorAccount is
      */
 
     function cancelUpkeep() external onlyOwner {
-        if (!s_upkeepRegistered)
+        if (getUpkeep().admin == address(0))
             revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
 
         // Cancel the Chainlink Upkeep
         REGISTRY.cancelUpkeep(s_upkeepId);
-        // Set the upkeep as not registered
-        s_upkeepRegistered = false;
 
         emit DACContributorAccount__UpkeepCanceled(s_upkeepId);
     }
@@ -660,12 +655,12 @@ contract DACContributorAccount is
     }
 
     /**
-     * @notice Get the Chainlink Upkeep registered status
-     * @return bool Whether the Chainlink Upkeep is registered or not
+     * @notice Get the informations about the Chainlink Upkeep
+     * @return struct UpkeepInfo The informations about the Chainlink Upkeep
      */
 
-    function isUpkeepRegistered() external view returns (bool) {
-        return s_upkeepRegistered;
+    function getUpkeep() public view returns (UpkeepInfo memory) {
+        return REGISTRY.getUpkeep(s_upkeepId);
     }
 
     /**

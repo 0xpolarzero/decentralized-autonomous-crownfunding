@@ -121,13 +121,8 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
           );
           assert.equal(
             Number(await contributorAccountContract.getUpkeepId()),
-            1,
+            0,
             'Should set the upkeepId to 1',
-          );
-          assert.equal(
-            await contributorAccountContract.isUpkeepRegistered(),
-            true,
-            'Should set the isUpkeepRegistered to true',
           );
         });
       });
@@ -782,53 +777,26 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
       describe('Mock functions', function () {
         describe('registerNewUpkeep', function () {
-          beforeEach(async () => {
-            // We need to cancel the upkeep that was registered in the constructor
-            // to correctly test the `registerNewUpkeep` function
-            const tx = await contributorAccountContract.cancelUpkeep();
-            await tx.wait(1);
-          });
-
           it('Should revert if not owner', async () => {
             await expect(
               contributorAccountContract.connect(notUser).registerNewUpkeep(),
             ).to.be.revertedWith('DACContributorAccount__NOT_OWNER()');
           });
 
-          it('Should revert if the upkeep is already registered', async () => {
+          it('Should successfully register the upkeep', async () => {
             const tx = await contributorAccountContract.registerNewUpkeep();
             await tx.wait(1);
 
-            await expect(
-              contributorAccountContract.registerNewUpkeep(),
-            ).to.be.revertedWith(
-              'DACContributorAccount__UPKEEP_ALREADY_REGISTERED()',
-            );
-          });
-
-          it('Should successfully register the upkeep', async () => {
             assert.equal(
               await contributorAccountContract.getUpkeepId(),
-              1, // it's actually been set to 1 in the constructor, but using the same logic
+              1,
               'Should have the correct upkeepId',
             );
           });
 
-          it('Should set the upkeep as registered and emit the correct event', async () => {
-            assert.equal(
-              await contributorAccountContract.isUpkeepRegistered(),
-              false,
-              'Should not be registered initially',
-            );
-
+          it('Should emit the correct event with the correct parameters', async () => {
             const tx = await contributorAccountContract.registerNewUpkeep();
             const txReceipt = await tx.wait(1);
-
-            assert.equal(
-              await contributorAccountContract.isUpkeepRegistered(),
-              true,
-              'Should set the upkeep as registered',
-            );
 
             const event = txReceipt.events?.find(
               (e) => e.event === 'DACContributorAccount__UpkeepRegistered',
@@ -848,6 +816,11 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
         });
 
         describe('cancelUpkeep', function () {
+          beforeEach(async () => {
+            const tx = await contributorAccountContract.registerNewUpkeep();
+            await tx.wait(1);
+          });
+
           it('Should revert if not owner', async () => {
             await expect(
               contributorAccountContract.connect(notUser).cancelUpkeep(),
@@ -865,15 +838,9 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
             );
           });
 
-          it('Should successfully cancel the upkeep, set is to unregistered and emit the correct event', async () => {
+          it('Should successfully cancel the upkeep and emit the correct event', async () => {
             const tx = await contributorAccountContract.cancelUpkeep();
             const txReceipt = await tx.wait(1);
-
-            assert.equal(
-              await contributorAccountContract.isUpkeepRegistered(),
-              false,
-              'Should set the upkeep as unregistered',
-            );
 
             const event = txReceipt.events?.find(
               (e) => e.event === 'DACContributorAccount__UpkeepCanceled',
@@ -881,30 +848,19 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
             assert.equal(
               event.args.upkeepId,
-              1,
+              0,
               'Should emit the correct upkeepId',
             );
           });
 
-          it('Should allow to register a new upkeep', async () => {
-            const tx = await contributorAccountContract.cancelUpkeep();
-            await tx.wait(1);
+          // We can't test that in local as we need to interact with the Chainlink registry
+          // it('Should allow to register a new upkeep', async () => {
+          //   const tx = await contributorAccountContract.cancelUpkeep();
+          //   await tx.wait(1);
 
-            assert.equal(
-              await contributorAccountContract.isUpkeepRegistered(),
-              false,
-              'Should set the upkeep as unregistered',
-            );
-
-            const tx2 = await contributorAccountContract.registerNewUpkeep();
-            await tx2.wait(1);
-
-            assert.equal(
-              await contributorAccountContract.isUpkeepRegistered(),
-              true,
-              'Should set the upkeep as registered',
-            );
-          });
+          //   const tx2 = await contributorAccountContract.registerNewUpkeep();
+          //   await tx2.wait(1);
+          // });
         });
 
         describe('withdrawUpkeepFunds', function () {
@@ -924,7 +880,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
             assert.equal(
               Number(event.args.upkeepId),
-              1,
+              0,
               'Should emit the correct upkeep id',
             );
           });

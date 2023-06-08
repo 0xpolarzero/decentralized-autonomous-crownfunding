@@ -162,8 +162,6 @@ contract MockDACContributorAccount is
     /// @dev The interval between each payment
     // The owner of the account can change this value, knowing that a smaller value will require more LINK
     uint256 private s_upkeepInterval;
-    /// @dev Whether an upkeep is registered or not
-    bool private s_upkeepRegistered;
 
     /// @dev The projects the account is contributing to
     Contribution[] private s_contributions;
@@ -222,12 +220,6 @@ contract MockDACContributorAccount is
 
         // Initialize the DAC Aggregator
         DAC_AGGREGATOR = DACAggregatorInterface(msg.sender);
-
-        // Register a new Chainlink Upkeep
-        // We can't call `registerUpkeep` yet in the constructor because of the immutable variables
-        s_upkeepId = MOCK_registerUpkeep();
-        // Set the upkeep as registered
-        s_upkeepRegistered = true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -430,14 +422,11 @@ contract MockDACContributorAccount is
      */
 
     function registerNewUpkeep() public onlyOwner {
-        if (s_upkeepRegistered)
+        if (getUpkeep().admin != address(0))
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
         // Register the Chainlink Upkeep
         s_upkeepId = MOCK_registerUpkeep();
-
-        // Set the upkeep as registered
-        s_upkeepRegistered = true;
 
         emit DACContributorAccount__UpkeepRegistered(
             s_upkeepId,
@@ -451,13 +440,11 @@ contract MockDACContributorAccount is
      */
 
     function cancelUpkeep() external onlyOwner {
-        if (!s_upkeepRegistered)
+        if (getUpkeep().admin == address(0))
             revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
 
         // Cancel the Chainlink Upkeep
         MOCK_cancelUpkeep();
-        // Set the upkeep as not registered
-        s_upkeepRegistered = false;
 
         emit DACContributorAccount__UpkeepCanceled(s_upkeepId);
     }
@@ -649,12 +636,26 @@ contract MockDACContributorAccount is
     }
 
     /**
-     * @notice Get the Chainlink Upkeep registered status
-     * @return bool Whether the Chainlink Upkeep is registered or not
+     * @notice Get the informations about the Chainlink Upkeep
+     * @return struct UpkeepInfo The informations about the Chainlink Upkeep
      */
 
-    function isUpkeepRegistered() external view returns (bool) {
-        return s_upkeepRegistered;
+    function getUpkeep() public view returns (UpkeepInfo memory) {
+        // return REGISTRY.getUpkeep(s_upkeepId);
+        // There is no registry here, so we return the informations manually
+        return
+            UpkeepInfo({
+                target: address(this),
+                executeGas: s_upkeepGasLimit,
+                checkData: "",
+                balance: 0,
+                admin: s_upkeepId == 1 ? address(this) : address(0),
+                maxValidBlocknumber: 0,
+                lastPerformBlockNumber: 0,
+                amountSpent: 0,
+                paused: false,
+                offchainConfig: ""
+            });
     }
 
     /**
@@ -790,7 +791,9 @@ contract MockDACContributorAccount is
      * @notice Mock function to simulate cancelling the Upkeep
      */
 
-    function MOCK_cancelUpkeep() private {}
+    function MOCK_cancelUpkeep() private {
+        s_upkeepId = 0;
+    }
 
     /**
      * @notice Mock function to simulate withdrawing the funds from the Upkeep
