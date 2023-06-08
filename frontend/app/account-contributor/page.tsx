@@ -2,12 +2,15 @@
 
 import React, { useEffect, useState } from "react"
 import Link from "next/link"
+import { calculate } from "@/helpers/calculate"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
 import { LucideCompass } from "lucide-react"
+import { useContractRead } from "wagmi"
 
-import { Contribution } from "@/types/contributions"
+import { Contribution, ContributionToSend } from "@/types/contributions"
 import { ContributorAccount } from "@/types/contributor-account"
+import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
@@ -24,8 +27,6 @@ import {
 import formatData from "@/components/table-account-contributor/format-data"
 import CurrencyComponent from "@/components/ui-extended/currency"
 import { DataTableSkeleton } from "@/components/ui-extended/data-table-skeleton"
-import { useContractRead } from "wagmi"
-import {DACContributorAccountAbi} from '@/config/constants/abis/DACContributorAccount'
 
 export default function AccountContributorPage() {
   const {
@@ -66,10 +67,10 @@ export default function AccountContributorPage() {
   const [totalDistributed, setTotalDistributed] = useState<number>(0)
   const [totalStored, setTotalStored] = useState<number>(0)
 
-  const { data: , isError, isLoading }: any = useContractRead({
+  const { data: paymentInterval }: any = useContractRead({
     address: contributorAccountAddress,
     abi: DACContributorAccountAbi,
-    functionName: "checkUpkeep",
+    functionName: "getUpkeepInterval",
   })
 
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,6 +171,16 @@ export default function AccountContributorPage() {
       </section>
     )
 
+  console.log(
+    contributorData?.contributorAccounts[0],
+    contributorData?.contributorAccounts[0].lastContributionsTransferedAt +
+      Number(paymentInterval),
+    "=",
+    contributorData?.contributorAccounts[0].lastContributionsTransferedAt,
+    " + ",
+    Number(paymentInterval)
+  )
+
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <ContributorUpkeepComponent />
@@ -195,8 +206,24 @@ export default function AccountContributorPage() {
           Expected next payment
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
+          ) : paymentInterval ? (
+            <CurrencyComponent
+              amount={calculate
+                .totalContributions(
+                  contributions,
+                  Number(paymentInterval),
+                  contributorData?.contributorAccounts[0]
+                    .lastContributionsTransferedAt + Number(paymentInterval)
+                )
+                .reduce(
+                  (acc: number, contribution: ContributionToSend) =>
+                    acc + contribution.amount,
+                  0
+                )}
+              currency="native"
+            />
           ) : (
-            <CurrencyComponent amount={totalStored} currency="native" />
+            "N/A"
           )}
         </div>
       </div>
@@ -238,7 +265,14 @@ export default function AccountContributorPage() {
         ) : contributions.length ? (
           <DataTable
             columns={columns}
-            data={formatData(contributions, totalDistributed, totalStored, contributorData?.contributorAccounts[0].lastContributionsTransferedAt)}
+            data={formatData(
+              contributions,
+              totalDistributed,
+              totalStored,
+              contributorData?.contributorAccounts[0]
+                .lastContributionsTransferedAt,
+              paymentInterval
+            )}
           />
         ) : (
           "You don't have any contributions yet."

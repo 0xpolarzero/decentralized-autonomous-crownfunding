@@ -4,7 +4,8 @@ export default function formatData(
   contributions: Contribution[],
   totalDistributed: number,
   totalStored: number,
-  lastContributionsTransferedAt: number
+  lastContributionsTransferedAt: number,
+  paymentInterval: BigInt
 ) {
   return contributions
     ? contributions
@@ -20,17 +21,20 @@ export default function formatData(
           return {
             project,
             projectStatus:
-              new Date(project.lastActivityAt * 1000) >
+              new Date(Number(project.lastActivityAt) * 1000) >
               new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
                 ? true
                 : false,
-            amountStored,
-            amountDistributed,
-            startedAt,
-            endsAt,
-            totalDistributed,
-            totalStored,
-            lastContributionsTransferedAt,
+            amountStored: Number(amountStored),
+            amountDistributed: Number(amountDistributed),
+            startedAt: Number(startedAt),
+            endsAt: Number(endsAt),
+            totalDistributed: Number(totalDistributed),
+            totalStored: Number(totalStored),
+            lastContributionsTransferedAt: Number(
+              lastContributionsTransferedAt
+            ),
+            paymentInterval: Number(paymentInterval),
           }
         })
         // Sort by most recent first

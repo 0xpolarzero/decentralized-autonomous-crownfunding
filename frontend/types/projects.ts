@@ -6,14 +6,14 @@ export interface Project {
   description: string
   links: string[]
   tags: string[]
-  createdAt: number
-  lastActivityAt: number
+  createdAt: string
+  lastActivityAt: string
   projectContract: string
   initiator: string
   collaborators: string[]
-  shares: number[]
+  shares: string[]
   contributors?: Contribution[]
-  totalRaised: number
+  totalRaised: string
   // We add these fields to the Project type after the query
   network: string
   blockExplorer: string
@@ -34,16 +34,16 @@ export type ProjectTable = {
   name: string
   status: true | false
   collaborators: string[]
-  totalRaised: string
+  totalRaised: number
   links: string[]
   tags: string[]
   // Indirect display (popover, modal, etc.)
   description: string
-  createdAt: string
-  lastActivityAt: string
+  createdAt: number
+  lastActivityAt: number
   projectContract: string
   initiator: string
-  shares: string
+  shares: number[]
   contributors: string
   network: string
   blockExplorer: string

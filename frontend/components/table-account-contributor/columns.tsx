@@ -99,8 +99,8 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
 }
 
 const ContributionPeriod: React.FC<CellProps> = ({ row }) => {
-  const startDate = new Date(Number(row.original?.startedAt) * 1000)
-  const endDate = new Date(Number(row.original?.endsAt) * 1000)
+  const startDate = new Date(row.original?.startedAt * 1000)
+  const endDate = new Date(row.original?.endsAt * 1000)
   return (
     <>
       <p>

@@ -5,8 +5,8 @@ export interface Contribution {
   id: string
   account: ContributorAccount
   project: Project
-  amountStored: number
-  amountDistributed: number
+  amountStored: string
+  amountDistributed: string
   startedAt: string
   endsAt: string
 }
@@ -17,8 +17,17 @@ export interface ContributionTable {
   projectStatus: true | false
   amountStored: number
   amountDistributed: number
-  startedAt: string
-  endsAt: string
+  startedAt: number
+  endsAt: number
   totalDistributed: number
   totalStored: number
+  lastContributionsTransferedAt: number
+  paymentInterval: number | null
+}
+
+export interface ContributionToSend {
+  id: string
+  project: Project
+  amount: number
+  index: number
 }

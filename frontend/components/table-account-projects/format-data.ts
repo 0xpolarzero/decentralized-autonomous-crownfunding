@@ -26,21 +26,23 @@ export default function formatData(data: Project[]) {
       name,
       // Active only if timestamp < 30 days ago
       status:
-        new Date(lastActivityAt * 1000) >
+        new Date(Number(lastActivityAt) * 1000) >
         new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
           ? true
           : false,
       collaborators,
-      totalRaised,
+      totalRaised: Number(totalRaised),
       links,
       tags,
       // Indirect display (popover, modal, etc.)
       description,
-      createdAt: new Date(createdAt * 1000).toLocaleDateString(),
-      lastActivityAt: new Date(lastActivityAt * 1000).toLocaleDateString(),
+      createdAt: new Date(Number(createdAt) * 1000).toLocaleDateString(),
+      lastActivityAt: new Date(
+        Number(lastActivityAt) * 1000
+      ).toLocaleDateString(),
       projectContract,
       initiator,
-      shares,
+      shares: shares.map((share) => Number(share)),
       contributors,
       network,
       blockExplorer,

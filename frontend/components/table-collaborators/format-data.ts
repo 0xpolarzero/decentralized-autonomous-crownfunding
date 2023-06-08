@@ -5,7 +5,7 @@ export default function formatData(collaborators: string[], shares: number[]) {
     const obj: Collaborator = {
       id: index.toString(),
       address: collaborator,
-      share: shares[index],
+      share: Number(shares[index]),
     }
     return obj
   })

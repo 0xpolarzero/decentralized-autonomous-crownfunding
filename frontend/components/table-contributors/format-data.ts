@@ -25,12 +25,12 @@ export default function formatData(
           return {
             owner,
             accountContract,
-            amountStored,
-            amountDistributed,
-            startedAt,
-            endsAt,
-            totalRaised,
-            totalStored,
+            amountStored: Number(amountStored),
+            amountDistributed: Number(amountDistributed),
+            startedAt: Number(startedAt),
+            endsAt: Number(endsAt),
+            totalRaised: Number(totalRaised),
+            totalStored: Number(totalStored),
           }
         })
         // Sort by most recent first

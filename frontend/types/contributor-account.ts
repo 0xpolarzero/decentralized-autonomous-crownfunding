@@ -4,9 +4,9 @@ export interface ContributorAccount {
   id: string
   owner: string
   accountContract: string
-  createdAt: number
+  createdAt: string
   contributions: Contribution[]
-  contributionsCount: number
-  totalContributed: number
-  lastContributionsTransferedAt: number
+  contributionsCount?: string
+  totalContributed: string
+  lastContributionsTransferedAt: string
 }
