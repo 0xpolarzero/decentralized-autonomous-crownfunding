@@ -35,11 +35,11 @@ export const siteConfig = {
         },
       ],
     },
-    {
-      title: "Documentation",
-      slug: "docs",
-      href: "/docs",
-    },
+    // {
+    //   title: "Documentation",
+    //   slug: "docs",
+    //   href: "/docs",
+    // },
   ],
   links: {
     twitter: "https://twitter.com/0xpolarzero",
