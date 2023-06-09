@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { LucideClipboard, LucideClipboardCheck } from "lucide-react"

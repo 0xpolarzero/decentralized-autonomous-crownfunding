@@ -41,10 +41,10 @@ export default function ProjectPage() {
   const scrollArea = useRef<React.ElementRef<typeof ScrollAreaRoot>>(null)
 
   const createdAtFormatted = project?.createdAt
-    ? new Date(project?.createdAt * 1000)
+    ? new Date(Number(project?.createdAt) * 1000)
     : undefined
   const lastActivityAtFormatted = project?.lastActivityAt
-    ? new Date(project?.lastActivityAt * 1000)
+    ? new Date(Number(project?.lastActivityAt) * 1000)
     : undefined
 
   const isStillActive = (): boolean => {
@@ -53,7 +53,6 @@ export default function ProjectPage() {
   }
 
   const fetchProject = async () => {
-    // 'https://.../project?address=0x1234'
     const projectAddress = new URLSearchParams(window.location.search).get(
       "address"
     )
@@ -150,6 +149,7 @@ export default function ProjectPage() {
                   )}
                 </DialogTrigger>
                 <ContributeDialogComponent
+                  // @ts-ignore
                   data={project as ProjectTable | null}
                 />
               </Dialog>
@@ -292,9 +292,10 @@ export default function ProjectPage() {
               ) : (
                 <DataTable
                   columns={columnsCollaborators}
+                  // @ts-ignore
                   data={formatDataCollaborators(
                     project?.collaborators,
-                    project?.shares
+                    project?.shares.map((share) => Number(share))
                   )}
                 />
               )}
@@ -315,9 +316,10 @@ export default function ProjectPage() {
               ) : (
                 <DataTable
                   columns={columnsContributors}
+                  // @ts-ignore
                   data={formatDataContributors(
                     project?.contributors,
-                    project?.totalRaised
+                    Number(project?.totalRaised)
                   )}
                   filterable
                   filterSelector="owner"

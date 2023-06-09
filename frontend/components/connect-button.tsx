@@ -5,7 +5,7 @@ import useGlobalStore from "@/stores/useGlobalStore"
 import { readContract } from "@wagmi/core"
 import { ConnectKitButton } from "connectkit"
 import { zeroAddress } from "viem"
-import { useAccount, useContractRead, useNetwork } from "wagmi"
+import { useAccount, useNetwork } from "wagmi"
 
 import { abi, networkConfig, networkMapping } from "@/config/network"
 
@@ -33,42 +33,6 @@ export function ConnectButton() {
     setLoading: state.setLoading,
   }))
 
-  const getContributorAccount = async () => {
-    try {
-      const chainIdString = chain?.id.toString() || "0"
-      if (!networkMapping[chainIdString]) {
-        resetContributorAccount()
-        return
-      }
-
-      const data = await readContract({
-        address: networkMapping[chainIdString][
-          "DACAggregator"
-        ][0] as `0x${string}`,
-        abi: abi.dacAggregator,
-        functionName: "getContributorAccount",
-        args: [address],
-      })
-
-      if (data && data !== zeroAddress) {
-        setHasContributorAccount(true)
-        setContributorAccountAddress(data as `0x${string}`)
-      } else {
-        resetContributorAccount()
-      }
-    } catch (err) {
-      console.log(err)
-      resetContributorAccount()
-    }
-
-    setLoading(false)
-  }
-
-  const resetContributorAccount = () => {
-    setHasContributorAccount(false)
-    setContributorAccountAddress("0x")
-  }
-
   // Address & connected status
   useEffect(() => {
     if (address && isConnected) {
@@ -78,7 +42,7 @@ export function ConnectButton() {
       setConnected(false)
       setAddress("0x")
     }
-  }, [isConnected])
+  }, [isConnected, address, setAddress, setConnected])
 
   // Chain
   useEffect(() => {
@@ -91,12 +55,56 @@ export function ConnectButton() {
     } else {
       setCurrentNetwork(null)
     }
-  }, [chain])
+  }, [chain, setCurrentNetwork])
 
   // Contributor account
   useEffect(() => {
+    const resetContributorAccount = () => {
+      setHasContributorAccount(false)
+      setContributorAccountAddress("0x")
+    }
+
+    const getContributorAccount = async () => {
+      try {
+        const chainIdString = chain?.id.toString() || "0"
+        if (!networkMapping[chainIdString]) {
+          resetContributorAccount()
+          return
+        }
+
+        const data = await readContract({
+          address: networkMapping[chainIdString][
+            "DACAggregator"
+          ][0] as `0x${string}`,
+          abi: abi.dacAggregator,
+          functionName: "getContributorAccount",
+          args: [address],
+        })
+
+        if (data && data !== zeroAddress) {
+          setHasContributorAccount(true)
+          setContributorAccountAddress(data as `0x${string}`)
+        } else {
+          resetContributorAccount()
+        }
+      } catch (err) {
+        console.log(err)
+        resetContributorAccount()
+      }
+
+      setLoading(false)
+    }
+
     getContributorAccount()
-  }, [connected, currentNetwork])
+  }, [
+    connected,
+    currentNetwork,
+    address,
+    chain?.id,
+    setContributorAccountAddress,
+    setHasContributorAccount,
+    setLoading,
+  ])
 
   return <ConnectKitButton />
 }

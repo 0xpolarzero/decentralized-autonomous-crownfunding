@@ -10,7 +10,6 @@ import { useContractWrite } from "wagmi"
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
 import { networkConfig, networkMapping } from "@/config/network"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/components/ui/use-toast"
 import InfoComponent from "@/components/ui-extended/info"
@@ -116,7 +115,7 @@ export default function ContributorCreateAccount() {
               <b>between 1 hour and 30 days</b>.
             </p>
             <Separator className="my-2" />
-            <span className="flex items-center gap-2 mb-2">
+            <span className="mb-2 flex items-center gap-2">
               Payment interval
               <InfoComponent content="The interval between automatic payments." />
             </span>

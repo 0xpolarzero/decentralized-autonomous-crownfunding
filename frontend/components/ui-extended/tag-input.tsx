@@ -11,8 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-
-import { Separator } from "../ui/separator"
+import { Separator } from "@/components/ui/separator"
 
 type Checked = DropdownMenuCheckboxItemProps["checked"]
 
@@ -92,7 +91,7 @@ const TagInput: React.FC<TagInputProps> = ({ options, onChange }) => {
 
   useEffect(() => {
     if (onChange) onChange(tags)
-  }, [tags])
+  }, [tags, onChange])
 
   return (
     <div className="grid gap-2">
@@ -126,7 +125,7 @@ const TagInput: React.FC<TagInputProps> = ({ options, onChange }) => {
           max={30}
         />
       </div>
-      <div className="flex wrap gap-2">
+      <div className="wrap flex gap-2">
         {tags.sort().map((tag, i) => (
           <Badge
             key={i}

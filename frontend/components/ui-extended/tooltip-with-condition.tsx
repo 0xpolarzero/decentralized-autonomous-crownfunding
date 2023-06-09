@@ -1,6 +1,6 @@
 import React from "react"
 
-import TooltipComponent from "./tooltip"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 interface TooltipWithConditionProps {
   shownContent: React.ReactNode

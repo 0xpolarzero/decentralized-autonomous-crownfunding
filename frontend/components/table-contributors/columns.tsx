@@ -1,5 +1,3 @@
-// ! ADD FILTERING (address)
-// ! Add percentages
 "use client"
 
 import { ColumnDef, Row } from "@tanstack/react-table"
@@ -7,23 +5,18 @@ import {
   ArrowDown01,
   ArrowDown10,
   ArrowUpDown,
-  LucideArrowDownRight,
-  LucideArrowUpRight,
   LucideHourglass,
-  LucidePlus,
-  LucideSparkle,
   Sparkles,
 } from "lucide-react"
 
-import { Contribution, ContributionTable } from "@/types/contributions"
-
-import AddressComponent from "../ui-extended/address"
-import CurrencyComponent from "../ui-extended/currency"
-import DurationComponent from "../ui-extended/duration"
-import InfoComponent from "../ui-extended/info"
-import TooltipComponent from "../ui-extended/tooltip"
-import { Button } from "../ui/button"
-import { Skeleton } from "../ui/skeleton"
+import { ContributionTable } from "@/types/contributions"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import AddressComponent from "@/components/ui-extended/address"
+import CurrencyComponent from "@/components/ui-extended/currency"
+import DurationComponent from "@/components/ui-extended/duration"
+import InfoComponent from "@/components/ui-extended/info"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 type CellProps = {
   row: Row<ContributionTable | undefined>
@@ -41,6 +34,7 @@ const ContributorOwnerAndAccountAddress: React.FC<CellProps> = ({ row }) => {
       </p>
       <p className="text-sm text-muted-foreground">
         <AddressComponent
+          // @ts-ignore
           address={row.original?.accountContract as `0x${string}`}
         />
       </p>
@@ -104,10 +98,6 @@ const ContributorAmountStored: React.FC<CellProps> = ({ row }) => {
     </>
   )
 }
-
-// const ActionsCell: React.FC<CellProps> = ({ row }) => {
-//   return null
-// }
 
 /* -------------------------------------------------------------------------- */
 /*                                   COLUMNS                                  */
@@ -243,16 +233,12 @@ export const columns: ColumnDef<ContributionTable | undefined>[] = [
     },
     cell: ({ row }) => <ContributorAmountStored row={row} />,
   },
-  // {
-  //   id: "actions",
-  //   cell: ({ row }) => <ActionsCell row={row} />,
-  // },
 ]
 
 export const columnsSkeleton: ColumnDef<ContributionTable | undefined>[] =
   columns.map((column) => {
     return {
       ...column,
-      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+      cell: () => <Skeleton className="h-[16px] w-[100px]" />,
     }
   })

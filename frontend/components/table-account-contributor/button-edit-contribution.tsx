@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
@@ -49,14 +49,20 @@ const ButtonEditContributionComponent: React.FC<
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-  const formatAmount = (value: number) =>
-    Number(
-      Number(formatUnits(BigInt(value), networkInfo.currency.decimals)).toFixed(
-        4
-      )
-    )
-  const parseAmount = (value: number | string) =>
-    parseUnits(`${Number(value)}`, networkInfo.currency.decimals)
+  const formatAmount = useCallback(
+    (value: number | string) =>
+      Number(
+        Number(
+          formatUnits(BigInt(value), networkInfo.currency.decimals)
+        ).toFixed(4)
+      ),
+    [networkInfo]
+  )
+  const parseAmount = useCallback(
+    (value: number | string) =>
+      parseUnits(`${Number(value)}`, networkInfo.currency.decimals),
+    [networkInfo]
+  )
 
   const isProjectStillActive = (): boolean =>
     new Date().getTime() - new Date(projectLastActivityAt).getTime() <
@@ -122,6 +128,7 @@ const ButtonEditContributionComponent: React.FC<
       abi: DACContributorAccountAbi,
       functionName: "updateContribution",
       args: [contributionIndex, parseAmount(amount)],
+      // @ts-ignore
       value: isContributionIncrease
         ? parseAmount(amount) - BigInt(amounts.stored)
         : 0,
@@ -178,7 +185,7 @@ const ButtonEditContributionComponent: React.FC<
     } else {
       setIsContributionIncrease(false)
     }
-  }, [amount])
+  }, [amount, amounts, parseAmount])
 
   return (
     <>
@@ -237,13 +244,13 @@ const ButtonEditContributionComponent: React.FC<
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <div className="flex flex-col gap-2 items-start w-full">
+          <div className="flex w-full flex-col items-start gap-2">
             {isProcessingTransaction ? (
-              <span className="text-sm text-gray-400 mb-2">
+              <span className="mb-2 text-sm text-gray-400">
                 Your contribution is being updated...
               </span>
             ) : null}
-            <div className="flex grow items-center justify-between w-full ">
+            <div className="flex w-full grow items-center justify-between ">
               <Button
                 variant="secondary"
                 style={{ background: "var(--red)", color: "white" }}

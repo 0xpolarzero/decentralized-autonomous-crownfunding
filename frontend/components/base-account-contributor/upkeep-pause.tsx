@@ -91,7 +91,7 @@ const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
       },
     })
 
-  if (paused === undefined) return <Skeleton className="w-24 h-10" />
+  if (paused === undefined) return <Skeleton className="h-10 w-24" />
 
   return (
     <TooltipComponent

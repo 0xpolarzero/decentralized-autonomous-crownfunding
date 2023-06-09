@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
@@ -89,18 +89,21 @@ export default function ExplorePage() {
     setProjects(filtered)
   }
 
-  const withNetworkAppened = (data: Project[]) => {
-    const networkInfo =
-      currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
+  const withNetworkAppened = useCallback(
+    (data: Project[]) => {
+      const networkInfo =
+        currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-    return data.map((project) => ({
-      ...project,
-      network: networkInfo.name,
-      blockExplorer: `${networkInfo.blockExplorer.url}/address/${project.projectContract}`,
-    }))
-  }
+      return data.map((project) => ({
+        ...project,
+        network: networkInfo.name,
+        blockExplorer: `${networkInfo.blockExplorer.url}/address/${project.projectContract}`,
+      }))
+    },
+    [currentNetwork]
+  )
 
-  const initProjects = () => {
+  const initProjects = useCallback(() => {
     setProjects(withNetworkAppened(initialData.projects))
     setTags(
       initialData.projects
@@ -114,11 +117,11 @@ export default function ExplorePage() {
         // Format it for the combobox
         .map((tag: string) => ({ value: tag, label: tag }))
     )
-  }
+  }, [initialData, withNetworkAppened])
 
   useEffect(() => {
     if (initialData && initialData.projects) initProjects()
-  }, [initialData])
+  }, [initialData, initProjects])
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
@@ -184,6 +187,7 @@ export default function ExplorePage() {
         ) : error ? (
           "There was an error fetching the projects. Please try again later."
         ) : (
+          // @ts-ignore
           <DataTable columns={columns} data={formatData(projects)} />
         )}
       </div>

@@ -8,37 +8,21 @@ import {
   ArrowDown01,
   ArrowDown10,
   ArrowUpDown,
-  LucideArrowDownRight,
-  LucideArrowUpRight,
   LucideCheckCircle2,
-  LucideExternalLink,
   LucideHourglass,
   LucideInfo,
-  LucidePlus,
   LucideShare2,
-  LucideSparkle,
   LucideXCircle,
   MoreHorizontal,
   Sparkles,
 } from "lucide-react"
-import { useContractWrite } from "wagmi"
 
 import { ContributionTable } from "@/types/contributions"
-import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { networkConfig } from "@/config/network"
 import { siteConfig } from "@/config/site"
 import useCopyToClipboard from "@/hooks/copy-to-clipboard"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
-import AddressComponent from "@/components/ui-extended/address"
-import CurrencyComponent from "@/components/ui-extended/currency"
-import DurationComponent from "@/components/ui-extended/duration"
-import ElapsedTimeComponent from "@/components/ui-extended/elapsed-time"
-import InfoComponent from "@/components/ui-extended/info"
-import TooltipComponent from "@/components/ui-extended/tooltip"
-
-import { Dialog } from "../ui/dialog"
+import { Dialog } from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,8 +30,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu"
-import ButtonEditContributionComponent from "./button-edit-contribution"
+} from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
+import ButtonEditContributionComponent from "@/components/table-account-contributor/button-edit-contribution"
+import AddressComponent from "@/components/ui-extended/address"
+import CurrencyComponent from "@/components/ui-extended/currency"
+import DurationComponent from "@/components/ui-extended/duration"
+import ElapsedTimeComponent from "@/components/ui-extended/elapsed-time"
+import InfoComponent from "@/components/ui-extended/info"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 type CellProps = {
   row: Row<ContributionTable>
@@ -149,7 +141,7 @@ const ContributionAmountDistributed: React.FC<CellProps> = ({ row }) => {
           currency="native"
         />
       </p>
-      <p className="flex items-center text-sm text-muted-foreground gap-2">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         {((amountDistributed / amountStored) * 100).toFixed(2)}%
         <InfoComponent content="The percentage of the total amount stored that has been sent to the project already." />
       </p>
@@ -169,7 +161,7 @@ const ContributionAmountPending: React.FC<CellProps> = ({ row }) => {
       <p>
         <CurrencyComponent amount={pending.amount} currency="native" />
       </p>
-      <p className="flex items-center text-sm text-muted-foreground gap-2">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         {percentage.toFixed(2)}%
         <InfoComponent content="The percentage of the total amount stored that should be sent to the project at the current time." />
       </p>
@@ -189,7 +181,7 @@ const ContributionAmountStored: React.FC<CellProps> = ({ row }) => {
           currency="native"
         />
       </p>
-      <p className="flex items-center text-sm text-muted-foreground gap-2">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
         {((amountStored / totalStored) * 100).toFixed(2)}%
         <InfoComponent content="The percentage of your total stored contributions." />
       </p>
@@ -199,12 +191,6 @@ const ContributionAmountStored: React.FC<CellProps> = ({ row }) => {
 
 const ActionsCell: React.FC<CellProps> = ({ row }) => {
   const currentNetwork = useGlobalStore((state) => state.currentNetwork)
-  const networkInfo =
-    currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
-
-  const [isCanceling, setIsCanceling] = useState<boolean>(false)
-
-  const { toast } = useToast()
 
   const copyToClipboard = useCopyToClipboard()
 
@@ -442,7 +428,7 @@ export const columnsSkeleton: ColumnDef<ContributionTable>[] = columns.map(
   (column) => {
     return {
       ...column,
-      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+      cell: () => <Skeleton className="h-[16px] w-[100px]" />,
     }
   }
 )

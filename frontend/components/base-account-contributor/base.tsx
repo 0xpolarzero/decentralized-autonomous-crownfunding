@@ -5,9 +5,8 @@ import { useContractRead } from "wagmi"
 import { UpkeepInfo } from "@/types/contributor-account"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { Skeleton } from "@/components/ui/skeleton"
+import UpkeepComponent from "@/components/base-account-contributor/upkeep"
 import UpkeepCreateComponent from "@/components/base-account-contributor/upkeep-create"
-
-import UpkeepComponent from "./upkeep"
 
 interface BaseComponentProps {}
 
@@ -15,13 +14,11 @@ const BaseComponent: React.FC<BaseComponentProps> = () => {
   const {
     connected,
     contributorAccountAddress,
-    currentNetwork,
     hasContributorAccount,
     walletLoading,
   } = useGlobalStore((state) => ({
     connected: state.connected,
     contributorAccountAddress: state.contributorAccountAddress,
-    currentNetwork: state.currentNetwork,
     hasContributorAccount: state.hasContributorAccount,
     walletLoading: state.loading,
   }))
@@ -33,7 +30,7 @@ const BaseComponent: React.FC<BaseComponentProps> = () => {
   })
   const upkeepInfo = upkeepData as UpkeepInfo
 
-  if (walletLoading) return <Skeleton className="w-full h-20" />
+  if (walletLoading) return <Skeleton className="h-20 w-full" />
   if (!connected || !hasContributorAccount) return null
 
   if (

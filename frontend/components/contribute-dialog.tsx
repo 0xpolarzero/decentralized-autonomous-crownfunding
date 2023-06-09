@@ -60,6 +60,7 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
         parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
         endDate ? endDate.getTime() / 1000 : 0,
       ],
+      // @ts-ignore
       value: parseUnits(`${Number(amount)}`, networkInfo.currency.decimals),
       enabled: Number(amount) > 0 && typeof endDate !== "undefined",
 

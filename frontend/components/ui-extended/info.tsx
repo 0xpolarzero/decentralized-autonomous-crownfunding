@@ -1,7 +1,7 @@
 import React from "react"
 import { LucideAlertCircle, LucideInfo, LucideXCircle } from "lucide-react"
 
-import TooltipComponent from "./tooltip"
+import TooltipComponent from "@/components/ui-extended/tooltip"
 
 interface InfoComponentProps {
   content: React.ReactNode

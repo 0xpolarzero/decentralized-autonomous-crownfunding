@@ -1,6 +1,5 @@
 import useGlobalStore from "@/stores/useGlobalStore"
 import { LucideCreditCard, LucideTrash2 } from "lucide-react"
-import { formatUnits } from "viem"
 import { useContractRead } from "wagmi"
 
 import { UpkeepInfo } from "@/types/contributor-account"
@@ -48,7 +47,7 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap justify-between items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Dialog>
             <TooltipWithConditionComponent

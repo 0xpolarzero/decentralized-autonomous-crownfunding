@@ -12,11 +12,13 @@ import useClipboard from "react-use-clipboard"
 
 import { UpkeepInfo } from "@/types/contributor-account"
 import { networkConfig } from "@/config/network"
-import useCopyToClipboard from "@/hooks/copy-to-clipboard"
-
-import CurrencyComponent from "../ui-extended/currency"
-import { Button } from "../ui/button"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card"
+import { Button } from "@/components/ui/button"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import CurrencyComponent from "@/components/ui-extended/currency"
 
 interface UpkeepInformationComponentProps {
   upkeep: UpkeepInfo | null

@@ -4,17 +4,16 @@ import useGlobalStore from "@/stores/useGlobalStore"
 import { waitForTransaction, writeContract } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
 import { formatUnits, parseUnits } from "viem"
-import { useContractRead, useContractWrite } from "wagmi"
+import { useContractRead } from "wagmi"
 
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { LinkTokenAbi } from "@/config/constants/abis/LinkToken"
 import { networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
-
-import InfoComponent from "../ui-extended/info"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
+import InfoComponent from "@/components/ui-extended/info"
 
 const formatAmount = (value: number) =>
   Number(Number(formatUnits(BigInt(value), 18)).toFixed(4))
@@ -173,7 +172,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
     if (linkBalance && linkBalance >= linkAmountRequired) {
       setIsFundingComplete(true)
     }
-  }, [linkBalance])
+  }, [linkBalance, linkAmountRequired])
 
   useEffect(() => {
     if (
@@ -185,7 +184,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
       setIsLinkAmountValid(true)
       setLinkAmountRegistration(Number(parseAmount(Number(inputValue))))
     }
-  }, [inputValue])
+  }, [inputValue, linkAmountRequired])
 
   useEffect(() => () => setIsFundingComplete(false), [])
 
@@ -207,7 +206,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
           }
         />
       </Label>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         <div>
           <Input
             value={inputValue}
@@ -233,7 +232,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
       ) : null}
       {!isLinkAmountValid ? (
         <div
-          className="mt-1 text-muted-foreground text-sm"
+          className="mt-1 text-sm text-muted-foreground"
           style={{ color: "var(--yellow)" }}
         >
           Please enter a valid amount. It should be higher than{" "}

@@ -1,15 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
-import { Cell, ColumnDef, Row } from "@tanstack/react-table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 import {
   ArrowDown01,
   ArrowDown10,
   ArrowUpDown,
-  LucideArrowDownRight,
-  LucideArrowUpRight,
   LucideBanknote,
   LucideCheckCircle2,
   LucideExternalLink,
@@ -58,7 +55,7 @@ const NameCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) =>
 
 const StatusCell: React.FC<CellProps> = ({ row }) => {
   const status: string = row.getValue("status")
-  const lastActivityAt: string = row.original.lastActivityAt
+  const lastActivityAt: string = row.original.lastActivityAt.toString()
 
   if (status)
     return (
@@ -348,7 +345,7 @@ export const columnsSkeleton: ColumnDef<ProjectTable>[] = columns.map(
   (column) => {
     return {
       ...column,
-      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+      cell: () => <Skeleton className="h-[16px] w-[100px]" />,
     }
   }
 )

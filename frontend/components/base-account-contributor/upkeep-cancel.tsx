@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { fetchBlockNumber, waitForTransaction } from "@wagmi/core"
-import { Loader2, LucideTrash } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 
-import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { KeeperRegistry2_0Abi } from "@/config/constants/abis/KeeperRegistry2_0"
 import { networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
@@ -223,7 +222,7 @@ const UpkeepCancelDialogComponent: React.FC<
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <div className="w-full flex flex-col gap-3">
+        <div className="flex w-full flex-col gap-3">
           {isProcessingTransaction ? (
             <span className="justify-self-start text-sm text-gray-400">
               {processingMessage}

@@ -1,12 +1,9 @@
 "use client"
 
-import Link from "next/link"
-import useGlobalStore from "@/stores/useGlobalStore"
-import { Cell, ColumnDef, Row } from "@tanstack/react-table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 
 import { Contribution } from "@/types/contributions"
-
-import { Skeleton } from "../ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type CellProps = {
   row: Row<Contribution[] | undefined>
@@ -71,6 +68,6 @@ export const columnsSkeleton: ColumnDef<Contribution[] | undefined>[] =
   columns.map((column) => {
     return {
       ...column,
-      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+      cell: () => <Skeleton className="h-[16px] w-[100px]" />,
     }
   })

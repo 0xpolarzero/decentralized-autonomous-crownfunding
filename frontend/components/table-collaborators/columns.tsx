@@ -3,9 +3,8 @@
 import { ColumnDef, Row } from "@tanstack/react-table"
 
 import { Collaborator } from "@/types/projects"
-
-import AddressComponent from "../ui-extended/address"
-import { Skeleton } from "../ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton"
+import AddressComponent from "@/components/ui-extended/address"
 
 type CellProps = {
   row: Row<Collaborator[] | undefined>
@@ -22,11 +21,6 @@ const CollaboratorAddressCell: React.FC<CellProps> = ({ row }) => {
 const CollaboratorShareCell: React.FC<CellProps> = ({ row }) => {
   return row.getValue("share")
 }
-
-// const ActionsCell: React.FC<CellProps> = ({ row }) => {
-//   return null
-// }
-
 /* -------------------------------------------------------------------------- */
 /*                                   COLUMNS                                  */
 /* -------------------------------------------------------------------------- */
@@ -42,16 +36,12 @@ export const columns: ColumnDef<Collaborator[] | undefined>[] = [
     header: "Share (%)",
     cell: ({ row }) => <CollaboratorShareCell row={row} />,
   },
-  // {
-  //   id: "actions",
-  //   cell: ({ row }) => <ActionsCell row={row} />,
-  // },
 ]
 
 export const columnsSkeleton: ColumnDef<Collaborator[] | undefined>[] =
   columns.map((column) => {
     return {
       ...column,
-      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+      cell: () => <Skeleton className="h-[16px] w-[100px]" />,
     }
   })

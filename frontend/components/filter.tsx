@@ -1,27 +1,17 @@
-import { HeaderContext } from "@tanstack/react-table"
 import {
   ArrowUpDown,
   LucideArrowDownRight,
   LucideArrowUpRight,
 } from "lucide-react"
 
-import { Contribution } from "@/types/contributions"
 import { Button } from "@/components/ui/button"
 import TooltipComponent from "@/components/ui-extended/tooltip"
 
 interface FilterComponentProps {
-  column: HeaderContext<Contribution, any>
-  hint: string
-  ascending: string
-  descending: string
+  column: any
 }
 
-const FilterComponent: React.FC<FilterComponentProps> = ({
-  column,
-  hint,
-  ascending,
-  descending,
-}) => {
+const FilterComponent: React.FC<FilterComponentProps> = ({ column }) => {
   return (
     <TooltipComponent
       shownContent={

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
@@ -9,7 +9,7 @@ import { LucidePlus } from "lucide-react"
 import { Project, ProjectTable } from "@/types/projects"
 import { GET_PROJECTS } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
 import {
@@ -67,17 +67,21 @@ export default function AccountProjectsPage() {
     setProjects(withNetworkAppened(initialData.projects))
   }
 
-  const withNetworkAppened = (data: Project[]) => {
-    const networkInfo =
-      currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
+  // or wrap it in a useCallback
+  const withNetworkAppened = useCallback(
+    (data: Project[]) => {
+      const networkInfo =
+        currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-    return data.map((project) => ({
-      ...project,
-      network: networkInfo.name,
-      blockExplorer: `${networkInfo.blockExplorer.url}/address/${project.projectContract}`,
-      userAddress: address,
-    }))
-  }
+      return data.map((project) => ({
+        ...project,
+        network: networkInfo.name,
+        blockExplorer: `${networkInfo.blockExplorer.url}/address/${project.projectContract}`,
+        userAddress: address,
+      }))
+    },
+    [address, currentNetwork]
+  )
 
   useEffect(() => {
     if (initialData && initialData.projects)
@@ -90,7 +94,7 @@ export default function AccountProjectsPage() {
           )
         )
       )
-  }, [initialData, address])
+  }, [initialData, address, withNetworkAppened])
 
   if (!connected || !address) {
     return (
@@ -129,7 +133,7 @@ export default function AccountProjectsPage() {
           </Link>
         </div>
         <p className="max-w-[700px] text-lg text-muted-foreground">
-          Interact with the projects you're involved in.
+          Interact with the projects you&apos;re involved in.
         </p>
       </div>
       <div className="grow overflow-auto">
@@ -138,6 +142,7 @@ export default function AccountProjectsPage() {
         ) : error ? (
           "There was an error fetching the projects. Please try again later."
         ) : (
+          // @ts-ignore
           <DataTable columns={columns} data={formatData(projects)} />
         )}
       </div>

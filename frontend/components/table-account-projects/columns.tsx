@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
-import { Cell, ColumnDef, Row } from "@tanstack/react-table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 import { waitForTransaction } from "@wagmi/core"
 import {
   ArrowDown01,
@@ -28,9 +28,7 @@ import { DACProjectAbi } from "@/config/constants/abis/DACProject"
 import { networkConfig, networkMapping } from "@/config/network"
 import { siteConfig } from "@/config/site"
 import useCopyToClipboard from "@/hooks/copy-to-clipboard"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,13 +38,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
 import AddressComponent from "@/components/ui-extended/address"
 import CurrencyComponent from "@/components/ui-extended/currency"
+import DurationComponent from "@/components/ui-extended/duration"
+import InfoComponent from "@/components/ui-extended/info"
 import TooltipComponent from "@/components/ui-extended/tooltip"
-
-import DurationComponent from "../ui-extended/duration"
-import InfoComponent from "../ui-extended/info"
-import { useToast } from "../ui/use-toast"
 
 type CellProps = {
   row: Row<ProjectTable>
@@ -83,7 +80,7 @@ const CollaboratorsCell: React.FC<CellProps> = ({ row }) => {
 /* -------------------------------------------------------------------------- */
 
 const StatusCell: React.FC<CellProps> = ({ row }) => {
-  const lastActivityAt: string = row.original.lastActivityAt
+  const lastActivityAt: string = row.original.lastActivityAt.toString()
   const dateWhenInactive = new Date(
     new Date(lastActivityAt).getTime() + 1000 * 60 * 60 * 24 * 30
   )
@@ -110,7 +107,7 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
               endTimestamp={dateWhenInactive.getTime()}
             />
           </span>
-          <p className="text-sm text-muted-foreground whitespace-nowrap">
+          <p className="whitespace-nowrap text-sm text-muted-foreground">
             before inactivity
           </p>
         </div>
@@ -183,9 +180,9 @@ const WithdrawableCell: React.FC<CellProps> = ({ row }) => {
         (totalRaised * Number(data.share)) / 100 - Number(data.amountAvailable)
       )
     }
-  }, [data])
+  }, [data, totalRaised])
 
-  if (isLoading) return <Skeleton className="w-20 h-6" />
+  if (isLoading) return <Skeleton className="h-6 w-20" />
 
   if (isError) return <span style={{ color: "var(--yellow)" }}>Error</span>
 
@@ -304,7 +301,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
           description: (
             <>
               <p>
-                You've successfully withdrawn{" "}
+                You&apos;ve successfully withdrawn{" "}
                 <CurrencyComponent
                   amount={Number(collaboratorData.amountAvailable)}
                   currency="native"
@@ -542,7 +539,7 @@ export const columnsSkeleton: ColumnDef<ProjectTable>[] = columns.map(
   (column) => {
     return {
       ...column,
-      cell: ({ row }) => <Skeleton className="h-[16px] w-[100px]" />,
+      cell: () => <Skeleton className="h-[16px] w-[100px]" />,
     }
   }
 )

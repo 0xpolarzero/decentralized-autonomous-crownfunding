@@ -11,7 +11,6 @@ import { TransactionReceipt } from "viem"
 import { useContractRead, useContractWrite } from "wagmi"
 
 import { Contribution, ContributionToSend } from "@/types/contributions"
-import { ContributorAccount } from "@/types/contributor-account"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
@@ -234,7 +233,7 @@ export default function AccountContributorPage() {
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <UpkeepComponent />
       <Separator />
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <span className="text-muted-foreground">Contributed</span>
           {loading || walletLoading ? (
@@ -276,7 +275,7 @@ export default function AccountContributorPage() {
             <TooltipComponent
               shownContent={
                 <span
-                  className="flex items-center gap-2 text-muted-foreground text-sm"
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
                   style={{ color: "var(--yellow)" }}
                 >
                   <PauseCircle size={16} /> N/A
@@ -332,7 +331,7 @@ export default function AccountContributorPage() {
               />
             </div>
           ) : (
-            <span className="text-muted-foreground text-sm">N/A</span>
+            <span className="text-sm text-muted-foreground">N/A</span>
           )}
         </div>
       </div>
@@ -408,6 +407,7 @@ export default function AccountContributorPage() {
         ) : contributions.length ? (
           <DataTable
             columns={columns}
+            // @ts-ignore
             data={formatData(
               contributions,
               totalDistributed,

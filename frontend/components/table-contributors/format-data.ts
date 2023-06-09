@@ -35,6 +35,5 @@ export default function formatData(
         })
         // Sort by most recent first
         .sort((a, b) => Number(b.startedAt) - Number(a.startedAt))
-    : // .sort((a, b) => b.amountDistributed - a.amountDistributed)
-      null
+    : null
 }
