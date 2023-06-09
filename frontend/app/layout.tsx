@@ -53,7 +53,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 </div>
               </ApolloProviderWrapper>
             </Web3Provider>
-            <TailwindIndicator />
+            {/* <TailwindIndicator /> */}
           </ThemeProvider>
         </body>
       </html>

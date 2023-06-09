@@ -5,18 +5,21 @@ import Link from "next/link"
 import { calculate } from "@/helpers/calculate"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
-import { LucideCompass, PauseCircle } from "lucide-react"
-import { useContractRead } from "wagmi"
+import { waitForTransaction } from "@wagmi/core"
+import { Loader2, LucideCompass, LucideSend, PauseCircle } from "lucide-react"
+import { TransactionReceipt } from "viem"
+import { useContractRead, useContractWrite } from "wagmi"
 
 import { Contribution, ContributionToSend } from "@/types/contributions"
 import { ContributorAccount } from "@/types/contributor-account"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/components/ui/use-toast"
 import UpkeepComponent from "@/components/base-account-contributor/base"
 import ContributorCreateAccount from "@/components/contributor-create-account"
 import { DataTable } from "@/components/data-table"
@@ -62,12 +65,14 @@ export default function AccountContributorPage() {
     userAddress: address,
   }
 
+  const { toast } = useToast()
+
   const [searchValue, setSearchValue] = useState<string>("")
-  const [contributorAccount, setContributorAccount] =
-    useState<ContributorAccount | null>(null)
   const [contributions, setContributions] = useState<Contribution[]>([])
   const [totalDistributed, setTotalDistributed] = useState<number>(0)
   const [totalStored, setTotalStored] = useState<number>(0)
+  const [isProcessingTransaction, setIsProcessingTransaction] =
+    useState<boolean>(false)
 
   const { data: paymentInterval }: any = useContractRead({
     address: contributorAccountAddress,
@@ -75,13 +80,67 @@ export default function AccountContributorPage() {
     functionName: "getUpkeepInterval",
   })
 
+  const { isLoading: isSendingContributions, write: sendContributions } =
+    useContractWrite({
+      address: contributorAccountAddress,
+      abi: DACContributorAccountAbi,
+      functionName: "triggerManualPayment",
+
+      onSuccess: async (tx) => {
+        setIsProcessingTransaction(true)
+
+        const receipt: TransactionReceipt = await waitForTransaction({
+          hash: tx.hash,
+          confirmations: 5,
+        })
+        console.log(receipt)
+
+        if (receipt.status === "success") {
+          toast({
+            title: "Contributions sent",
+            description: (
+              <>
+                <p>
+                  Your contributions were successfully sent to their respective
+                  project.
+                </p>
+                <p>
+                  <Link
+                    href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    See on block explorer
+                  </Link>
+                </p>
+              </>
+            ),
+          })
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Something went wrong",
+            description: "Please try again.",
+          })
+        }
+
+        setIsProcessingTransaction(false)
+      },
+      onError: (err) => {
+        toast({
+          variant: "destructive",
+          title: "Something went wrong",
+          description: "Please try again.",
+        })
+        console.error(err)
+      },
+    })
+
   const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value)
 
     if (!e.target.value || e.target.value.length < 1) {
-      setContributorAccount(
-        contributorData.contributorAccounts[0].contributions
-      )
       return
     }
 
@@ -113,8 +172,6 @@ export default function AccountContributorPage() {
       contributorData.contributorAccounts &&
       hasContributorAccount
     ) {
-      setContributorAccount(contributorData.contributorAccounts[0])
-
       const contrib = contributorData.contributorAccounts?.length
         ? contributorData.contributorAccounts[0].contributions
         : []
@@ -179,7 +236,7 @@ export default function AccountContributorPage() {
       <Separator />
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex flex-col gap-1">
-          Total contributed
+          <span className="text-muted-foreground">Contributed</span>
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
           ) : (
@@ -187,7 +244,18 @@ export default function AccountContributorPage() {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          Total stored
+          <span className="text-muted-foreground">Stored</span>
+          {loading || walletLoading ? (
+            <Skeleton className="h-6 w-20" />
+          ) : (
+            <CurrencyComponent
+              amount={totalStored - totalDistributed}
+              currency="native"
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-muted-foreground">Total</span>
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
           ) : (
@@ -268,6 +336,40 @@ export default function AccountContributorPage() {
           )}
         </div>
       </div>
+      <Button
+        variant="default"
+        className="w-full"
+        disabled={isSendingContributions}
+        onClick={() => sendContributions()}
+      >
+        {isProcessingTransaction ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <LucideSend className="mr-2 h-4 w-4" />
+        )}{" "}
+        Send contributions (
+        <CurrencyComponent
+          amount={calculate
+            .totalContributions(
+              contributions,
+              Number(paymentInterval),
+              new Date().getTime() / 1000
+            )
+            .reduce(
+              (acc: number, contribution: ContributionToSend) =>
+                acc + contribution.amount,
+              0
+            )}
+          currency="native"
+        />
+        )
+      </Button>
+      {isProcessingTransaction ? (
+        <span className="text-sm text-muted-foreground">
+          Your contributions are being sent to their respective project...
+        </span>
+      ) : null}
+      <Separator />
       <div className="flex max-w-[1400px] flex-col items-start gap-2">
         <div className="my-4 flex w-full items-center space-x-2">
           <Input
