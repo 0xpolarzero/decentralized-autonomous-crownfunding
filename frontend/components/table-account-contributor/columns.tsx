@@ -312,6 +312,46 @@ export const columns: ColumnDef<ContributionTable>[] = [
     cell: ({ row }) => <ContributionPeriod row={row} />,
   },
   {
+    accessorKey: "amountStored",
+    header: ({ column }) => {
+      return (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span>Initial</span>
+            <InfoComponent content="The amount initially stored in the contributor account for this contribution." />
+          </div>
+          <TooltipComponent
+            shownContent={
+              <Button
+                variant="ghost"
+                className="pl-1 pr-3"
+                onClick={() => {
+                  column.toggleSorting(column.getIsSorted() === "asc")
+                }}
+              >
+                {column.getIsSorted() === "asc" ? (
+                  <ArrowDown01 className="ml-2 h-4 w-4" />
+                ) : column.getIsSorted() === "desc" ? (
+                  <ArrowDown10 className="ml-2 h-4 w-4" />
+                ) : (
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+            }
+            tooltipContent={
+              column.getIsSorted() === "asc"
+                ? "Showing lowest first"
+                : column.getIsSorted() === "desc"
+                ? "Showing highest first"
+                : "Sort by amount raised"
+            }
+          />
+        </div>
+      )
+    },
+    cell: ({ row }) => <ContributionAmountStored row={row} />,
+  },
+  {
     accessorKey: "amountDistributed",
     header: ({ column }) => {
       return (
@@ -390,46 +430,6 @@ export const columns: ColumnDef<ContributionTable>[] = [
       )
     },
     cell: ({ row }) => <ContributionAmountPending row={row} />,
-  },
-  {
-    accessorKey: "amountStored",
-    header: ({ column }) => {
-      return (
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span>Stored</span>
-            <InfoComponent content="The amount stored in the contributor account yet to be sent to the project." />
-          </div>
-          <TooltipComponent
-            shownContent={
-              <Button
-                variant="ghost"
-                className="pl-1 pr-3"
-                onClick={() => {
-                  column.toggleSorting(column.getIsSorted() === "asc")
-                }}
-              >
-                {column.getIsSorted() === "asc" ? (
-                  <ArrowDown01 className="ml-2 h-4 w-4" />
-                ) : column.getIsSorted() === "desc" ? (
-                  <ArrowDown10 className="ml-2 h-4 w-4" />
-                ) : (
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                )}
-              </Button>
-            }
-            tooltipContent={
-              column.getIsSorted() === "asc"
-                ? "Showing lowest first"
-                : column.getIsSorted() === "desc"
-                ? "Showing highest first"
-                : "Sort by amount raised"
-            }
-          />
-        </div>
-      )
-    },
-    cell: ({ row }) => <ContributionAmountStored row={row} />,
   },
 
   {
