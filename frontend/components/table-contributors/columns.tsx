@@ -69,6 +69,9 @@ const ContributorPeriod: React.FC<CellProps> = ({ row }) => {
 const ContributorAmountDistributed: React.FC<CellProps> = ({ row }) => {
   const amountDistributed = row.original?.amountDistributed || 0
   const totalRaised = row.original?.totalRaised || 0
+  const percentage = totalRaised
+    ? ((amountDistributed / totalRaised) * 100).toFixed(2)
+    : 0
 
   return (
     <>
@@ -78,9 +81,7 @@ const ContributorAmountDistributed: React.FC<CellProps> = ({ row }) => {
           currency="native"
         />
       </p>
-      <p className="text-sm text-muted-foreground">
-        {((amountDistributed / totalRaised) * 100).toFixed(2)}%
-      </p>
+      <p className="text-sm text-muted-foreground">{percentage}%</p>
     </>
   )
 }
