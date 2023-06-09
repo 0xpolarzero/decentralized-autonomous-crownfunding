@@ -30,7 +30,10 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
   const formatAmount = (value: number) =>
     value
       ? Number(
-          formatUnits(BigInt(value), currentNetwork?.currency.decimals || 18)
+          formatUnits(
+            BigInt(value.toFixed()),
+            currentNetwork?.currency.decimals || 18
+          )
         ).toFixed(4)
       : "0"
 
@@ -60,7 +63,10 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          {formatUnits(BigInt(amount), currentNetwork?.currency.decimals || 18)}{" "}
+          {formatUnits(
+            BigInt(amount.toFixed()),
+            currentNetwork?.currency.decimals || 18
+          )}{" "}
           {currency === "native"
             ? actualCurrency
             : networkConfig.defaultCurrency.symbol}
