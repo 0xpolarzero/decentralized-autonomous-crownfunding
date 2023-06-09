@@ -413,7 +413,7 @@ contract DACContributorAccount is
      */
 
     function registerNewUpkeep(uint96 _fundingAmount) public onlyOwner {
-        if (getUpkeep().maxValidBlocknumber != MAX_UINT32)
+        if (getUpkeep().maxValidBlocknumber == MAX_UINT32)
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
         if (_fundingAmount < 0.1 * 10 ** 18)

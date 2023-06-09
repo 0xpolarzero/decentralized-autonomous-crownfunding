@@ -227,30 +227,6 @@ export const DACContributorAccountAbi = [
   {
     "type": "event",
     "anonymous": false,
-    "name": "DACContributorAccount__UpkeepCanceled",
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "upkeepId",
-        "indexed": false
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "anonymous": false,
-    "name": "DACContributorAccount__UpkeepFundsWithdrawn",
-    "inputs": [
-      {
-        "type": "uint256",
-        "name": "upkeepId",
-        "indexed": false
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "anonymous": false,
     "name": "DACContributorAccount__UpkeepIntervalUpdated",
     "inputs": [
       {
@@ -280,14 +256,6 @@ export const DACContributorAccountAbi = [
   {
     "type": "function",
     "name": "cancelAllContributions",
-    "constant": false,
-    "payable": false,
-    "inputs": [],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "cancelUpkeep",
     "constant": false,
     "payable": false,
     "inputs": [],
@@ -618,14 +586,6 @@ export const DACContributorAccountAbi = [
         "name": "_amount"
       }
     ],
-    "outputs": []
-  },
-  {
-    "type": "function",
-    "name": "withdrawUpkeepFunds",
-    "constant": false,
-    "payable": false,
-    "inputs": [],
     "outputs": []
   }
 ] as const
