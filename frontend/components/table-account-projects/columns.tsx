@@ -19,6 +19,7 @@ import {
   LucideWallet,
   MoreHorizontal,
 } from "lucide-react"
+import { TransactionReceipt } from "viem"
 import { useContractRead, useContractWrite } from "wagmi"
 
 import { ProjectTable } from "@/types/projects"
@@ -237,7 +238,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
     onSuccess: async (tx) => {
       setIsPinging(true)
 
-      const receipt = await waitForTransaction({
+      const receipt: TransactionReceipt = await waitForTransaction({
         hash: tx.hash,
         confirmations: 5,
       })
@@ -291,7 +292,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
     onSuccess: async (tx) => {
       setIsWithdrawing(true)
 
-      const receipt = await waitForTransaction({
+      const receipt: TransactionReceipt = await waitForTransaction({
         hash: tx.hash,
         confirmations: 5,
       })

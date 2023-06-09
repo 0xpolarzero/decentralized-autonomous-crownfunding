@@ -3,6 +3,7 @@ import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
+import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 
 import { KeeperRegistry2_0Abi } from "@/config/constants/abis/KeeperRegistry2_0"
@@ -41,7 +42,7 @@ const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
       onSuccess: async (tx) => {
         setIsProcessingTransaction(true)
 
-        const receipt = await waitForTransaction({
+        const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
           confirmations: 5,
         })

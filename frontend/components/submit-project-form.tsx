@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2, LucideAsterisk } from "lucide-react"
 import { useFieldArray, useForm } from "react-hook-form"
+import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 import * as z from "zod"
 
@@ -158,7 +159,7 @@ export function SubmitProjectForm() {
       onSuccess: async (tx) => {
         setIsProcessingTransaction(true)
 
-        const receipt = await waitForTransaction({
+        const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
           confirmations: 5,
         })

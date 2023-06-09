@@ -4,6 +4,7 @@ import useGlobalStore from "@/stores/useGlobalStore"
 import { Separator } from "@radix-ui/react-dropdown-menu"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
+import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
@@ -48,7 +49,7 @@ export default function ContributorCreateAccount() {
       onSuccess: async (tx) => {
         setIsProcessingTransaction(true)
 
-        const receipt = await waitForTransaction({
+        const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
           confirmations: 5,
         })

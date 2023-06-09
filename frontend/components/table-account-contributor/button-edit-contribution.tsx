@@ -4,7 +4,12 @@ import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2, LucideEdit } from "lucide-react"
-import { GetTransactionReceiptParameters, formatUnits, parseUnits } from "viem"
+import {
+  GetTransactionReceiptParameters,
+  TransactionReceipt,
+  formatUnits,
+  parseUnits,
+} from "viem"
 import { useContractWrite } from "wagmi"
 
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
@@ -75,7 +80,7 @@ const ButtonEditContributionComponent: React.FC<
   ) => {
     setIsProcessingTransaction(true)
 
-    const receipt = await waitForTransaction({
+    const receipt: TransactionReceipt = await waitForTransaction({
       hash: tx.hash,
       confirmations: 5,
     })

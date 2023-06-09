@@ -4,7 +4,7 @@ import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
-import { parseUnits } from "viem"
+import { TransactionReceipt, parseUnits } from "viem"
 import { useContractWrite } from "wagmi"
 
 import { ProjectTable } from "@/types/projects"
@@ -66,7 +66,7 @@ const ContributeDialogComponent: React.FC<ContributeDialogComponentProps> = ({
       onSuccess: async (tx) => {
         setIsProcessingTransaction(true)
 
-        const receipt = await waitForTransaction({
+        const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
           confirmations: 5,
         })
