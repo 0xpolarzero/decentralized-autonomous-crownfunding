@@ -44,14 +44,6 @@ export default function IndexPage() {
         >
           Explore projects
         </Link>
-        <Link
-          target="_blank"
-          rel="noreferrer"
-          href={siteConfig.links.docs}
-          className={buttonVariants({ variant: "outline" })}
-        >
-          Documentation
-        </Link>
       </div>
     </section>
   )
