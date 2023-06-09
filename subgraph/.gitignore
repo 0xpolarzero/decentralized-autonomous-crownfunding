@@ -1,4 +1,6 @@
 node_modules
-
-generated
 yarn.lock
+
+build
+generated
+tests
