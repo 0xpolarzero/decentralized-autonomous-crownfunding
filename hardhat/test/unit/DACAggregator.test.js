@@ -287,10 +287,10 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
           it('Should revert if the payment interval is invalid', async () => {
             await expect(
-              dacAggregatorContract.createContributorAccount(86399), // 1 second less than 1 day
+              dacAggregatorContract.createContributorAccount(3559), // 1 second less than 1 hour
             ).to.be.revertedWith(
               'DACAggregator__INVALID_PAYMENT_INTERVAL()',
-              'Should revert if the payment interval is less than 1 day',
+              'Should revert if the payment interval is less than 1 hour',
             );
 
             await expect(

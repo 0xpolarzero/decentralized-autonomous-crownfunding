@@ -1046,9 +1046,9 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
         });
 
         it('Should revert if the new interval is too low or too high', async () => {
-          // It should not be lower than 1 day
+          // It should not be lower than 1 hour
           await expect(
-            contributorAccountContract.setUpkeepInterval(86399), // 1 day - 1 second
+            contributorAccountContract.setUpkeepInterval(3599), // 1 hour - 1 second
           ).to.be.revertedWith(
             'DACContributorAccount__INVALID_UPKEEP_INTERVAL()',
           );

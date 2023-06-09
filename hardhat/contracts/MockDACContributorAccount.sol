@@ -484,7 +484,7 @@ contract MockDACContributorAccount is
      */
 
     function setUpkeepInterval(uint256 _interval) external onlyOwner {
-        if (_interval < 1 days || _interval > 30 days)
+        if (_interval < 1 hours || _interval > 30 days)
             revert DACContributorAccount__INVALID_UPKEEP_INTERVAL();
 
         s_upkeepInterval = _interval;

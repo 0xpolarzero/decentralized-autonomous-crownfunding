@@ -336,7 +336,7 @@ contract MockDACAggregator is DACContributionSystem {
      * @notice Create a contributor wallet
      * @param _paymentInterval The payment interval in seconds, meaning how frequently will the upkeep be called
      * A higher upkeep meaning a higher cost in LINK tokens
-     * Minimum is 1 day (86400 seconds) and maximum is 30 days (2592000 seconds)
+     * Minimum is 1 hour (3600 seconds) and maximum is 30 days (2592000 seconds)
      * @dev This will create a child contract for the contributor, including a Chainlink upkeep
      * @dev This is kind of a smart contract wallet
      * @dev For more information, see the `DACContributorAccount` contract
@@ -348,7 +348,7 @@ contract MockDACAggregator is DACContributionSystem {
             revert DACAggregator__ALREADY_EXISTS();
 
         // It should be at least 1 day and at most 30 days
-        if (_paymentInterval < 1 days || _paymentInterval > 30 days)
+        if (_paymentInterval < 1 hours || _paymentInterval > 30 days)
             revert DACAggregator__INVALID_PAYMENT_INTERVAL();
 
         // Create a child contract for the contributor
