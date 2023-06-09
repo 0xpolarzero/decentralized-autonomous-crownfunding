@@ -21,9 +21,13 @@ const formatAmount = (value: number) =>
 const parseAmount = (value: number | string) =>
   parseUnits(`${Number(value)}`, 18)
 
-interface UpkeepCreateComponentProps {}
+interface UpkeepCreateComponentProps {
+  refetch: () => void
+}
 
-const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = () => {
+const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
+  refetch,
+}) => {
   const { contributorAccountAddress, currentNetwork } = useGlobalStore(
     (state) => ({
       contributorAccountAddress: state.contributorAccountAddress,
@@ -64,7 +68,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = () => {
 
       if (!isFundingComplete) {
         setProcessingMessage("Funding contract with LINK...")
-        console.log(linkAmountRegistration)
+
         // Step 1: Send LINK to the contract
         const { hash: hashFunding } = await writeContract({
           address: networkInfo.contracts.LINK as `0x${string}`,
@@ -143,6 +147,8 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = () => {
             </>
           ),
         })
+
+        refetch()
       } else {
         toast({
           variant: "destructive",
@@ -180,6 +186,8 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = () => {
       setLinkAmountRegistration(Number(parseAmount(Number(inputValue))))
     }
   }, [inputValue])
+
+  useEffect(() => () => setIsFundingComplete(false), [])
 
   return (
     <div className="flex flex-col gap-2">

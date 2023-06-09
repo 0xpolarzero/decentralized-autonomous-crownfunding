@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { waitForTransaction } from "@wagmi/core"
-import { Loader2 } from "lucide-react"
+import { Loader2, LucidePauseCircle, LucidePlayCircle } from "lucide-react"
 import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 
@@ -103,7 +103,11 @@ const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
         >
           {isProcessingTransaction ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : null}
+          ) : paused ? (
+            <LucidePlayCircle className="mr-2 h-4 w-4" />
+          ) : (
+            <LucidePauseCircle className="mr-2 h-4 w-4" />
+          )}
           {paused ? "Unpause" : "Pause"}
         </Button>
       }

@@ -38,10 +38,7 @@ const UpkeepInformationComponent: React.FC<UpkeepInformationComponentProps> = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild className="flex">
-        <Button
-          variant="secondary"
-          className="flex items-center gap-2 whitespace-nowrap"
-        >
+        <Button className="flex items-center gap-2 whitespace-nowrap">
           <LucideEye size={16} /> Your Upkeep information
         </Button>
       </HoverCardTrigger>

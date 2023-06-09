@@ -1,8 +1,8 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { fetchBlockNumber, waitForTransaction } from "@wagmi/core"
-import { Loader2 } from "lucide-react"
+import { Loader2, LucideTrash } from "lucide-react"
 import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import TimerComponent from "@/components/ui-extended/Timer"
+import TimerComponent from "@/components/ui-extended/timer"
 import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with-condition"
 
 interface UpkeepCancelDialogComponentProps {
@@ -43,9 +43,7 @@ const UpkeepCancelDialogComponent: React.FC<
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
   const [processingMessage, setProcessingMessage] = useState<string>("")
-  const [upkeepCanceled, setUpkeepCanceled] = useState<boolean>(
-    alreadyCanceled || false
-  )
+  const [upkeepCanceled, setUpkeepCanceled] = useState<boolean>(alreadyCanceled)
   const [canWithdrawFunds, setCanWithdrawFunds] =
     useState<boolean>(alreadyCanceled)
   const [targetBlockNumber, setTargetBlockNumber] = useState<bigint>(BigInt(0))
@@ -70,10 +68,19 @@ const UpkeepCancelDialogComponent: React.FC<
         console.log(receipt)
 
         if (receipt.status === "success") {
+          setUpkeepCanceled(true)
           setTargetBlockNumber(receipt.blockNumber + BigInt(51))
           setTargetTimestampExpected(
             new Date().getTime() + 51 * networkInfo.blockDuration
           )
+
+          // Set a timeout to check if the block number has been reached
+          setTimeout(async () => {
+            const currentBlockNumber = await fetchBlockNumber()
+            if (currentBlockNumber >= targetBlockNumber) {
+              setCanWithdrawFunds(true)
+            }
+          }, 51 * networkInfo.blockDuration * 1000)
 
           toast({
             title: "Upkeep canceled",
@@ -106,7 +113,6 @@ const UpkeepCancelDialogComponent: React.FC<
 
         setIsProcessingTransaction(false)
         setProcessingMessage("")
-        setUpkeepCanceled(true)
       },
       onError: (err) => {
         toast({
@@ -166,7 +172,6 @@ const UpkeepCancelDialogComponent: React.FC<
 
         setIsProcessingTransaction(false)
         setProcessingMessage("")
-        setUpkeepCanceled(true)
       },
       onError: (err) => {
         toast({
@@ -177,18 +182,6 @@ const UpkeepCancelDialogComponent: React.FC<
         console.error(err)
       },
     })
-
-  const updateTimeRemaining = async () => {
-    const blockNumber: bigint = await fetchBlockNumber()
-    if (blockNumber >= targetBlockNumber) {
-      setCanWithdrawFunds(true)
-    } else {
-      setTargetTimestampExpected(
-        new Date().getTime() +
-          Number(targetBlockNumber - blockNumber) * networkInfo.blockDuration
-      )
-    }
-  }
 
   return (
     <DialogContent>
@@ -217,14 +210,11 @@ const UpkeepCancelDialogComponent: React.FC<
             to withdraw.
           </p>
 
-          {upkeepCanceled && targetTimestampExpected > new Date().getTime() ? (
+          {upkeepCanceled && targetTimestampExpected ? (
             <p className="text-justify">
               You will be able to withdraw your funds in:{" "}
               <b>
-                <TimerComponent
-                  targetTimestamp={targetTimestampExpected}
-                  onTargetReached={() => updateTimeRemaining()}
-                />
+                <TimerComponent targetTimestamp={targetTimestampExpected} />
               </b>
               .
             </p>
@@ -233,11 +223,7 @@ const UpkeepCancelDialogComponent: React.FC<
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <div
-          className={`flex grow items-center ${
-            isProcessingTransaction ? "justify-between" : "justify-end"
-          }`}
-        >
+        <div className="w-full flex flex-col gap-3">
           {isProcessingTransaction ? (
             <span className="justify-self-start text-sm text-gray-400">
               {processingMessage}

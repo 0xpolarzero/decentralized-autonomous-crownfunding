@@ -1,32 +1,21 @@
-import { useEffect, useState } from "react"
-import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
+import { LucideCreditCard, LucideTrash2 } from "lucide-react"
 import { formatUnits } from "viem"
-import { useContractRead, useContractWrite } from "wagmi"
+import { useContractRead } from "wagmi"
 
 import { UpkeepInfo } from "@/types/contributor-account"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { KeeperRegistry2_0Abi } from "@/config/constants/abis/KeeperRegistry2_0"
-import { LinkTokenAbi } from "@/config/constants/abis/LinkToken"
 import { networkConfig } from "@/config/network"
-import useCopyToClipboard from "@/hooks/copy-to-clipboard"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
-
-import CurrencyComponent from "../ui-extended/currency"
-import InfoComponent from "../ui-extended/info"
-import TooltipWithConditionComponent from "../ui-extended/tooltip-with-condition"
-import { Dialog, DialogTrigger } from "../ui/dialog"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
-import UpkeepCancelDialogComponent from "./upkeep-cancel"
-import UpkeepFundDialogComponent from "./upkeep-fund"
-import UpkeepInformationComponent from "./upkeep-information"
-import UpkeepPauseComponent from "./upkeep-pause"
-
-const formatAmount = (value: number) =>
-  Number(Number(formatUnits(BigInt(value), 18)).toFixed(4))
+import UpkeepCancelDialogComponent from "@/components/base-account-contributor/upkeep-cancel"
+import UpkeepFundDialogComponent from "@/components/base-account-contributor/upkeep-fund"
+import UpkeepInformationComponent from "@/components/base-account-contributor/upkeep-information"
+import UpkeepPauseComponent from "@/components/base-account-contributor/upkeep-pause"
+import CurrencyComponent from "@/components/ui-extended/currency"
+import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with-condition"
 
 interface UpkeepComponentProps {
   upkeep: UpkeepInfo | null
@@ -60,16 +49,15 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap justify-between items-center gap-2">
-        <UpkeepInformationComponent
-          upkeep={upkeep}
-          id={upkeepId?.toString() || ""}
-        />
         <div className="flex flex-wrap items-center gap-2">
           <Dialog>
             <TooltipWithConditionComponent
               shownContent={
                 <DialogTrigger asChild>
-                  <Button disabled={upkeep?.canceled}>Add funds</Button>
+                  <Button variant="secondary" disabled={upkeep?.canceled}>
+                    <LucideCreditCard size={16} className="mr-2 h-4 w-4" /> Add
+                    funds
+                  </Button>
                 </DialogTrigger>
               }
               tooltipContent="You can't add funds to your Upkeep if it is canceled"
@@ -87,7 +75,7 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
               shownContent={
                 <DialogTrigger asChild>
                   <Button variant="secondary" disabled={upkeep?.paused}>
-                    Cancel Upkeep
+                    <LucideTrash2 className="mr-2 h-4 w-4" /> Cancel Upkeep
                   </Button>
                 </DialogTrigger>
               }
@@ -101,20 +89,23 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
             />
           </Dialog>
         </div>
+        <UpkeepInformationComponent
+          upkeep={upkeep}
+          id={upkeepId?.toString() || ""}
+        />
       </div>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          Please try to keep a balance above{" "}
-          {minBalance ? (
-            <>
-              <CurrencyComponent amount={Number(minBalance)} currency="link" />{" "}
-              LINK
-            </>
-          ) : (
-            <Skeleton className="h-4 w-20" />
-          )}{" "}
-          for your Upkeep to be able to run.
-        </div>
+
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        Please try to keep a balance above{" "}
+        {minBalance ? (
+          <>
+            <CurrencyComponent amount={Number(minBalance)} currency="link" />{" "}
+            LINK
+          </>
+        ) : (
+          <Skeleton className="h-4 w-20" />
+        )}{" "}
+        for your Upkeep to be able to run.
       </div>
     </div>
   )

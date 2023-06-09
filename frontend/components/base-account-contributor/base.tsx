@@ -4,8 +4,6 @@ import { useContractRead } from "wagmi"
 
 import { UpkeepInfo } from "@/types/contributor-account"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
-import { KeeperRegistry2_0Abi } from "@/config/constants/abis/KeeperRegistry2_0"
-import { networkConfig } from "@/config/network"
 import { Skeleton } from "@/components/ui/skeleton"
 import UpkeepCreateComponent from "@/components/base-account-contributor/upkeep-create"
 
@@ -28,7 +26,7 @@ const BaseComponent: React.FC<BaseComponentProps> = () => {
     walletLoading: state.loading,
   }))
 
-  const { data: upkeepData } = useContractRead({
+  const { data: upkeepData, refetch } = useContractRead({
     address: contributorAccountAddress,
     abi: DACContributorAccountAbi,
     functionName: "getUpkeep",
@@ -46,7 +44,7 @@ const BaseComponent: React.FC<BaseComponentProps> = () => {
       4_294_967_295 /* max uint32 */ &&
       upkeepInfo.balance === BigInt(0))
   )
-    return <UpkeepCreateComponent />
+    return <UpkeepCreateComponent refetch={refetch} />
 
   return (
     <div className="flex flex-col gap-2">
