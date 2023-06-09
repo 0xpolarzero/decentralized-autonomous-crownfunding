@@ -68,9 +68,14 @@ const UpkeepInformationComponent: React.FC<UpkeepInformationComponentProps> = ({
             <div className="space-y-1">
               <h4 className="text-sm font-semibold">Status</h4>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {upkeep?.paused ? (
+                {upkeep?.canceled ? (
                   <div className="flex items-center space-x-2">
                     <LucideXCircle size={16} color="var(--red)" />
+                    <span>Canceled</span>
+                  </div>
+                ) : upkeep?.paused ? (
+                  <div className="flex items-center space-x-2">
+                    <LucideXCircle size={16} color="var(--yellow)" />
                     <span>Paused</span>
                   </div>
                 ) : (

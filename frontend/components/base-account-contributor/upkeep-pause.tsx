@@ -16,11 +16,13 @@ import TooltipComponent from "@/components/ui-extended/tooltip"
 interface UpkeepPauseComponentProps {
   upkeepId: bigint
   paused: boolean | undefined
+  canceled: boolean | undefined
 }
 
 const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
   upkeepId,
   paused,
+  canceled,
 }) => {
   const { toast } = useToast()
 
@@ -96,7 +98,7 @@ const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
       shownContent={
         <Button
           variant="secondary"
-          disabled={isUpdatingPauseUpkeep}
+          disabled={isUpdatingPauseUpkeep || canceled}
           onClick={() => updatePauseUpkeep()}
         >
           {isProcessingTransaction ? (
@@ -106,7 +108,9 @@ const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
         </Button>
       }
       tooltipContent={
-        paused
+        canceled
+          ? "You cannot pause a canceled Upkeep"
+          : paused
           ? "This will unpause your Upkeep, meaning that it will start running again at the configured payment interval"
           : "This will pause your Upkeep, meaning that it will stop running until you unpause it again."
       }

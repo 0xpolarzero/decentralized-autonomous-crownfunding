@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast"
 
 import CurrencyComponent from "../ui-extended/currency"
 import InfoComponent from "../ui-extended/info"
+import TooltipWithConditionComponent from "../ui-extended/tooltip-with-condition"
 import { Dialog, DialogTrigger } from "../ui/dialog"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
@@ -65,20 +66,39 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
         />
         <div className="flex flex-wrap items-center gap-2">
           <Dialog>
-            <DialogTrigger asChild>
-              <Button>Add funds</Button>
-            </DialogTrigger>
+            <TooltipWithConditionComponent
+              shownContent={
+                <DialogTrigger asChild>
+                  <Button disabled={upkeep?.canceled}>Add funds</Button>
+                </DialogTrigger>
+              }
+              tooltipContent="You can't add funds to your Upkeep if it is canceled"
+              condition={upkeep?.canceled || false}
+            />
             <UpkeepFundDialogComponent upkeepId={upkeepId as bigint} />
           </Dialog>
           <UpkeepPauseComponent
             upkeepId={upkeepId as bigint}
             paused={upkeep?.paused}
+            canceled={upkeep?.canceled}
           />
           <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="secondary">Cancel Upkeep</Button>
-            </DialogTrigger>
-            <UpkeepCancelDialogComponent upkeepId={upkeepId as bigint} />
+            <TooltipWithConditionComponent
+              shownContent={
+                <DialogTrigger asChild>
+                  <Button variant="secondary" disabled={upkeep?.paused}>
+                    Cancel Upkeep
+                  </Button>
+                </DialogTrigger>
+              }
+              tooltipContent="You can't cancel your Upkeep if it is paused"
+              condition={upkeep?.paused || false}
+            />
+
+            <UpkeepCancelDialogComponent
+              upkeepId={upkeepId?.toString()}
+              alreadyCanceled={upkeep?.canceled || false}
+            />
           </Dialog>
         </div>
       </div>

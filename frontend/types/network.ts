@@ -20,6 +20,7 @@ export interface NetworkInfo {
     icon: string
   }
   timeout: number
+  blockDuration: number
   contracts: {
     [key: string]: string
   }

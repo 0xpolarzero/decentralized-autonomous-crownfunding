@@ -13,13 +13,14 @@ export interface ContributorAccount {
 
 export interface UpkeepInfo {
   target: string
-  executeGas: string
+  executeGas: number
   checkData: string
-  balance: string
+  balance: bigint
   admin: string
-  maxValidBlocknumber: string
-  lastPerformBlockNumber: string
-  amountSpent: string
+  maxValidBlocknumber: bigint
+  lastPerformBlockNumber: number
+  amountSpent: bigint
   paused: boolean
   offchainConfig: string
+  canceled: boolean
 }

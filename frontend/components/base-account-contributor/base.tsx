@@ -38,12 +38,26 @@ const BaseComponent: React.FC<BaseComponentProps> = () => {
   if (walletLoading) return <Skeleton className="w-full h-20" />
   if (!connected || !hasContributorAccount) return null
 
-  if (!upkeepInfo || upkeepInfo.admin === zeroAddress)
+  if (
+    !upkeepInfo ||
+    upkeepInfo.admin === zeroAddress ||
+    // Canceled & balance is 0
+    (Number(upkeepInfo.maxValidBlocknumber) !==
+      4_294_967_295 /* max uint32 */ &&
+      upkeepInfo.balance === BigInt(0))
+  )
     return <UpkeepCreateComponent />
 
   return (
     <div className="flex flex-col gap-2">
-      <UpkeepComponent upkeep={upkeepInfo} />
+      <UpkeepComponent
+        upkeep={{
+          ...upkeepInfo,
+          canceled:
+            upkeepInfo.maxValidBlocknumber !==
+            BigInt(4_294_967_295) /* max uint32 */,
+        }}
+      />
     </div>
   )
 }

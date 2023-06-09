@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from "react"
-import Image from "next/image"
+import React, { useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
-import { waitForTransaction, writeContract } from "@wagmi/core"
+import { fetchBlockNumber, waitForTransaction } from "@wagmi/core"
 import { Loader2 } from "lucide-react"
-import { formatUnits, parseUnits } from "viem"
-import { useContractRead } from "wagmi"
+import { TransactionReceipt } from "viem"
+import { useContractWrite } from "wagmi"
 
+import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { KeeperRegistry2_0Abi } from "@/config/constants/abis/KeeperRegistry2_0"
-import { LinkTokenAbi } from "@/config/constants/abis/LinkToken"
-import { currencies, networkConfig } from "@/config/network"
+import { networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
 import {
   DialogContent,
@@ -18,19 +17,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import InfoComponent from "@/components/ui-extended/info"
+import TimerComponent from "@/components/ui-extended/Timer"
 import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with-condition"
 
 interface UpkeepCancelDialogComponentProps {
-  upkeepId: bigint
+  upkeepId: string | undefined
+  alreadyCanceled: boolean
 }
 
 const UpkeepCancelDialogComponent: React.FC<
   UpkeepCancelDialogComponentProps
-> = ({ upkeepId }) => {
+> = ({ upkeepId, alreadyCanceled }) => {
   const { address, currentNetwork } = useGlobalStore((state) => ({
     address: state.address,
     currentNetwork: state.currentNetwork,
@@ -44,52 +43,49 @@ const UpkeepCancelDialogComponent: React.FC<
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
   const [processingMessage, setProcessingMessage] = useState<string>("")
-  const [inputValue, setInputValue] = useState<number | string>(0)
-  const [linkAmount, setLinkAmount] = useState<bigint>(BigInt(0))
-  const [isInputValid, setIsInputValid] = useState<boolean>(false)
+  const [upkeepCanceled, setUpkeepCanceled] = useState<boolean>(
+    alreadyCanceled || false
+  )
+  const [canWithdrawFunds, setCanWithdrawFunds] =
+    useState<boolean>(alreadyCanceled)
+  const [targetBlockNumber, setTargetBlockNumber] = useState<bigint>(BigInt(0))
+  const [targetTimestampExpected, setTargetTimestampExpected] =
+    useState<number>(0)
 
-  const { data: allowance, refetch: refetchAllowance }: any = useContractRead({
-    address: networkInfo.contracts.LINK as `0x${string}`,
-    abi: LinkTokenAbi,
-    functionName: "allowance",
-    args: [address, networkInfo.contracts.KEEPER_REGISTRY as `0x${string}`],
-  })
+  const { isLoading: isCancelingUpkeep, write: cancelUpkeep } =
+    useContractWrite({
+      address: networkInfo.contracts.KEEPER_REGISTRY as `0x${string}`,
+      abi: KeeperRegistry2_0Abi,
+      functionName: "cancelUpkeep",
+      args: [BigInt(upkeepId || 0)],
 
-  const fundUpkeep = async () => {
-    console.log(allowance, linkAmount)
-    try {
-      setIsProcessingTransaction(true)
+      onSuccess: async (tx) => {
+        setIsProcessingTransaction(true)
+        setProcessingMessage("Canceling Upkeep...")
 
-      if (allowance < linkAmount) {
-        setProcessingMessage("Allowing spending of LINK...")
-        // Step 1: Allow spending of LINK
-        const { hash: hashAllowance } = await writeContract({
-          address: networkInfo.contracts.LINK as `0x${string}`,
-          abi: LinkTokenAbi,
-          functionName: "approve",
-          args: [
-            networkInfo.contracts.KEEPER_REGISTRY as `0x${string}`,
-            linkAmount,
-          ],
-        })
-
-        const receiptAllowance = await waitForTransaction({
-          hash: hashAllowance,
+        const receipt: TransactionReceipt = await waitForTransaction({
+          hash: tx.hash,
           confirmations: 5,
         })
+        console.log(receipt)
 
-        if (receiptAllowance.status === "success") {
+        if (receipt.status === "success") {
+          setTargetBlockNumber(receipt.blockNumber + BigInt(51))
+          setTargetTimestampExpected(
+            new Date().getTime() + 51 * networkInfo.blockDuration
+          )
+
           toast({
-            title: "Allowed spending of LINK",
+            title: "Upkeep canceled",
             description: (
               <>
                 <p>
-                  You successfully approved spending of{" "}
-                  {formatUnits(allowance, 18)} LINK
+                  Your Upkeep was successfully canceled. Please wait for 50
+                  blocks to withdraw your funds.
                 </p>
                 <p>
                   <Link
-                    href={`${networkInfo.blockExplorer.url}tx/${hashAllowance}`}
+                    href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline"
@@ -107,117 +103,133 @@ const UpkeepCancelDialogComponent: React.FC<
             description: "Please try again.",
           })
         }
-      }
 
-      // Step 2: Add funds to Upkeep
-      const { data: newAllowed } = await refetchAllowance()
-      if (newAllowed < linkAmount) {
-        // Just start again
-        fundUpkeep()
-        return
-      }
-
-      setProcessingMessage("Funding Upkeep...")
-      const { hash: hashFunding } = await writeContract({
-        address: networkInfo.contracts.KEEPER_REGISTRY as `0x${string}`,
-        abi: KeeperRegistry2_0Abi,
-        functionName: "addFunds",
-        args: [upkeepId, linkAmount],
-      })
-
-      const receiptFunding = await waitForTransaction({
-        hash: hashFunding,
-        confirmations: 5,
-      })
-
-      if (receiptFunding.status === "success") {
-        toast({
-          title: "Upkeep funded",
-          description: (
-            <>
-              <p className="flex items-center gap-2">
-                Your Upkeep has been successfully funded with{" "}
-                {Number(Number(formatUnits(linkAmount, 18)).toFixed(4))} LINK.
-              </p>
-              <p>
-                <Link
-                  href={`${networkInfo.blockExplorer.url}tx/${hashFunding}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline"
-                >
-                  See on block explorer
-                </Link>
-              </p>
-            </>
-          ),
-        })
-      } else {
+        setIsProcessingTransaction(false)
+        setProcessingMessage("")
+        setUpkeepCanceled(true)
+      },
+      onError: (err) => {
         toast({
           variant: "destructive",
           title: "Something went wrong",
           description: "Please try again.",
         })
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description: "Please try again.",
-      })
-      console.error(error)
-    }
+        console.error(err)
+      },
+    })
 
-    setIsProcessingTransaction(false)
-    setProcessingMessage("")
-  }
+  const { isLoading: isWithdrawingFunds, write: withdrawFunds } =
+    useContractWrite({
+      address: networkInfo.contracts.KEEPER_REGISTRY as `0x${string}`,
+      abi: KeeperRegistry2_0Abi,
+      functionName: "withdrawFunds",
+      args: [BigInt(upkeepId || 0), address],
 
-  useEffect(() => {
-    if (isNaN(Number(inputValue)) || Number(inputValue) <= 0) {
-      setIsInputValid(false)
+      onSuccess: async (tx) => {
+        setIsProcessingTransaction(true)
+        setProcessingMessage("Withdrawing remaining funds...")
+
+        const receipt: TransactionReceipt = await waitForTransaction({
+          hash: tx.hash,
+          confirmations: 5,
+        })
+        console.log(receipt)
+        if (receipt.status === "success") {
+          toast({
+            title: "Funds withdrawn",
+            description: (
+              <>
+                <p>
+                  Your LINK were sucessfully withdrawn and sent back to your
+                  wallet.
+                </p>
+                <p>
+                  <Link
+                    href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    See on block explorer
+                  </Link>
+                </p>
+              </>
+            ),
+          })
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Something went wrong",
+            description: "Please try again.",
+          })
+        }
+
+        setIsProcessingTransaction(false)
+        setProcessingMessage("")
+        setUpkeepCanceled(true)
+      },
+      onError: (err) => {
+        toast({
+          variant: "destructive",
+          title: "Something went wrong",
+          description: "Please try again.",
+        })
+        console.error(err)
+      },
+    })
+
+  const updateTimeRemaining = async () => {
+    const blockNumber: bigint = await fetchBlockNumber()
+    if (blockNumber >= targetBlockNumber) {
+      setCanWithdrawFunds(true)
     } else {
-      setIsInputValid(true)
-      setLinkAmount(parseUnits(`${Number(inputValue)}`, 18))
+      setTargetTimestampExpected(
+        new Date().getTime() +
+          Number(targetBlockNumber - blockNumber) * networkInfo.blockDuration
+      )
     }
-  }, [inputValue])
+  }
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Add funds to Upkeep</DialogTitle>
+        <DialogTitle>Cancel Upkeep</DialogTitle>
         <DialogDescription className="flex flex-col gap-2">
           <p className="mt-2 text-justify">
-            This will fund your Upkeep with the specified amount of LINK.
+            This will <b>cancel your Upkeep</b>, allow you to{" "}
+            <b>withdraw your remaining funds</b> and stop the automation.
           </p>
           <p className="text-justify">
-            You will always be able to cancel the Upkeep and{" "}
-            <b>withdraw the unused balance</b> at any time, here or on the
-            Chainlink Automation UI.
+            You will need to <b>wait for 50 blocks</b> after cancelation before
+            you can withdraw your funds.
           </p>
           <p className="text-justify">
-            These funds will be used to pay for the Upkeep's transactions,
-            meaning the contributions payments at the payment interval currently
-            set up.
+            If you can&apos;t withdraw your funds although you&apos;ve already
+            canceled your Upkeep, you can visit the{" "}
+            <Link
+              className="underline"
+              href={`https://automation.chain.link/${networkInfo.name.toLowerCase()}/${upkeepId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Chainlink Automation UI
+            </Link>{" "}
+            to withdraw.
           </p>
+
+          {upkeepCanceled && targetTimestampExpected > new Date().getTime() ? (
+            <p className="text-justify">
+              You will be able to withdraw your funds in:{" "}
+              <b>
+                <TimerComponent
+                  targetTimestamp={targetTimestampExpected}
+                  onTargetReached={() => updateTimeRemaining()}
+                />
+              </b>
+              .
+            </p>
+          ) : null}
           <Separator className="my-2" />
-          <span className="flex items-center gap-2">
-            Amount{" "}
-            <Image
-              src={currencies.link.icon}
-              alt="link"
-              width={16}
-              height={16}
-            />
-            <InfoComponent content="The funding amount in LINK" />
-          </span>
-          <Input
-            type="number"
-            placeholder="0.0"
-            className="mb-2"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            disabled={isProcessingTransaction}
-          />
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
@@ -228,25 +240,45 @@ const UpkeepCancelDialogComponent: React.FC<
         >
           {isProcessingTransaction ? (
             <span className="justify-self-start text-sm text-gray-400">
-              {processingMessage || "Processing transaction..."}
+              {processingMessage}
             </span>
           ) : null}
-          <TooltipWithConditionComponent
-            shownContent={
-              <Button
-                type="submit"
-                disabled={!isInputValid || isProcessingTransaction}
-                onClick={() => fundUpkeep()}
-              >
-                {isProcessingTransaction ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Fund
-              </Button>
-            }
-            tooltipContent="Please enter a valid amount"
-            condition={!isInputValid}
-          />
+          <div className="flex items-center justify-between gap-2">
+            <TooltipWithConditionComponent
+              shownContent={
+                <Button
+                  variant={upkeepCanceled ? "secondary" : "default"}
+                  disabled={isCancelingUpkeep || upkeepCanceled}
+                  onClick={() => cancelUpkeep()}
+                >
+                  {isCancelingUpkeep ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Cancel Upkeep
+                </Button>
+              }
+              tooltipContent="Your Upkeep is already canceled"
+              condition={upkeepCanceled}
+            />
+            <TooltipWithConditionComponent
+              shownContent={
+                <Button
+                  variant={upkeepCanceled ? "default" : "secondary"}
+                  disabled={
+                    isWithdrawingFunds || !upkeepCanceled || !canWithdrawFunds
+                  }
+                  onClick={() => withdrawFunds()}
+                >
+                  {isWithdrawingFunds ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Withdraw funds
+                </Button>
+              }
+              tooltipContent="You need to cancel your Upkeep and wait for 50 blocks first"
+              condition={!upkeepCanceled || !canWithdrawFunds}
+            />
+          </div>
         </div>
       </DialogFooter>
     </DialogContent>
