@@ -59,7 +59,7 @@ export function handleContributorAccountCreated(
   account.createdAt = event.params._event.block.timestamp;
   account.totalContributed = BigInt.fromI32(0);
   account.contributionsCount = BigInt.fromI32(0);
-  account.lastContributionsTransferedAt = BigInt.fromI32(0);
+  account.lastContributionsTransferedAt = event.params._event.block.timestamp;
 
   account.save();
 }
