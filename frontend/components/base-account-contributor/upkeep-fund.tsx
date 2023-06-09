@@ -195,7 +195,7 @@ const UpkeepFundDialogComponent: React.FC<UpkeepFundDialogComponentProps> = ({
             Chainlink Automation UI.
           </p>
           <p className="text-justify">
-            These funds will be used to pay for the Upkeep's transactions,
+            These funds will be used to pay for the Upkeep&apos;s transactions,
             meaning the contributions payments at the payment interval currently
             set up.
           </p>

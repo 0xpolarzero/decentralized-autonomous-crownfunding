@@ -205,7 +205,7 @@ export default function AccountContributorPage() {
     return (
       <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-          You don't have a contributor account yet.
+          You don&apos;t have a contributor account yet.
         </h1>
         <p className="max-w-[800px] text-lg text-muted-foreground">
           Create one to be able to support projects.
