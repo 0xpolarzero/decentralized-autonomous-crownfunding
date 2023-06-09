@@ -2,13 +2,9 @@ import React, { useEffect, useState } from "react"
 
 interface TimerComponentProps {
   targetTimestamp: number
-  onTargetReached?: () => void
 }
 
-const TimerComponent: React.FC<TimerComponentProps> = ({
-  targetTimestamp,
-  onTargetReached,
-}) => {
+const TimerComponent: React.FC<TimerComponentProps> = ({ targetTimestamp }) => {
   const [remainingTime, setRemainingTime] = useState<string>("")
 
   useEffect(() => {
@@ -19,8 +15,6 @@ const TimerComponent: React.FC<TimerComponentProps> = ({
       if (timeRemaining <= 0) {
         setRemainingTime("Expired")
         clearInterval(intervalId)
-
-        if (typeof onTargetReached !== "undefined") onTargetReached()
       } else {
         setRemainingTime(formatDuration(timeRemaining))
       }
