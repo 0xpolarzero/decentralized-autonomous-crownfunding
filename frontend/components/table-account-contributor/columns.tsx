@@ -75,7 +75,7 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
   const status: string = row.getValue("projectStatus")
   const lastActivityAt: string = new Date(
     Number(row.original.project.lastActivityAt) * 1000
-  ).toLocaleDateString()
+  ).toLocaleString()
 
   if (status)
     return (

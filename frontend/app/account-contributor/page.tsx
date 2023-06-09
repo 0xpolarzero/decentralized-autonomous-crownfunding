@@ -17,8 +17,8 @@ import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import UpkeepComponent from "@/components/base-account-contributor/base"
 import ContributorCreateAccount from "@/components/contributor-create-account"
-import ContributorUpkeepComponent from "@/components/contributor-upkeep"
 import { DataTable } from "@/components/data-table"
 import {
   columns,
@@ -27,6 +27,7 @@ import {
 import formatData from "@/components/table-account-contributor/format-data"
 import CurrencyComponent from "@/components/ui-extended/currency"
 import { DataTableSkeleton } from "@/components/ui-extended/data-table-skeleton"
+import DurationComponent from "@/components/ui-extended/duration"
 import TooltipComponent from "@/components/ui-extended/tooltip"
 
 export default function AccountContributorPage() {
@@ -174,7 +175,7 @@ export default function AccountContributorPage() {
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      <ContributorUpkeepComponent />
+      <UpkeepComponent />
       <Separator />
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex flex-col gap-1">
@@ -194,10 +195,13 @@ export default function AccountContributorPage() {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          Expected next payment
+          Next payment expected
           {loading || walletLoading ? (
             <Skeleton className="h-6 w-20" />
-          ) : Number(contributorAccount?.lastContributionsTransferedAt) +
+          ) : Number(
+              contributorData?.contributorAccounts[0]
+                .lastContributionsTransferedAt
+            ) +
               Number(paymentInterval) <
             new Date().getTime() / 1000 ? (
             // The last payment was missed
@@ -214,23 +218,51 @@ export default function AccountContributorPage() {
             />
           ) : paymentInterval &&
             contributorData?.contributorAccounts?.length ? (
-            <CurrencyComponent
-              amount={calculate
-                .totalContributions(
-                  contributions,
-                  Number(paymentInterval),
-                  Number(
+            <div className="flex items-center gap-2">
+              <CurrencyComponent
+                amount={calculate
+                  .totalContributions(
+                    contributions,
+                    Number(paymentInterval),
+                    Number(
+                      contributorData?.contributorAccounts[0]
+                        .lastContributionsTransferedAt
+                    ) + Number(paymentInterval)
+                  )
+                  .reduce(
+                    (acc: number, contribution: ContributionToSend) =>
+                      acc + contribution.amount,
+                    0
+                  )}
+                currency="native"
+              />{" "}
+              <TooltipComponent
+                shownContent={
+                  <span className="flex items-center text-muted-foreground">
+                    in{" "}
+                    <DurationComponent
+                      startTimestamp={new Date().getTime()}
+                      endTimestamp={
+                        (Number(
+                          contributorData?.contributorAccounts[0]
+                            .lastContributionsTransferedAt
+                        ) +
+                          Number(paymentInterval)) *
+                        1000
+                      }
+                    />
+                  </span>
+                }
+                tooltipContent={new Date(
+                  (Number(
                     contributorData?.contributorAccounts[0]
                       .lastContributionsTransferedAt
-                  ) + Number(paymentInterval)
-                )
-                .reduce(
-                  (acc: number, contribution: ContributionToSend) =>
-                    acc + contribution.amount,
-                  0
-                )}
-              currency="native"
-            />
+                  ) +
+                    Number(paymentInterval)) *
+                    1000
+                ).toLocaleString()}
+              />
+            </div>
           ) : (
             <span className="text-muted-foreground text-sm">N/A</span>
           )}

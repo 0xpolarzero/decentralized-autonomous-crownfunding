@@ -253,7 +253,7 @@ export default function ProjectPage() {
                     />
                   </>
                 }
-                tooltipContent={createdAtFormatted?.toLocaleDateString()}
+                tooltipContent={createdAtFormatted?.toLocaleString()}
               />
               <TooltipComponent
                 shownContent={
@@ -264,7 +264,7 @@ export default function ProjectPage() {
                     />
                   </>
                 }
-                tooltipContent={lastActivityAtFormatted?.toLocaleDateString()}
+                tooltipContent={lastActivityAtFormatted?.toLocaleString()}
               />
               <Link
                 className="text-sm text-muted-foreground underline"

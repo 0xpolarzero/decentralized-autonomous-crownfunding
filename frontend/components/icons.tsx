@@ -31,7 +31,12 @@ export const Icons = {
   //     <line x1="21" x2="18" y1="21" y2="18"></line>
   //   </svg>
   // ),
-  logo: Waves,
+  // logo: Waves,
+  // Or rotated
+  logo: (props: LucideProps) => (
+    <Waves {...props} style={{ transform: "rotate(90deg)" }} />
+  ),
+
   gitHub: (props: LucideProps) => (
     <svg viewBox="0 0 438.549 438.549" {...props}>
       <path

@@ -286,7 +286,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
     address: row.original.projectContract as `0x${string}`,
     abi: DACProjectAbi,
     functionName: "withdrawShare",
-    args: [collaboratorData.amountAvailable],
+    args: [collaboratorData?.amountAvailable],
 
     onSuccess: async (tx) => {
       setIsWithdrawing(true)

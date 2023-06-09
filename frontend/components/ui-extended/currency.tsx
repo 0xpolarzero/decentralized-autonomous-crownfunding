@@ -4,6 +4,7 @@ import useGlobalStore from "@/stores/useGlobalStore"
 import { formatUnits } from "viem"
 
 import { currencies, networkConfig } from "@/config/network"
+import { cn } from "@/lib/utils"
 import {
   Tooltip,
   TooltipContent,
@@ -14,11 +15,13 @@ import {
 interface CurrencyComponentProps {
   amount: number
   currency: "native" | "link"
+  className?: string
 }
 
 const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
   amount,
   currency,
+  className,
 }) => {
   const currentNetwork = useGlobalStore((state) => state.currentNetwork)
   const actualCurrency =
@@ -51,7 +54,7 @@ const CurrencyComponent: React.FC<CurrencyComponentProps> = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          <div className="flex items-center gap-2">
+          <div className={cn("flex items-center gap-2", className || "")}>
             {getCurrencyIcon()}
             <span>{Number(formatAmount(amount))}</span>
           </div>

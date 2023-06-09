@@ -49,6 +49,10 @@ export const networkConfig: NetworkConfig = {
       },
       currency: currencies.matic,
       timeout: 120_000, // 2 minutes
+      contracts: {
+        LINK: "0xb0897686c545045aFc77CF20eC7A532E3120E0F1",
+        KEEPER_REGISTRY: "0x02777053d6764996e594c3E88AF1D58D5363a2e6",
+      },
     },
     maticmum: {
       name: "Mumbai",
@@ -59,6 +63,10 @@ export const networkConfig: NetworkConfig = {
       },
       currency: currencies.matic,
       timeout: 120_000, // 2 minutes
+      contracts: {
+        LINK: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
+        KEEPER_REGISTRY: "0xE16Df59B887e3Caa439E0b29B42bA2e7976FD8b2",
+      },
     },
   },
 }
