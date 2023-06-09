@@ -1,62 +1,61 @@
-# decentralized-autonomous-crownfunding on Arbitrum
+# Cascade - A decentralized automated crowdfunding platform
 
-## Process
+Your decentralized crowdfunding platform. Enabling automated and flexible project support through blockchain and Chainlink.
 
-Submit a founders team for a decentralized autonomous crowdfunding process.
+Cascade is a crowdfunding platform that tries to enable a new level of control and flexibility in supporting projects you believe in. Leveraging Chainlink Automation, Cascade ensures precise, periodic payments to chosen projects, embodying the continuous flow its name suggests. Instead of dealing with recurring bank deductions, you dedicate an amount of your choice from your contributor account, for each project. These funds are then automatically distributed at intervals you specify.
 
-Once the team (addresses) is submitted, create a child smart contract for this process (maybe link addresses with names, but doesn't need to be onchain, e.g. see Space & Time?).
+As the member of a project, you can stay confident that each collaborator is being paid their fair share, without having to worry about the logistics of the process.
 
-Anyone investing some money is given access to proposals. There can be a timed period and/or a hardcap for the crowdfunding to finish.
+## Overview
 
-See Chainlink Automations for this (upkeep on end of crowdfunding, same for proposals to be executed).
+It is a platform for both projects support and creation. It behaves as **an interface between founders and contributors**, where the latter can plan their contributions over a specified period, give out their funds to a secured contract, let the payments be sent automatically, and still pull back if they don't feel confident anymore at some point.
 
-When the period is over/hardcap reached, each person is given a % based on the money they invested, which will determine their voting power.
-If the (softcap?) is not reached, the founder can just dissolve the contract and the money is returned to the investors.
+The collaborators in a project are each assigned a percentage of the funds, and are able to withdraw their share at any time.
 
-Then, maybe another time frame, anyone can propose a plan, like for each address, how much they are getting paid total/each month, so for each a % or the total pool and a time period. The founding team could come up with the first proposal.
+## Directory structure
 
-Once all proposals are here, the voting starts. Each person can vote for any proposal, with their voting power. The proposal with the most votes wins. If there is a tie, the proposal with the most money invested wins.
+### `frontend`
 
-Once this is finished, it's executed. The founders will be able to withdraw x amount of money per month (or maybe just based on the timestamp, calculated on the fly, so they can withdraw at any time but in the end they would have withdrawn no more than their allowance).
+Everything related to the Next.js app, which is the main interface of the platform, written in Typescript. It can be visited at [cascade.polarzero.xyz](https://cascade.polarzero.xyz).
 
-The thing is, anyone can submit a proposal for stopping the process, in case the founders rug or fail to deliver. If it reached a x % of votes (maybe it can be determined in the first proposal for the plan), the process is stopped and the rest of the money is returned to the investors based on their % invested. Withdrawing is disabled during the voting period.
+### `hardhat`
 
-DON'T VOTE TO STOP THE PROCESS AND REFUND: Just allow people to withdraw what's remaining of their investment, to stop supporting the project.
+The smart contracts, written in Solidity and both tested and deployed with Hardhat. The contracts are currently deployed on the Polygon Mumbai testnet.
 
-Use SPACE AND TIME to get indexed events of the child contracts
+### `subgraph`
 
-Founder need to check active at least once a month, otherwise the process is stopped and the money is returned to the investors.
+The subgraph, written in Typescript & GraphQL, which is used to index the events emitted by the smart contracts. It is deployed on [The Graph's studio](https://thegraph.com).
 
-UPKEEPS: perform upkeeps for these tasks
+## Trying out / testing
 
-- daily on factory contract, check LINK balance of child contracts and fund them if they are active
-- every 7 days
+To get a local copy up and running follow these simple example steps.
 
-OR
+You will need to install either **npm** or **yarn** to run the commands, and **git** to clone the repository.
 
-on each upkeep:
+### Installation
 
-- if the project is still active and has a balance, trigger the payment
-- check the last time collaborators manifested themselves, if > 30 days set it no inactive
+1. Clone the repo:
 
-## UI
+   ```sh
+   git clone https://github.com/0xpolarzero/chainlink-fall-2022-hackathon
+   ```
 
-Need to catch everything to display on the website, also gathering all addresses that are in founding teams or investors, to allow for researching a profile. Maybe a backend (not necessarily decentralized) can allow people to link their profiles, e.g. Lens.
+2. Navigate into a subdirectory:
 
-No need to do too big, e.g. function to create a project, no need for adding addresses after, modifying the name, etc etc. Keep it simple
+   ```sh
+   cd name-of-the-subdirectory
+   ```
 
-- Create a project (with co-founders/team) with addresses, which creates a new smart contract ; also with the initial plan (hardcap, time frame, % for each address, % needed to stop the process)
-- See in which projects you're involved
-- During plan time, propose a plan
-- After plan time, vote for a plan (display the most voted first)
-- If a plan is executed, see the money you can withdraw (for founders)
-- When executed, button to propose to halt the process (if you're an investor or a founder)
+3. Install NPM packages using `yarn` or `npm install`.
 
-BUT hard to track events in these child contracts, still this issue
+### Usage
 
-# TODO LATER
+Usage strongly depends on the subdirectory you are in. Please refer to the `README.md` file in each subdirectory for more information.
 
-- Currently limited to 100 items (projects, contributions): need to handle more and fetch on different pages & on search (but limited with The Graph queries)
-- Can completely abstract Chainlink from the user (request some native tokens on creation, create the Upkeep, swap to LINK & fund it, don't use the UI and put everything in-app)
-- Can also abstract the wallet and let the usser connect with Web2 onboarding
-- Can use Account abstraction as well instead of contributor account with the right contract standard & sponsor gas fees for transactions & upkeep (only let pay with wallet/credit cart for contributing)
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Contact
+
+If you have any questions, feel free to reach out to me on [Twitter](https://twitter.com/0xpolarzero) or [by email](mailto:0xpolarzero@gmail.com) (0xpolarzero@gmail.com).
