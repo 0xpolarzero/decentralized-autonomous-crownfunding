@@ -14,7 +14,7 @@ module.exports = async () => {
   ) {
     console.log('Updating front end...');
     await updateContractAddresses();
-    // await updateAbi();
+    await updateAbi();
   }
 };
 
