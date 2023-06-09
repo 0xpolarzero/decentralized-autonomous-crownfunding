@@ -123,14 +123,6 @@ contract DACContributorAccount is
         uint256 interval
     );
 
-    /// @dev Emitted when the upkeep is canceled
-    /// @param upkeepId The ID of the upkeep
-    event DACContributorAccount__UpkeepCanceled(uint256 upkeepId);
-
-    /// @dev Emitted when the upkeep funds are withdrawn
-    /// @param upkeepId The ID of the upkeep
-    event DACContributorAccount__UpkeepFundsWithdrawn(uint256 upkeepId);
-
     /// @dev Emitted when the upkeep interval is updated
     /// @param interval The new interval between each payment (upkeep)
     event DACContributorAccount__UpkeepIntervalUpdated(uint256 interval);
@@ -138,6 +130,8 @@ contract DACContributorAccount is
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
     /* -------------------------------------------------------------------------- */
+    /// @dev The maximun uint32 value
+    uint32 private constant MAX_UINT32 = 4_294_967_295;
 
     /// @dev The address of the owner of the account
     address private immutable i_owner;
@@ -419,7 +413,7 @@ contract DACContributorAccount is
      */
 
     function registerNewUpkeep(uint96 _fundingAmount) public onlyOwner {
-        if (getUpkeep().admin != address(0))
+        if (getUpkeep().maxValidBlocknumber != MAX_UINT32)
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
         if (_fundingAmount < 0.1 * 10 ** 18)
@@ -451,38 +445,6 @@ contract DACContributorAccount is
             s_upkeepId,
             s_upkeepInterval
         );
-    }
-
-    /**
-     * @notice Cancel the registration of the Chainlink Upkeep
-     * @dev This will cancel the upkeep but it won't withdraw the funds
-     */
-
-    function cancelUpkeep() external onlyOwner {
-        if (getUpkeep().admin == address(0))
-            revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
-
-        // Cancel the Chainlink Upkeep
-        REGISTRY.cancelUpkeep(s_upkeepId);
-
-        emit DACContributorAccount__UpkeepCanceled(s_upkeepId);
-    }
-
-    /**
-     * @notice Withdraw the funds from the Chainlink Upkeep
-     * @dev The upkeep needs to be canceled first, and the funds can be withdrawn
-     * only after 50 blocks
-     * @dev It will send the funds to the owner of the account
-     * @dev The frontend should carefully let the owner cancel the upkeep and withdraw the funds, before
-     * allowing them to create a new upkeep, or they would lose the ID ; even though it could still be grabbed
-     * from the registry/events to withdraw the funds later
-     */
-
-    function withdrawUpkeepFunds() external onlyOwner {
-        // Withdraw the funds from the Chainlink Upkeep
-        REGISTRY.withdrawFunds(s_upkeepId, i_owner);
-
-        emit DACContributorAccount__UpkeepFundsWithdrawn(s_upkeepId);
     }
 
     /**

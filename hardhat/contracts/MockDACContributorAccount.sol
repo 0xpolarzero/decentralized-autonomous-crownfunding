@@ -16,9 +16,6 @@ import "./DACContributionSystem.sol";
  * @dev The functions impacted are:
  * - `constructor` -> calls `MOCK__registerUpkeep`
  * - `registerUpkeep` -> calls `MOCK__registerUpkeep`
- * - `fundUpkeep` -> calls `MOCK__fundUpkeep`
- * - `cancelUpkeep` -> calls `MOCK__cancelUpkeep`
- * - `withdrawUpkeepFunds` -> calls `MOCK__withdrawUpkeepFunds`
  */
 
 contract MockDACContributorAccount is
@@ -129,14 +126,6 @@ contract MockDACContributorAccount is
         uint256 interval
     );
 
-    /// @dev Emitted when the upkeep is canceled
-    /// @param upkeepId The ID of the upkeep
-    event DACContributorAccount__UpkeepCanceled(uint256 upkeepId);
-
-    /// @dev Emitted when the upkeep funds are withdrawn
-    /// @param upkeepId The ID of the upkeep
-    event DACContributorAccount__UpkeepFundsWithdrawn(uint256 upkeepId);
-
     /// @dev Emitted when the upkeep interval is updated
     /// @param interval The new interval between each payment (upkeep)
     event DACContributorAccount__UpkeepIntervalUpdated(uint256 interval);
@@ -144,6 +133,8 @@ contract MockDACContributorAccount is
     /* -------------------------------------------------------------------------- */
     /*                                   STORAGE                                  */
     /* -------------------------------------------------------------------------- */
+    /// @dev The maximun uint32 value
+    uint32 private constant MAX_UINT32 = 4_294_967_295;
 
     /// @dev The address of the owner of the account
     address private immutable i_owner;
@@ -421,49 +412,17 @@ contract MockDACContributorAccount is
      * @notice Register a new Chainlink Upkeep
      */
 
-    function registerNewUpkeep() public onlyOwner {
-        if (getUpkeep().admin != address(0))
+    function registerNewUpkeep() external onlyOwner {
+        if (getUpkeep().maxValidBlocknumber == MAX_UINT32)
             revert DACContributorAccount__UPKEEP_ALREADY_REGISTERED();
 
         // Register the Chainlink Upkeep
-        s_upkeepId = MOCK_registerUpkeep();
+        MOCK_registerUpkeep();
 
         emit DACContributorAccount__UpkeepRegistered(
             s_upkeepId,
             s_upkeepInterval
         );
-    }
-
-    /**
-     * @notice Cancel the registration of the Chainlink Upkeep
-     * @dev This will cancel the upkeep but it won't withdraw the funds
-     */
-
-    function cancelUpkeep() external onlyOwner {
-        if (getUpkeep().admin == address(0))
-            revert DACContributorAccount__UPKEEP_NOT_REGISTERED();
-
-        // Cancel the Chainlink Upkeep
-        MOCK_cancelUpkeep();
-
-        emit DACContributorAccount__UpkeepCanceled(s_upkeepId);
-    }
-
-    /**
-     * @notice Withdraw the funds from the Chainlink Upkeep
-     * @dev The upkeep needs to be canceled first, and the funds can be withdrawn
-     * only after 50 blocks
-     * @dev It will send the funds to the owner of the account
-     * @dev The frontend should carefully let the owner cancel the upkeep and withdraw the funds, before
-     * allowing them to create a new upkeep, or they would lose the ID ; even though it could still be grabbed
-     * from the registry/events to withdraw the funds later
-     */
-
-    function withdrawUpkeepFunds() external onlyOwner {
-        // Withdraw the funds from the Chainlink Upkeep
-        MOCK_withdrawFundsFromUpkeep();
-
-        emit DACContributorAccount__UpkeepFundsWithdrawn(s_upkeepId);
     }
 
     /**
@@ -649,8 +608,8 @@ contract MockDACContributorAccount is
                 executeGas: s_upkeepGasLimit,
                 checkData: "",
                 balance: 0,
-                admin: s_upkeepId == 1 ? address(this) : address(0),
-                maxValidBlocknumber: 0,
+                admin: i_owner,
+                maxValidBlocknumber: s_upkeepId == 1 ? MAX_UINT32 : 0,
                 lastPerformBlockNumber: 0,
                 amountSpent: 0,
                 paused: false,
@@ -780,24 +739,9 @@ contract MockDACContributorAccount is
 
     /**
      * @notice Mock function to simulate the Upkeep registration
-     * @return uint256 The Chainlink Upkeep ID
      */
 
-    function MOCK_registerUpkeep() private pure returns (uint256) {
-        return 1;
+    function MOCK_registerUpkeep() private {
+        s_upkeepId = 1;
     }
-
-    /**
-     * @notice Mock function to simulate cancelling the Upkeep
-     */
-
-    function MOCK_cancelUpkeep() private {
-        s_upkeepId = 0;
-    }
-
-    /**
-     * @notice Mock function to simulate withdrawing the funds from the Upkeep
-     */
-
-    function MOCK_withdrawFundsFromUpkeep() private {}
 }
