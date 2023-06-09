@@ -42,8 +42,6 @@ export default function IndexPage() {
             siteConfig.mainNav.find((nav) => nav.slug === "projects")?.href ||
             "/"
           }
-          target="_blank"
-          rel="noreferrer"
           className={buttonVariants()}
         >
           Explore projects
