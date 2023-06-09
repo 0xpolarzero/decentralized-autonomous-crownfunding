@@ -23,6 +23,7 @@ export interface ContributionTable {
   totalDistributed: number
   totalStored: number
   pending: ContributionToSend[]
+  totalRaised?: number
 }
 
 export interface ContributionToSend {
