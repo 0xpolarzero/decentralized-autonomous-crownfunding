@@ -15,7 +15,6 @@ import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/components/ui/use-toast"
 import InfoComponent from "@/components/ui-extended/info"
 
-import TooltipWithConditionComponent from "./ui-extended/tooltip-with-condition"
 import {
   Dialog,
   DialogContent,
@@ -36,15 +35,15 @@ export default function ContributorCreateAccount() {
 
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
-  const [paymentInterval, setPaymentInterval] = useState<number>(604800) // 7 days
-  const [isIntervalValid, setIsIntervalValid] = useState<boolean>(true)
+  const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(604800) // 7 days
+  const [paymentIntervalHours, setPaymentIntervalHours] = useState<number>(3600)
 
   const { isLoading: isCreatingAccount, write: createAccount } =
     useContractWrite({
       address: networkMapping[networkInfo.chainId]["DACAggregator"][0],
       abi: DACAggregatorAbi,
       functionName: "createContributorAccount",
-      args: [paymentInterval],
+      args: [paymentIntervalDays + paymentIntervalHours],
 
       onSuccess: async (tx) => {
         setIsProcessingTransaction(true)
@@ -113,25 +112,38 @@ export default function ContributorCreateAccount() {
               automatically.
             </p>
             <p>
-              You can change this interval at any time, with a value between 1
-              and 30 days.
+              You can change this interval at any time, with a value{" "}
+              <b>between 1 hour and 30 days</b>.
             </p>
             <Separator className="my-2" />
             <span className="flex items-center gap-2 mb-2">
               Payment interval
               <InfoComponent content="The interval between automatic payments." />
             </span>
-            <Slider
-              value={[paymentInterval]}
-              min={86400}
-              max={2592000}
-              step={86400}
-              onValueChange={([value]) => setPaymentInterval(value)}
-            />
-            <Label className="justify-self-start">
-              {paymentInterval / 86400}{" "}
-              {paymentInterval / 86400 > 1 ? "days" : "day"}
-            </Label>
+            <div className="grid grid-cols-[1fr,auto] gap-4">
+              <Slider
+                value={[paymentIntervalDays]}
+                min={0}
+                max={2592000} // 30 days
+                step={86400} // 1 day
+                onValueChange={([value]) => setPaymentIntervalDays(value)}
+              />
+              <b>
+                {paymentIntervalDays / 86400}{" "}
+                {paymentIntervalDays / 86400 > 1 ? "days" : "day"}
+              </b>
+              <Slider
+                value={[paymentIntervalHours]}
+                min={3600}
+                max={82800}
+                step={3600}
+                onValueChange={([value]) => setPaymentIntervalHours(value)}
+              />
+              <b>
+                {paymentIntervalHours / 3600}{" "}
+                {paymentIntervalHours / 3600 > 1 ? "hours" : "hour"}
+              </b>
+            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -145,22 +157,16 @@ export default function ContributorCreateAccount() {
                 Your account is being created...
               </span>
             ) : null}
-            <TooltipWithConditionComponent
-              shownContent={
-                <Button
-                  type="submit"
-                  disabled={isCreatingAccount || !isIntervalValid}
-                  onClick={() => createAccount()}
-                >
-                  {isCreatingAccount ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Confirm
-                </Button>
-              }
-              tooltipContent="Please fill in all fields"
-              condition={!isIntervalValid}
-            />
+            <Button
+              type="submit"
+              disabled={isCreatingAccount}
+              onClick={() => createAccount()}
+            >
+              {isCreatingAccount ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Confirm
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
