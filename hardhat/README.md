@@ -2,9 +2,9 @@
 
 This folder contains all the smart contracts and the tests. Namely, it contains the following:
 
-- `contracts/DACAggregator.sol`: ...
-- `contracts/DACContributorAccount.sol`: ...
-- `contracts/DACProject.sol`: ...
+- `contracts/DACAggregator.sol`: The main contract used for creating projects and contributor accounts, which internally creates the corresponding contracts. It is indexed by the subgraph, and contains interface functions that are called by the `DACContributorAccount` contract on state changes.
+- `contracts/DACContributorAccount.sol`: The contract used for managing a user's contributor account. It allows the user to create contributions to projects, update them, transfer payments, and manage their Chainlink Upkeep. It uses the Chainlink Automation system and therefore implements the `checkUpkeep` and `performUpkeep` functions.
+- `contracts/DACProject.sol`: The contract used for managing a project. It is created with various data corresponding to the project, hold the funds received through contributions, and allows the project collaborators to withdraw them based on their share.
 
 And their mock versions (`MockDACAggregator.sol` & `MockDACContributorAccount.sol`) since we're not truly interacting with the Chainlink registry & registrat during the upkeep tests on the hardhat local network.
 
