@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react"
 
 export default function ClientOnly({
   children,
-  ...delegated
 }: {
   children: React.ReactNode
 }) {
@@ -18,5 +17,5 @@ export default function ClientOnly({
     return null
   }
 
-  return <div {...delegated}>{children}</div>
+  return <>{children}</>
 }
