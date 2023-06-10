@@ -55,12 +55,6 @@ export function ConnectButton() {
           : // If not set the default network
             networkConfig.networks[networkConfig.defaultNetwork]
       )
-      console.log(
-        networkConfig.networks[chain.network as NetworkName]
-          ? networkConfig.networks[chain.network as NetworkName]
-          : // If not set the default network
-            networkConfig.networks[networkConfig.defaultNetwork]
-      )
     } else {
       setCurrentNetwork(null)
     }
