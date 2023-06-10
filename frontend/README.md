@@ -1,76 +1,43 @@
-# TODO
+# Cascade - frontend
 
-- Complete project submission
-- Dashboard -> sub dropdown with Projects & Contributor account (/dashboard/projects & /dashboard/contributor)
-- Projects: Table of projects with additional columns (withdrawable amount) & action (withdraw)
-- Contributor: Table of contributions with additional columns (expected next payment) ; Expected next overall payment to projects, time of next payment, button to trigger payments ; Status of upkeep (enough funds) & button to fund it + link to the ui (to cancel + withdraw) - MAYBE FUND IT ALSO IN UI BC NO TIME
+## Overview
 
-[ ] Add footer with shadcn ui link
+The Next.js frontend for Cascade, available [here](https://cascade.polarzero.xyz). It uses [a Next.js starter template](https://ui.shadcn.com/docs/installation), [the amazing shadcs/ui components library](https://ui.shadcn.com/) and is deployed on [Vercel](https://vercel.com/).
 
-# Home page
+## Trying out / testing
 
-Description
+<p>To get a local copy up and running follow these simple example steps.</p>
+<p>You will need to install either <strong>npm</strong> or <strong>yarn</strong> to run the commands, and <strong>git</strong> to clone the repository.</p>
 
-Explore projects
+### Installation
 
-# Projects page
+1. Clone the repo:
+   ```sh
+   git clone git@github.com:0xpolarzero/decentralized-autonomous-crownfunding.git
+   ```
+2. Navigate into this subdirectory:
+   ```sh
+   cd frontend
+   ```
+3. Install NPM packages using `yarn` or `npm install`.
+4. Copy `.env.example` to `.env.local` and fill in the values.
+   ```sh
+   cp .env.example .env.local
+   ```
 
-## Search bar to search projects based on name, description, collaborators addresses or project address
+### Usage
 
-## Table with projects
+To run the application in development mode, use `yarn dev` or `npm run dev`.
 
-- name
-- creation date
-- last time a collaborator manifested themselves (popover to explain)
-- collaborators addresses
-- total amount raised
-- amount of current contributors + expected weekly payout
+To build the application for production, use:
 
-[ ] click to show more info (description, collaborators shares, contributors addresses, amount contributed & address)
-[ ] click to contribute (greyed out if not connected + popover to explain that) -> opens modal
--> amount to contribute
--> end date of contribution
+```sh
+yarn build
+yarn next export
+```
 
-# Contributor account page
+Everything else is already setup but can be replaced with your own configuration.
 
-## greyed out if not connected, tells user to connect first
+## License
 
-## if connected
-
-### Summary
-
-- total amount in contributor contract
-- total amount contributed
-- status of upkeep (not registered, not enough funds, active) & manage automated payments button -> opens modal
-  -> gives approximate recommended amount to fund upkeep
-  -> if not registered, register upkeep (first send LINK to contract, then register if contract has a balance of LINK)
-  -> if registered, show balance, button to fund upkeep with specific amount, button to cancel upkeep, button to withdraw funds (50 blocks after canceling upkeep)
-  [ ] button to cancel all contributions
-
-### Current contributions
-
-Tables with current contributions
-
-- project name
-- still active or not (last activity, popover to explain)
-- amount contributed
-- amount yet to distribute
-- start date of contribution
-- end date of contribution
-- expected next payout date & amount
-  [ ] click to show more info (description, collaborators shares, contributors addresses, amount contributed & address)
-  [ ] click to update contribution -> opens modal
-  -> say current amount left to contribute and let user change it with minimum amount
-  [ ] click to cancel contribution
-
-### Past contributions
-
-Tables with past contributions
-
-- project name
-- amount contributed
-- period of contribution
-  [ ] click to show more info (description, collaborators shares, contributors addresses, amount contributed & address)
-  [ ] click to contribute again -> opens modal
-  -> amount to contribute
-  -> end date of contribution
+Distributed under the MIT License. See `LICENSE` for more information.

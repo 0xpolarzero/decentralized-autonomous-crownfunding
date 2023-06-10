@@ -37,13 +37,13 @@ You will need to install either **npm** or **yarn** to run the commands, and **g
 1. Clone the repo:
 
    ```sh
-   git clone https://github.com/0xpolarzero/chainlink-fall-2022-hackathon
+   git clone git@github.com:0xpolarzero/decentralized-autonomous-crownfunding.git
    ```
 
 2. Navigate into a subdirectory:
 
    ```sh
-   cd name-of-the-subdirectory
+   cd name-of-the-subdirectory # frontend | hardhat | subgraph
    ```
 
 3. Install NPM packages using `yarn` or `npm install`.
