@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/use-toast"
 import UpkeepComponent from "@/components/base-account-contributor/base"
 import ClientOnly from "@/components/client-only"
 import ContributorCreateAccount from "@/components/contributor-create-account"
+import ContributorUpdatePaymentInterval from "@/components/contributor-update-payment-interval"
 import { DataTable } from "@/components/data-table"
 import {
   columns,
@@ -335,39 +336,50 @@ export default function AccountContributorPage() {
                 )}
               </div>
             </div>
-            <Button
-              variant="default"
-              className="w-full"
-              disabled={isSendingContributions}
-              onClick={() => sendContributions()}
-            >
-              {isProcessingTransaction ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <LucideSend className="mr-2 h-4 w-4" />
-              )}{" "}
-              Send contributions (
-              <CurrencyComponent
-                amount={calculate
-                  .totalContributions(
-                    contributions,
-                    Number(paymentInterval),
-                    new Date().getTime() / 1000
-                  )
-                  .reduce(
-                    (acc: number, contribution: ContributionToSend) =>
-                      acc + contribution.amount,
-                    0
-                  )}
-                currency="native"
-              />
-              )
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="default"
+                className="grow"
+                disabled={isSendingContributions}
+                onClick={() => sendContributions()}
+              >
+                {isProcessingTransaction ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LucideSend className="mr-2 h-4 w-4" />
+                )}{" "}
+                Send contributions (
+                <CurrencyComponent
+                  amount={calculate
+                    .totalContributions(
+                      contributions,
+                      Number(paymentInterval),
+                      new Date().getTime() / 1000
+                    )
+                    .reduce(
+                      (acc: number, contribution: ContributionToSend) =>
+                        acc + contribution.amount,
+                      0
+                    )}
+                  currency="native"
+                />
+                )
+              </Button>
+              <ContributorUpdatePaymentInterval />
+            </div>
             {isProcessingTransaction ? (
               <span className="text-sm text-muted-foreground">
                 Your contributions are being sent to their respective project...
               </span>
             ) : null}
+            <Link
+              className="justify-self-center text-sm text-muted-foreground underline"
+              href={`${currentNetwork?.blockExplorer.url}address/${contributorAccountAddress}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              See contributor account contract on block explorer
+            </Link>
             <Separator />
             <div className="flex max-w-[1400px] flex-col items-start gap-2">
               <div className="my-4 flex w-full items-center space-x-2">

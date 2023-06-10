@@ -3,12 +3,12 @@ import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { Separator } from "@radix-ui/react-dropdown-menu"
 import { waitForTransaction } from "@wagmi/core"
-import { Loader2 } from "lucide-react"
+import { Loader2, LucideTimer } from "lucide-react"
 import { TransactionReceipt } from "viem"
 import { useContractWrite } from "wagmi"
 
-import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
-import { networkConfig, networkMapping } from "@/config/network"
+import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
+import { networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/components/ui/use-toast"
@@ -24,8 +24,13 @@ import {
   DialogTrigger,
 } from "./ui/dialog"
 
-export default function ContributorCreateAccount() {
-  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+export default function ContributorUpdatePaymentInterval() {
+  const { contributorAccountAddress, currentNetwork } = useGlobalStore(
+    (state) => ({
+      contributorAccountAddress: state.contributorAccountAddress,
+      currentNetwork: state.currentNetwork,
+    })
+  )
 
   const { toast } = useToast()
 
@@ -37,11 +42,11 @@ export default function ContributorCreateAccount() {
   const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(604800) // 7 days
   const [paymentIntervalHours, setPaymentIntervalHours] = useState<number>(0)
 
-  const { isLoading: isCreatingAccount, write: createAccount } =
+  const { isLoading: isUpdatingInterval, write: updateInterval } =
     useContractWrite({
-      address: networkMapping[networkInfo.chainId]["DACAggregator"][0],
-      abi: DACAggregatorAbi,
-      functionName: "createContributorAccount",
+      address: contributorAccountAddress,
+      abi: DACContributorAccountAbi,
+      functionName: "setUpkeepInterval",
       args: [paymentIntervalDays + paymentIntervalHours],
 
       onSuccess: async (tx) => {
@@ -55,10 +60,10 @@ export default function ContributorCreateAccount() {
 
         if (receipt.status === "success") {
           toast({
-            title: "Account created",
+            title: "Interval updated",
             description: (
               <>
-                <p>Your contributor account was successfully created.</p>
+                <p>The Upkeep interval was successfully updated.</p>
                 <p>
                   <Link
                     href={`${networkInfo.blockExplorer.url}tx/${tx.hash}`}
@@ -99,23 +104,20 @@ export default function ContributorCreateAccount() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>Create a contributor account</Button>
+        <Button variant="secondary">
+          <LucideTimer className="mr-2 h-4 w-4" /> Update payment interval
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create a contributor account</DialogTitle>
+          <DialogTitle>Update payment interval</DialogTitle>
           <DialogDescription className="flex flex-col gap-2">
             <p className="mt-2 text-justify">
-              This will <b>create a contributor account smart contract</b> with
-              a chosen time interval between payments.
-            </p>
-            <p className="text-justify">
-              You will still be able to trigger payments manually and/or fund a
-              Chainlink Automation with LINK that will trigger payments
-              automatically.
+              This will update the interval between automatic payments,
+              triggered by the Chainlink Automation.
             </p>
             <p>
-              You can change this interval at any time, with a value{" "}
+              You can change this interval with a value{" "}
               <b>between 1 hour and 30 days</b>.
             </p>
             <Separator className="my-2" />
@@ -157,18 +159,18 @@ export default function ContributorCreateAccount() {
           >
             {isProcessingTransaction ? (
               <span className="justify-self-start text-sm text-gray-400">
-                Your account is being created...
+                The interval is being updated...
               </span>
             ) : null}
             <Button
               type="submit"
-              disabled={isCreatingAccount}
-              onClick={() => createAccount()}
+              disabled={isUpdatingInterval}
+              onClick={() => updateInterval()}
             >
-              {isCreatingAccount ? (
+              {isUpdatingInterval ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Confirm
+              Update
             </Button>
           </div>
         </DialogFooter>
