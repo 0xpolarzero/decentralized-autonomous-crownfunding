@@ -4,7 +4,7 @@ export interface NetworkMapping {
   }
 }
 
-export type NetworkName = "matic" | "maticmum"
+export type NetworkName = /*  "matic" | */ "maticmum"
 
 export interface NetworkInfo {
   name: string

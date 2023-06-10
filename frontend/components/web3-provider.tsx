@@ -3,13 +3,13 @@
 import * as React from "react"
 import { ConnectKitProvider, getDefaultConfig } from "connectkit"
 import { useTheme } from "next-themes"
-import { polygon, polygonMumbai } from "viem/chains"
+import { /* polygon,  */ polygonMumbai } from "viem/chains"
 import { WagmiConfig, createConfig } from "wagmi"
 
 import { Web3ProviderProps } from "@/types/provider"
 import { siteConfig } from "@/config/site"
 
-const chains = [polygon, polygonMumbai]
+const chains = [/* polygon, */ polygonMumbai]
 
 const config = createConfig(
   getDefaultConfig({

@@ -7,6 +7,7 @@ import { ConnectKitButton } from "connectkit"
 import { zeroAddress } from "viem"
 import { useAccount, useNetwork } from "wagmi"
 
+import { NetworkInfo, NetworkName } from "@/types/network"
 import { abi, networkConfig, networkMapping } from "@/config/network"
 
 export function ConnectButton() {
@@ -48,9 +49,17 @@ export function ConnectButton() {
   useEffect(() => {
     if (chain) {
       setCurrentNetwork(
-        networkConfig.networks[
-          chain.network as keyof typeof networkConfig.networks
-        ]
+        // Is the chain id in the network config?
+        networkConfig.networks[chain.network as NetworkName]
+          ? networkConfig.networks[chain.network as NetworkName]
+          : // If not set the default network
+            networkConfig.networks[networkConfig.defaultNetwork]
+      )
+      console.log(
+        networkConfig.networks[chain.network as NetworkName]
+          ? networkConfig.networks[chain.network as NetworkName]
+          : // If not set the default network
+            networkConfig.networks[networkConfig.defaultNetwork]
       )
     } else {
       setCurrentNetwork(null)

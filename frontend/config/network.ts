@@ -36,25 +36,26 @@ export const currencies = {
 }
 
 export const networkConfig: NetworkConfig = {
-  defaultNetwork: "matic" as NetworkName,
+  defaultNetwork: "maticmum" as NetworkName,
   defaultCurrency: currencies.matic,
 
   networks: {
-    matic: {
-      name: "Polygon",
-      chainId: 137,
-      blockExplorer: {
-        name: "Polygonscan",
-        url: "https://polygonscan.com/",
-      },
-      currency: currencies.matic,
-      timeout: 120_000, // 2 minutes
-      blockDuration: 2_500, // 2.5 seconds
-      contracts: {
-        LINK: "0xb0897686c545045aFc77CF20eC7A532E3120E0F1",
-        KEEPER_REGISTRY: "0x02777053d6764996e594c3E88AF1D58D5363a2e6",
-      },
-    },
+    /// Not yet deployed
+    // matic: {
+    //   name: "Polygon",
+    //   chainId: 137,
+    //   blockExplorer: {
+    //     name: "Polygonscan",
+    //     url: "https://polygonscan.com/",
+    //   },
+    //   currency: currencies.matic,
+    //   timeout: 120_000, // 2 minutes
+    //   blockDuration: 2_500, // 2.5 seconds
+    //   contracts: {
+    //     LINK: "0xb0897686c545045aFc77CF20eC7A532E3120E0F1",
+    //     KEEPER_REGISTRY: "0x02777053d6764996e594c3E88AF1D58D5363a2e6",
+    //   },
+    // },
     maticmum: {
       name: "Mumbai",
       chainId: 80001,
