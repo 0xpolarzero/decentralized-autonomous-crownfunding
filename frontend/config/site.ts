@@ -15,6 +15,7 @@ export const siteConfig = {
       title: "Explore projects",
       slug: "explore",
       href: "/explore",
+      iconName: "LucideCompass",
     },
     {
       title: "Dashboard",
@@ -26,12 +27,14 @@ export const siteConfig = {
           href: "/account-contributor",
           description:
             "Manage your contributor account (contributions, payments).",
+          iconName: "LucideWallet",
         },
         {
           title: "Projects",
           slug: "account-projects",
           href: "/account-projects",
           description: "Interact with the projects you're involved in.",
+          iconName: "LucidePresentation",
         },
       ],
     },

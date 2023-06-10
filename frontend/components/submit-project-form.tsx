@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/router"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -94,6 +95,7 @@ export function SubmitProjectForm() {
   })
 
   const { toast } = useToast()
+  const router = useRouter()
 
   // Form (zod & react-hook-form)
   const form = useForm<FormSchema>({
@@ -184,6 +186,9 @@ export function SubmitProjectForm() {
               </>
             ),
           })
+
+          // Redirect to explore page
+          router.push("/explore")
         } else {
           toast({
             variant: "destructive",

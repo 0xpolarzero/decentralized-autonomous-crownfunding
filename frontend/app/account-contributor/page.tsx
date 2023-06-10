@@ -12,7 +12,10 @@ import { useContractRead, useContractWrite } from "wagmi"
 
 import { Contribution, ContributionToSend } from "@/types/contributions"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
-import { GET_CONTRIBUTOR_ACCOUNT } from "@/config/constants/subgraph-queries"
+import {
+  GET_CONTRIBUTOR_ACCOUNT,
+  POLL_INTERVAL,
+} from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,15 +59,11 @@ export default function AccountContributorPage() {
     loading,
   } = useQuery(GET_CONTRIBUTOR_ACCOUNT, {
     variables: { address },
+    pollInterval: POLL_INTERVAL,
   })
 
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
-  const additionalData = {
-    network: networkInfo.name,
-    blockExplorer: `${networkInfo.blockExplorer.url}/address/${contributorAccountAddress}`,
-    userAddress: address,
-  }
 
   const { toast } = useToast()
 

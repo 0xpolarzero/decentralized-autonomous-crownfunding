@@ -101,7 +101,6 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
             ) : (
               <LucideAlertCircle size={16} color="var(--red)" />
             )}
-
             <DurationComponent
               startTimestamp={new Date().getTime()}
               endTimestamp={dateWhenInactive.getTime()}
@@ -110,6 +109,7 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
           <p className="whitespace-nowrap text-sm text-muted-foreground">
             before inactivity
           </p>
+          {new Date(lastActivityAt).toLocaleString()}
         </div>
       }
       tooltipContent={

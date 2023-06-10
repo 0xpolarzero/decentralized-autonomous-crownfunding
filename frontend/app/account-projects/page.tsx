@@ -1,13 +1,16 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { use, useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
 import { LucidePlus } from "lucide-react"
 
 import { Project, ProjectTable } from "@/types/projects"
-import { GET_PROJECTS } from "@/config/constants/subgraph-queries"
+import {
+  GET_PROJECTS,
+  POLL_INTERVAL,
+} from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,7 +30,9 @@ export default function AccountProjectsPage() {
     loading,
   } = useQuery(GET_PROJECTS, {
     variables: { amountPerPage: 1000, skip: 0 },
+    pollInterval: POLL_INTERVAL,
   })
+
   const { address, connected, currentNetwork } = useGlobalStore((state) => ({
     address: state.address,
     connected: state.connected,
@@ -42,7 +47,7 @@ export default function AccountProjectsPage() {
     // We cannot perform 'OR' searches, or search an array of strings with The Graph
     // so right now we're better off querying a large amount of projects and
     // filtering them on the client side
-    const projectsAppended = withNetworkAppened(initialData.projects)
+    const projectsAppended = withNetworkAppened(initialData?.projects)
 
     if (!e.target.value || e.target.value.length < 1) {
       setProjects(projectsAppended)
@@ -65,7 +70,7 @@ export default function AccountProjectsPage() {
 
   const clearSearch = () => {
     setSearchValue("")
-    setProjects(withNetworkAppened(initialData.projects))
+    setProjects(withNetworkAppened(initialData?.projects))
   }
 
   // or wrap it in a useCallback
@@ -85,7 +90,9 @@ export default function AccountProjectsPage() {
   )
 
   useEffect(() => {
-    if (initialData && initialData.projects)
+    console.log("updated")
+    if (initialData && initialData.projects) {
+      console.log("updating", initialData.projects)
       setProjects(
         withNetworkAppened(
           initialData.projects.filter((project: ProjectTable) =>
@@ -95,6 +102,7 @@ export default function AccountProjectsPage() {
           )
         )
       )
+    }
   }, [initialData, address, withNetworkAppened])
 
   return (
@@ -137,7 +145,7 @@ export default function AccountProjectsPage() {
             <div className="grow overflow-auto">
               {loading ? (
                 <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
-              ) : error ? (
+              ) : error || !initialData ? (
                 "There was an error fetching the projects. Please try again later."
               ) : (
                 // @ts-ignore

@@ -7,7 +7,10 @@ import { useQuery } from "@apollo/client"
 import { LucidePlus } from "lucide-react"
 
 import { Project } from "@/types/projects"
-import { GET_PROJECTS } from "@/config/constants/subgraph-queries"
+import {
+  GET_PROJECTS,
+  POLL_INTERVAL,
+} from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +35,7 @@ export default function ExplorePage() {
     loading,
   } = useQuery(GET_PROJECTS, {
     variables: { amountPerPage: 1000, skip: 0 },
+    pollInterval: POLL_INTERVAL,
   })
   const { currentNetwork, connected } = useGlobalStore((state) => ({
     currentNetwork: state.currentNetwork,

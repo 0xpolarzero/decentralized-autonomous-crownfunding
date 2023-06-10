@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
+import { fetchEnsName } from "@wagmi/core"
 import { LucideClipboard, LucideClipboardCheck } from "lucide-react"
 import useClipboard from "react-use-clipboard"
-import { useEnsName } from "wagmi"
 
 import {
   Tooltip,
@@ -22,27 +23,29 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
   tryEns = false,
   large = false,
 }) => {
-  const {
-    data: ensName,
-    isError,
-    isLoading,
-  } = useEnsName({
-    address: address,
-  })
   const currentNetwork = useGlobalStore((state) => state.currentNetwork)
 
   const [isCopied, setCopied] = useClipboard(address, {
     successDuration: 2000,
   })
 
+  const [ensName, setEnsName] = useState<string | null>(null)
+
   const renderAddress = (full = false) =>
     full ? address : `${address?.slice(0, 4)}...${address?.slice(-4)}`
+
+  useEffect(() => {
+    if (tryEns && currentNetwork?.ensSupported)
+      fetchEnsName({ address }).then((name) => {
+        setEnsName(name)
+      })
+  }, [address, tryEns])
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger>
-          {tryEns && !isError && !isLoading && ensName ? (
+          {ensName ? (
             ensName
           ) : (
             <Link

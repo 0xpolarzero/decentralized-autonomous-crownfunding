@@ -1,5 +1,7 @@
 import { gql } from "@apollo/client"
 
+export const POLL_INTERVAL: number = 5_000
+
 export const GET_PROJECTS = gql`
   query GetProjects($amountPerPage: Int!, $skip: Int!) {
     projects(first: $amountPerPage, skip: $skip) {

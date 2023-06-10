@@ -21,6 +21,7 @@ export interface NetworkInfo {
   }
   timeout: number
   blockDuration: number
+  ensSupported: boolean
   contracts: {
     [key: string]: string
   }
