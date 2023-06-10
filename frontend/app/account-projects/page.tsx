@@ -1,6 +1,6 @@
 "use client"
 
-import React, { use, useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"

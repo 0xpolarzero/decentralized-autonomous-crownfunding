@@ -3,12 +3,15 @@
 import React, { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
+import { useQuery } from "@apollo/client"
 import { Root as ScrollAreaRoot } from "@radix-ui/react-scroll-area"
 import { LucideBanknote } from "lucide-react"
 
 import { Project, ProjectTable } from "@/types/projects"
-import { client } from "@/config/apollo-client"
-import { GET_PROJECT_BY_SLUG_CONTRACT } from "@/config/constants/subgraph-queries"
+import {
+  GET_PROJECT_BY_SLUG_CONTRACT,
+  POLL_INTERVAL,
+} from "@/config/constants/subgraph-queries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
@@ -33,12 +36,18 @@ export default function ProjectPage() {
     hasContributorAccount: state.hasContributorAccount,
   }))
 
+  const [contractAddress, setContractAddress] = useState<string | null>("")
   const [project, setProject] = useState<Project | null>(null)
-  const [error, setError] = useState<boolean>(false)
-  const [loading, setLoading] = useState<boolean>(true)
 
   const [scrollAreaHeight, setScrollAreaHeight] = useState<number>(200)
   const scrollArea = useRef<React.ElementRef<typeof ScrollAreaRoot>>(null)
+
+  const { data, error, loading } = useQuery(GET_PROJECT_BY_SLUG_CONTRACT, {
+    variables: {
+      slug: contractAddress,
+    },
+    pollInterval: POLL_INTERVAL,
+  })
 
   const createdAtFormatted = project?.createdAt
     ? new Date(Number(project?.createdAt) * 1000)
@@ -52,29 +61,17 @@ export default function ProjectPage() {
     return new Date().getTime() - lastActivity < 1000 * 60 * 60 * 24 * 30 // 30 days
   }
 
-  const fetchProject = async () => {
-    const projectAddress = new URLSearchParams(window.location.search).get(
-      "address"
+  useEffect(() => {
+    setContractAddress(
+      new URLSearchParams(window.location.search).get("address")
     )
+  }, [])
 
-    try {
-      const { data } = await client.query({
-        query: GET_PROJECT_BY_SLUG_CONTRACT,
-        variables: { slug: projectAddress },
-      })
-
-      if (data && data.projects) {
-        setProject(data.projects[0])
-      } else {
-        setError(true)
-      }
-
-      setLoading(false)
-    } catch (err) {
-      setError(true)
-      setLoading(false)
+  useEffect(() => {
+    if (data && data.projects) {
+      setProject(data.projects[0])
     }
-  }
+  }, [data])
 
   useEffect(() => {
     const textDiv = (
@@ -87,10 +84,6 @@ export default function ProjectPage() {
       textDiv?.offsetHeight < 200 ? textDiv?.offsetHeight : 200
     )
   }, [project])
-
-  useEffect(() => {
-    fetchProject()
-  }, [])
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
