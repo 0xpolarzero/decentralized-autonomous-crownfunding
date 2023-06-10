@@ -57,7 +57,6 @@ export default function ProjectPage() {
       "address"
     )
 
-    console.log(projectAddress)
     try {
       const { data } = await client.query({
         query: GET_PROJECT_BY_SLUG_CONTRACT,

@@ -11,6 +11,7 @@ import { GET_PROJECTS } from "@/config/constants/subgraph-queries"
 import { networkConfig } from "@/config/network"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import ClientOnly from "@/components/client-only"
 import { DataTable } from "@/components/data-table"
 import ComboboxComponent, {
   OptionProps,
@@ -124,73 +125,75 @@ export default function ExplorePage() {
   }, [initialData, initProjects])
 
   return (
-    <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      <div className="flex max-w-[1400px] flex-col items-start gap-2">
-        <div className="my-4 flex w-full items-center space-x-2">
-          <Input
-            type="search"
-            value={searchValue}
-            onChange={handleSearch}
-            placeholder="Search a project by name, address or projects involving a collaborator"
-          />
-          <button
-            className={buttonVariants({
-              variant: "outline",
-            })}
-            onClick={clearSearch}
-          >
-            Clear
-          </button>
-        </div>
-        <div className="flex w-[100%] items-center justify-between gap-2">
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
-            Latest projects
-          </h1>
-          {connected ? (
-            <Link className={buttonVariants()} href="/submit-project">
-              <LucidePlus size={16} className="mr-2" />
-              <span>Submit a project</span>
-            </Link>
-          ) : (
-            <TooltipComponent
-              shownContent={
-                <Button disabled>
-                  <LucidePlus size={16} className="mr-2" />
-                  <span>Submit a project</span>
-                </Button>
-              }
-              tooltipContent={
-                <>
-                  <p>You need to connect your wallet to contribute.</p>
-                  <p>Make sure you are on a supported chain.</p>
-                </>
-              }
+    <ClientOnly>
+      <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
+        <div className="flex max-w-[1400px] flex-col items-start gap-2">
+          <div className="my-4 flex w-full items-center space-x-2">
+            <Input
+              type="search"
+              value={searchValue}
+              onChange={handleSearch}
+              placeholder="Search a project by name, address or projects involving a collaborator"
             />
+            <button
+              className={buttonVariants({
+                variant: "outline",
+              })}
+              onClick={clearSearch}
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex w-[100%] items-center justify-between gap-2">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
+              Latest projects
+            </h1>
+            {connected ? (
+              <Link className={buttonVariants()} href="/submit-project">
+                <LucidePlus size={16} className="mr-2" />
+                <span>Submit a project</span>
+              </Link>
+            ) : (
+              <TooltipComponent
+                shownContent={
+                  <Button disabled>
+                    <LucidePlus size={16} className="mr-2" />
+                    <span>Submit a project</span>
+                  </Button>
+                }
+                tooltipContent={
+                  <>
+                    <p>You need to connect your wallet to contribute.</p>
+                    <p>Make sure you are on a supported chain.</p>
+                  </>
+                }
+              />
+            )}
+          </div>
+          <p className="max-w-[700px] text-lg text-muted-foreground">
+            Explore the latest projects campaigns listed on our platform.
+          </p>
+        </div>
+        <div className="grow overflow-auto">
+          {tags ? (
+            <ComboboxComponent
+              options={tags}
+              header="Tags"
+              type="tag"
+              onChange={handleTagChange}
+              canClear
+            />
+          ) : null}
+          {loading ? (
+            <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
+          ) : error ? (
+            "There was an error fetching the projects. Please try again later."
+          ) : (
+            // @ts-ignore
+            <DataTable columns={columns} data={formatData(projects)} />
           )}
         </div>
-        <p className="max-w-[700px] text-lg text-muted-foreground">
-          Explore the latest projects campaigns listed on our platform.
-        </p>
-      </div>
-      <div className="grow overflow-auto">
-        {tags ? (
-          <ComboboxComponent
-            options={tags}
-            header="Tags"
-            type="tag"
-            onChange={handleTagChange}
-            canClear
-          />
-        ) : null}
-        {loading ? (
-          <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
-        ) : error ? (
-          "There was an error fetching the projects. Please try again later."
-        ) : (
-          // @ts-ignore
-          <DataTable columns={columns} data={formatData(projects)} />
-        )}
-      </div>
-    </section>
+      </section>
+    </ClientOnly>
   )
 }
