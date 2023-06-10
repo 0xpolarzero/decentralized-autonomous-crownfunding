@@ -26,4 +26,9 @@ export default create<GlobalStore>((set, get) => ({
   // Loading
   loading: true,
   setLoading: (loading: boolean) => set({ loading }),
+
+  // Refresh
+  shouldRefresh: false,
+  refresh: () => set({ shouldRefresh: true }),
+  resetRefresh: () => set({ shouldRefresh: false }),
 }))

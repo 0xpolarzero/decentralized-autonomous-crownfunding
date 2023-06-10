@@ -13,8 +13,9 @@ const chains = [/* polygon, */ polygonMumbai]
 
 const config = createConfig(
   getDefaultConfig({
-    alchemyId: process.env.ALCHEMY_ID || "",
-    walletConnectProjectId: process.env.WALLETCONNECT_PROJECT_ID || "",
+    alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_ID || "",
+    walletConnectProjectId:
+      process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
     chains,
     appName: siteConfig.name,
     appDescription: siteConfig.description,

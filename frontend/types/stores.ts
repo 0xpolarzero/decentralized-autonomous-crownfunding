@@ -17,4 +17,7 @@ export interface GlobalStore {
   setHasContributorAccount: (hasContributorAccount: boolean) => void
   loading: boolean
   setLoading: (loading: boolean) => void
+  shouldRefresh: boolean
+  refresh: () => void
+  resetRefresh: () => void
 }

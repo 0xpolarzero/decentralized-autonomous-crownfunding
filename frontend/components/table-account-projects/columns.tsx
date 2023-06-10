@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import useGlobalStore from "@/stores/useGlobalStore"
 import { ColumnDef, Row } from "@tanstack/react-table"
@@ -80,9 +80,8 @@ const CollaboratorsCell: React.FC<CellProps> = ({ row }) => {
 /* -------------------------------------------------------------------------- */
 
 const StatusCell: React.FC<CellProps> = ({ row }) => {
-  const lastActivityAt: string = row.original.lastActivityAt.toString()
   const dateWhenInactive = new Date(
-    new Date(lastActivityAt).getTime() + 1000 * 60 * 60 * 24 * 30
+    row.original.lastActivityAt + 1000 * 60 * 60 * 24 * 30
   )
 
   const daysLeft = Math.floor(
@@ -109,7 +108,6 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
           <p className="whitespace-nowrap text-sm text-muted-foreground">
             before inactivity
           </p>
-          {new Date(lastActivityAt).toLocaleString()}
         </div>
       }
       tooltipContent={
@@ -161,7 +159,12 @@ const ShareCell: React.FC<CellProps> = ({ row }) => {
 /* -------------------------------------------------------------------------- */
 
 const WithdrawableCell: React.FC<CellProps> = ({ row }) => {
-  const { data, isError, isLoading }: any = useContractRead({
+  const { shouldRefresh, resetRefresh } = useGlobalStore((state) => ({
+    shouldRefresh: state.shouldRefresh,
+    resetRefresh: state.resetRefresh,
+  }))
+
+  const { data, isError, isLoading, refetch }: any = useContractRead({
     address: row.original.projectContract as `0x${string}`,
     abi: DACProjectAbi,
     functionName: "getCollaborator",
@@ -182,6 +185,13 @@ const WithdrawableCell: React.FC<CellProps> = ({ row }) => {
     }
   }, [data, totalRaised])
 
+  useEffect(() => {
+    if (shouldRefresh) {
+      refetch()
+      resetRefresh()
+    }
+  }, [shouldRefresh, refetch, resetRefresh])
+
   if (isLoading) return <Skeleton className="h-6 w-20" />
 
   if (isError) return <span style={{ color: "var(--yellow)" }}>Error</span>
@@ -190,7 +200,7 @@ const WithdrawableCell: React.FC<CellProps> = ({ row }) => {
     <div className="flex flex-col gap-2">
       <CurrencyComponent amount={withdrawable} currency="native" />
       <span className="text-muted-foreground">
-        <span className="flex items-center gap-3 whitespace-nowrap">
+        <span className="flex items-center gap-4 whitespace-nowrap">
           <CurrencyComponent amount={withdrawn} currency="native" /> already
           withdrawn
         </span>
@@ -204,7 +214,11 @@ const WithdrawableCell: React.FC<CellProps> = ({ row }) => {
 /* -------------------------------------------------------------------------- */
 
 const ActionsCell: React.FC<CellProps> = ({ row }) => {
-  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+  const { currentNetwork, refresh } = useGlobalStore((state) => ({
+    currentNetwork: state.currentNetwork,
+    refresh: state.refresh,
+  }))
+
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
@@ -214,7 +228,7 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
   const { toast } = useToast()
 
   const isStillActive = (): boolean =>
-    new Date().getTime() - new Date(row.original.lastActivityAt).getTime() <
+    new Date().getTime() - row.original.lastActivityAt <
     1000 * 60 * 60 * 24 * 30 // 30 days
 
   const copyToClipboard = useCopyToClipboard()
@@ -296,6 +310,8 @@ const ActionsCell: React.FC<CellProps> = ({ row }) => {
       console.log(receipt)
 
       if (receipt.status === "success") {
+        refresh()
+
         toast({
           title: "Share withdrawn",
           description: (

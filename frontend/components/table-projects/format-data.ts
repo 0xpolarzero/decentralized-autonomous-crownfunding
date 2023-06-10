@@ -35,10 +35,8 @@ export default function formatData(data: Project[]) {
       tags,
       // Indirect display (popover, modal, etc.)
       description,
-      createdAt: new Date(Number(createdAt) * 1000).toLocaleDateString(),
-      lastActivityAt: new Date(
-        Number(lastActivityAt) * 1000
-      ).toLocaleDateString(),
+      createdAt: Number(createdAt) * 1000,
+      lastActivityAt: Number(lastActivityAt) * 1000,
       projectContract,
       initiator,
       shares: shares.map((share) => Number(share)),

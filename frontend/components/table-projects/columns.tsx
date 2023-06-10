@@ -55,7 +55,6 @@ const NameCell: React.FC<CellProps> = ({ row }: { row: Row<ProjectTable> }) =>
 
 const StatusCell: React.FC<CellProps> = ({ row }) => {
   const status: string = row.getValue("status")
-  const lastActivityAt: string = row.original.lastActivityAt.toString()
 
   if (status)
     return (
@@ -69,10 +68,8 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
         tooltipContent={
           <>
             Last activity{" "}
-            <ElapsedTimeComponent
-              timestamp={new Date(lastActivityAt).getTime()}
-            />{" "}
-            ({lastActivityAt})
+            <ElapsedTimeComponent timestamp={row.original.lastActivityAt} /> (
+            {new Date(row.original.lastActivityAt).toLocaleDateString()})
           </>
         }
       />
@@ -89,10 +86,8 @@ const StatusCell: React.FC<CellProps> = ({ row }) => {
       tooltipContent={
         <>
           Last activity{" "}
-          <ElapsedTimeComponent
-            timestamp={new Date(lastActivityAt).getTime()}
-          />{" "}
-          ({lastActivityAt})
+          <ElapsedTimeComponent timestamp={row.original.lastActivityAt} /> (
+          {new Date(row.original.lastActivityAt).toLocaleDateString()})
         </>
       }
     />

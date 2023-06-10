@@ -90,9 +90,7 @@ export default function AccountProjectsPage() {
   )
 
   useEffect(() => {
-    console.log("updated")
     if (initialData && initialData.projects) {
-      console.log("updating", initialData.projects)
       setProjects(
         withNetworkAppened(
           initialData.projects.filter((project: ProjectTable) =>
