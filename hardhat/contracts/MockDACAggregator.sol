@@ -200,11 +200,13 @@ contract MockDACAggregator is DACContributionSystem {
 
     /**
      * @notice Verifies that the call is made from a contributor account
-     * @param _sender The address of the owner of the contributor account
+     * @param _accountOwner The address of the owner of the contributor account
+     * @dev This will be called by the contributor account contract, initiated either
+     * by the contributor owning the account or by the Chainlink Keeper
      */
 
-    modifier verifyContributorAccount(address _sender) {
-        if (s_contributorAccounts[_sender] != msg.sender)
+    modifier onlyContributorAccount(address _accountOwner) {
+        if (s_contributorAccounts[_accountOwner] != msg.sender)
             revert DACAggregator__NOT_CONTRIBUTOR_ACCOUNT();
         _;
     }
@@ -412,62 +414,62 @@ contract MockDACAggregator is DACContributionSystem {
 
     /**
      * @notice Called by a contributor account when the user creates a contribution
-     * @param _sender The address of the owner of the contributor account
+     * @param _accountOwner The address of the owner of the contributor account
      * @param _contribution The contribution object
      */
 
     function onContributionCreated(
-        address _sender,
+        address _accountOwner,
         Contribution memory _contribution
-    ) external verifyContributorAccount(_sender) {
+    ) external onlyContributorAccount(_accountOwner) {
         emit DACAggregator__ContributionCreated(
-            s_contributorAccounts[_sender],
+            s_contributorAccounts[_accountOwner],
             _contribution
         );
     }
 
     /**
      * @notice Called by a contributor account when the user updates or cancels a contribution
-     * @param _sender The address of the owner of the contributor account
+     * @param _accountOwner The address of the owner of the contributor account
      * @param _contribution The new contribution object
      */
 
     function onContributionUpdated(
-        address _sender,
+        address _accountOwner,
         ContributionMinimal memory _contribution
-    ) external verifyContributorAccount(_sender) {
+    ) external onlyContributorAccount(_accountOwner) {
         emit DACAggregator__ContributionUpdated(
-            s_contributorAccounts[_sender],
+            s_contributorAccounts[_accountOwner],
             _contribution
         );
     }
 
     /**
      * @notice Called by a contributor account when contributions have been transfered
-     * @param _sender The address of the owner of the contributor account
+     * @param _accountOwner The address of the owner of the contributor account
      * @param _contributions The contributions that have been transfered
      */
 
     function onContributionsTransfered(
-        address _sender,
+        address _accountOwner,
         ContributionMinimal[] memory _contributions
-    ) external verifyContributorAccount(_sender) {
+    ) external onlyContributorAccount(_accountOwner) {
         emit DACAggregator__ContributionsTransfered(
-            s_contributorAccounts[_sender],
+            s_contributorAccounts[_accountOwner],
             _contributions
         );
     }
 
     /**
      * @notice Called by a contributor account when the user cancels all contributions
-     * @param _sender The address of the owner of the contributor account
+     * @param _accountOwner The address of the owner of the contributor account
      */
 
     function onAllContributionsCanceled(
-        address _sender
-    ) external verifyContributorAccount(_sender) {
+        address _accountOwner
+    ) external onlyContributorAccount(_accountOwner) {
         emit DACAggregator__AllContributionsCanceled(
-            s_contributorAccounts[_sender]
+            s_contributorAccounts[_accountOwner]
         );
     }
 

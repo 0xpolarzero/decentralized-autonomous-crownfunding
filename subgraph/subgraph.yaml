@@ -6,9 +6,9 @@ dataSources:
     name: DACAggregator
     network: mumbai
     source:
-      address: '0xe6977f708E9F4Fd16e7990617fd43879A6A8Ef82'
+      address: '0x6d7cB6a227860ED758E57f25C3CF9F0a65cdDa73'
       abi: DACAggregator
-      startBlock: 36637910
+      startBlock: 36659757
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

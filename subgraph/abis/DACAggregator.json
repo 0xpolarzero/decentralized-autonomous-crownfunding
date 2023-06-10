@@ -433,7 +433,7 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_sender", "type": "address" }
+      { "internalType": "address", "name": "_accountOwner", "type": "address" }
     ],
     "name": "onAllContributionsCanceled",
     "outputs": [],
@@ -442,7 +442,7 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_sender", "type": "address" },
+      { "internalType": "address", "name": "_accountOwner", "type": "address" },
       {
         "components": [
           {
@@ -475,7 +475,7 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_sender", "type": "address" },
+      { "internalType": "address", "name": "_accountOwner", "type": "address" },
       {
         "components": [
           {
@@ -498,7 +498,7 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_sender", "type": "address" },
+      { "internalType": "address", "name": "_accountOwner", "type": "address" },
       {
         "components": [
           {

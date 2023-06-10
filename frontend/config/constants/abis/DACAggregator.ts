@@ -558,7 +558,7 @@ export const DACAggregatorAbi = [
     "inputs": [
       {
         "type": "address",
-        "name": "_sender"
+        "name": "_accountOwner"
       }
     ],
     "outputs": []
@@ -571,7 +571,7 @@ export const DACAggregatorAbi = [
     "inputs": [
       {
         "type": "address",
-        "name": "_sender"
+        "name": "_accountOwner"
       },
       {
         "type": "tuple",
@@ -610,7 +610,7 @@ export const DACAggregatorAbi = [
     "inputs": [
       {
         "type": "address",
-        "name": "_sender"
+        "name": "_accountOwner"
       },
       {
         "type": "tuple",
@@ -641,7 +641,7 @@ export const DACAggregatorAbi = [
     "inputs": [
       {
         "type": "address",
-        "name": "_sender"
+        "name": "_accountOwner"
       },
       {
         "type": "tuple[]",

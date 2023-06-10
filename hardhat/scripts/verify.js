@@ -1,14 +1,14 @@
 const { run } = require('hardhat');
 const { chainlink } = require('../helper-hardhat-config');
 
-const CONTRACT_ADDRESS = '0xebF5fEb79d650b445a1B916a7B95b4A1BBd43365';
+const CONTRACT_ADDRESS = '0x727389252C2A39A780b43Fd9aa87A98f906e121D';
 
 const ARGS_CONTRIBUTOR_ACCOUNT = [
   '0xAD285b5dF24BDE77A8391924569AF2AD2D4eE4A7', //  owner address
   chainlink[network.name].LINK_TOKEN, // LINK token address
   chainlink[network.name].REGISTRAR, // Upkeep registrar address
   chainlink[network.name].REGISTRY, // Upkeep registry address
-  3600, // Upkeep interval
+  60, // Upkeep interval
   chainlink[network.name].MAX_CONTRIBUTIONS, // Max contributions
   chainlink[network.name].GAS_LIMIT, // Upkeep gas limit
 ];
