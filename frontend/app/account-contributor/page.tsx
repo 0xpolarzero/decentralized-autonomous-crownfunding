@@ -76,11 +76,12 @@ export default function AccountContributorPage() {
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
 
-  const { data: paymentInterval }: any = useContractRead({
-    address: contributorAccountAddress,
-    abi: DACContributorAccountAbi,
-    functionName: "getUpkeepInterval",
-  })
+  const { data: paymentInterval, refetch: refetchPaymentInterval } =
+    useContractRead({
+      address: contributorAccountAddress,
+      abi: DACContributorAccountAbi,
+      functionName: "getUpkeepInterval",
+    })
 
   // Upkeep id
   const { data: upkeepId, refetch: refetchUpkeepId } = useContractRead({
@@ -405,7 +406,9 @@ export default function AccountContributorPage() {
                 />
                 )
               </Button>
-              <ContributorUpdatePaymentInterval refetch={refetchUpkeepInfo} />
+              <ContributorUpdatePaymentInterval
+                refetch={refetchPaymentInterval}
+              />
             </div>
             {isProcessingTransaction ? (
               <span className="text-sm text-muted-foreground">

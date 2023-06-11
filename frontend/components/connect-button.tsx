@@ -17,6 +17,7 @@ export function ConnectButton() {
   const {
     connected,
     currentNetwork,
+    getContributorAccount,
     setConnected,
     setAddress,
     setCurrentNetwork,
@@ -26,6 +27,7 @@ export function ConnectButton() {
   } = useGlobalStore((state) => ({
     connected: state.connected,
     currentNetwork: state.currentNetwork,
+    getContributorAccount: state.getContributorAccount,
     setConnected: state.setConnected,
     setAddress: state.setAddress,
     setCurrentNetwork: state.setCurrentNetwork,
@@ -62,52 +64,8 @@ export function ConnectButton() {
 
   // Contributor account
   useEffect(() => {
-    const resetContributorAccount = () => {
-      setHasContributorAccount(false)
-      setContributorAccountAddress("0x")
-    }
-
-    const getContributorAccount = async () => {
-      try {
-        const chainIdString = chain?.id.toString() || "0"
-        if (!networkMapping[chainIdString]) {
-          resetContributorAccount()
-          return
-        }
-
-        const data = await readContract({
-          address: networkMapping[chainIdString][
-            "DACAggregator"
-          ][0] as `0x${string}`,
-          abi: abi.dacAggregator,
-          functionName: "getContributorAccount",
-          args: [address],
-        })
-
-        if (data && data !== zeroAddress) {
-          setHasContributorAccount(true)
-          setContributorAccountAddress(data as `0x${string}`)
-        } else {
-          resetContributorAccount()
-        }
-      } catch (err) {
-        console.log(err)
-        resetContributorAccount()
-      }
-
-      setLoading(false)
-    }
-
-    getContributorAccount()
-  }, [
-    connected,
-    currentNetwork,
-    address,
-    chain?.id,
-    setContributorAccountAddress,
-    setHasContributorAccount,
-    setLoading,
-  ])
+    if (currentNetwork) getContributorAccount()
+  }, [currentNetwork])
 
   return <ConnectKitButton />
 }

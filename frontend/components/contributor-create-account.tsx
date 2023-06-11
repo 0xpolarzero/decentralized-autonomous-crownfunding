@@ -25,7 +25,10 @@ import {
 } from "./ui/dialog"
 
 export default function ContributorCreateAccount() {
-  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
+  const { currentNetwork, getContributorAccount } = useGlobalStore((state) => ({
+    currentNetwork: state.currentNetwork,
+    getContributorAccount: state.getContributorAccount,
+  }))
 
   const { toast } = useToast()
 
@@ -72,6 +75,8 @@ export default function ContributorCreateAccount() {
               </>
             ),
           })
+
+          getContributorAccount()
         } else {
           toast({
             variant: "destructive",

@@ -1,7 +1,11 @@
+import { readContract } from "@wagmi/core"
+import { zeroAddress } from "viem"
 import { create } from "zustand"
 
 import { NetworkInfo } from "@/types/network"
 import { GlobalStore } from "@/types/stores"
+import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
+import { networkConfig, networkMapping } from "@/config/network"
 
 export default create<GlobalStore>((set, get) => ({
   // Wallet
@@ -22,6 +26,47 @@ export default create<GlobalStore>((set, get) => ({
   hasContributorAccount: false,
   setHasContributorAccount: (hasContributorAccount: boolean) =>
     set({ hasContributorAccount }),
+
+  getContributorAccount: async () => {
+    const chainId =
+      get().currentNetwork?.chainId.toString() ||
+      networkConfig.networks[networkConfig.defaultNetwork].chainId.toString()
+
+    const resetContributorAccount = () => {
+      set({
+        contributorAccountAddress: "0x",
+        hasContributorAccount: false,
+      })
+    }
+
+    try {
+      if (!networkMapping[chainId]) {
+        resetContributorAccount()
+        return
+      }
+
+      const data = await readContract({
+        address: networkMapping[chainId]["DACAggregator"][0] as `0x${string}`,
+        abi: DACAggregatorAbi,
+        functionName: "getContributorAccount",
+        args: [get().address],
+      })
+
+      if (data && data !== zeroAddress) {
+        set({
+          contributorAccountAddress: data as `0x${string}`,
+          hasContributorAccount: true,
+        })
+      } else {
+        resetContributorAccount()
+      }
+    } catch (err) {
+      console.log(err)
+      resetContributorAccount()
+    }
+
+    set({ loading: false })
+  },
 
   // Loading
   loading: true,

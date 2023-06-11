@@ -15,6 +15,7 @@ export interface GlobalStore {
   ) => void
   hasContributorAccount: boolean
   setHasContributorAccount: (hasContributorAccount: boolean) => void
+  getContributorAccount: () => Promise<void>
   loading: boolean
   setLoading: (loading: boolean) => void
   shouldRefresh: boolean

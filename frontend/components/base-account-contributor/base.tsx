@@ -1,9 +1,6 @@
 import useGlobalStore from "@/stores/useGlobalStore"
-import { zeroAddress } from "viem"
-import { useContractRead } from "wagmi"
 
 import { UpkeepInfo } from "@/types/contributor-account"
-import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { Skeleton } from "@/components/ui/skeleton"
 import UpkeepComponent from "@/components/base-account-contributor/upkeep"
 import UpkeepCreateComponent from "@/components/base-account-contributor/upkeep-create"
@@ -23,17 +20,13 @@ const BaseComponent: React.FC<BaseComponentProps> = ({
   refetchUpkeepInfo,
   refetchUpkeepId,
 }) => {
-  const {
-    connected,
-    contributorAccountAddress,
-    hasContributorAccount,
-    walletLoading,
-  } = useGlobalStore((state) => ({
-    connected: state.connected,
-    contributorAccountAddress: state.contributorAccountAddress,
-    hasContributorAccount: state.hasContributorAccount,
-    walletLoading: state.loading,
-  }))
+  const { connected, hasContributorAccount, walletLoading } = useGlobalStore(
+    (state) => ({
+      connected: state.connected,
+      hasContributorAccount: state.hasContributorAccount,
+      walletLoading: state.loading,
+    })
+  )
 
   if (walletLoading) return <Skeleton className="h-20 w-full" />
   if (!connected || !hasContributorAccount) return null
