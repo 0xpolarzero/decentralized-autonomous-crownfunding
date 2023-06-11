@@ -4,7 +4,6 @@ import { formatUnits } from "viem"
 import { useContractRead } from "wagmi"
 
 import { UpkeepInfo } from "@/types/contributor-account"
-import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { KeeperRegistry2_0Abi } from "@/config/constants/abis/KeeperRegistry2_0"
 import { networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
