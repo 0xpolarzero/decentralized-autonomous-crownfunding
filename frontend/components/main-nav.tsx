@@ -32,7 +32,6 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { Separator } from "@/components/ui/separator"
 import { Icons } from "@/components/icons"
 
 interface MainNavProps {
@@ -46,8 +45,10 @@ const iconComponents = {
 }
 
 export function MainNav({ items }: MainNavProps) {
-  const { theme } = useTheme()
+  const { theme, resolvedTheme } = useTheme()
   const { isSizeSmallerThan } = useWindowSize()
+
+  const effectiveTheme = resolvedTheme || theme
 
   return (
     <div className="flex gap-6 md:gap-10">
@@ -56,12 +57,16 @@ export function MainNav({ items }: MainNavProps) {
         <>
           <Link href="/" className="flex items-center space-x-2">
             {/* <Icons.logo className="h-6 w-6" /> */}
-            <Image
-              src={theme === "dark" ? Icons.logoWhite : Icons.logoBlack}
-              alt="Logo"
-              width={24}
-              height={24}
-            />
+            {effectiveTheme ? (
+              <Image
+                src={
+                  effectiveTheme === "dark" ? Icons.logoWhite : Icons.logoBlack
+                }
+                alt="Logo"
+                width={24}
+                height={24}
+              />
+            ) : null}
             <span className="inline-block font-bold">{siteConfig.name}</span>
           </Link>
           <NavigationMenu>
