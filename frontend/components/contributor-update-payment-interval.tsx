@@ -44,9 +44,6 @@ export default function ContributorUpdatePaymentInterval({
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
-  console.log("raw", currentPaymentInterval)
-  console.log("days", Math.floor(currentPaymentInterval / 86400))
-
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
   const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(
