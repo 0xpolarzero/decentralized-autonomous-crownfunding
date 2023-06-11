@@ -21,8 +21,8 @@ const getScreenSize = (width: number): WindowSize => {
 }
 
 const useWindowSize = () => {
-  const [width, setWidth] = useState<number>(0)
-  const [windowSize, setWindowSize] = useState<WindowSize>(getScreenSize(0))
+  const [width, setWidth] = useState<number>(window?.innerWidth || 0)
+  const [windowSize, setWindowSize] = useState<WindowSize>(getScreenSize(width))
 
   const isSizeSmallerThan = (compareWith: WindowSize): boolean => {
     return breakpoints[windowSize] < breakpoints[compareWith]
