@@ -46,12 +46,14 @@ export default function ContributorUpdatePaymentInterval({
 
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
-  const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(
-    currentPaymentInterval - (currentPaymentInterval % 86400)
-  )
-  const [paymentIntervalHours, setPaymentIntervalHours] = useState<number>(
-    currentPaymentInterval % 86400
-  )
+  const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(604800)
+  const [paymentIntervalHours, setPaymentIntervalHours] = useState<number>(0)
+  useEffect(() => {
+    setPaymentIntervalDays(
+      currentPaymentInterval - (currentPaymentInterval % 86400)
+    )
+    setPaymentIntervalHours(currentPaymentInterval % 86400)
+  }, [currentPaymentInterval])
 
   const { isLoading: isUpdatingInterval, write: updateInterval } =
     useContractWrite({
