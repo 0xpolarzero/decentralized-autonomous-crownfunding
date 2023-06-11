@@ -58,7 +58,7 @@ yarn hardhat coverage
 # same as above, you can add the --network flag
 ```
 
-`yarn hardhat coverage` will report the coverage of the unit tests. The staging tests are not included in the coverage report. This is why it will be critical for `DACAggregator` & `DACContributorAccount`, the same way as for their Mock versions while running `yarn hardhat coverage --network mumbai`.
+`yarn hardhat coverage` will report the coverage of the unit tests. The staging tests are not included in the coverage report. This is why it will be critical for `DACAggregator` & `DACContributorAccount`.
 
 To get the gas usage report included or not, change `enabled` to `true` or `false` in the hardhat.config.js file.
 
