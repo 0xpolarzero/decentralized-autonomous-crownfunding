@@ -24,11 +24,12 @@ import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with
 interface UpkeepCancelDialogComponentProps {
   upkeepId: string | undefined
   alreadyCanceled: boolean
+  refetch: () => void
 }
 
 const UpkeepCancelDialogComponent: React.FC<
   UpkeepCancelDialogComponentProps
-> = ({ upkeepId, alreadyCanceled }) => {
+> = ({ upkeepId, alreadyCanceled, refetch }) => {
   const { address, currentNetwork } = useGlobalStore((state) => ({
     address: state.address,
     currentNetwork: state.currentNetwork,
@@ -102,6 +103,8 @@ const UpkeepCancelDialogComponent: React.FC<
               </>
             ),
           })
+
+          refetch()
         } else {
           toast({
             variant: "destructive",
@@ -161,6 +164,8 @@ const UpkeepCancelDialogComponent: React.FC<
               </>
             ),
           })
+
+          refetch()
         } else {
           toast({
             variant: "destructive",

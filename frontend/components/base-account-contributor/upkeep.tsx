@@ -1,5 +1,6 @@
 import useGlobalStore from "@/stores/useGlobalStore"
 import { LucideCreditCard, LucideTrash2 } from "lucide-react"
+import { formatUnits } from "viem"
 import { useContractRead } from "wagmi"
 
 import { UpkeepInfo } from "@/types/contributor-account"
@@ -13,29 +14,22 @@ import UpkeepCancelDialogComponent from "@/components/base-account-contributor/u
 import UpkeepFundDialogComponent from "@/components/base-account-contributor/upkeep-fund"
 import UpkeepInformationComponent from "@/components/base-account-contributor/upkeep-information"
 import UpkeepPauseComponent from "@/components/base-account-contributor/upkeep-pause"
-import CurrencyComponent from "@/components/ui-extended/currency"
 import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with-condition"
 
 interface UpkeepComponentProps {
+  upkeepId: bigint | null
   upkeep: UpkeepInfo | null
+  refetchUpkeep: () => void
 }
 
-const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
-  const { contributorAccountAddress, currentNetwork } = useGlobalStore(
-    (state) => ({
-      contributorAccountAddress: state.contributorAccountAddress,
-      currentNetwork: state.currentNetwork,
-    })
-  )
+const UpkeepComponent: React.FC<UpkeepComponentProps> = ({
+  upkeepId,
+  upkeep,
+  refetchUpkeep,
+}) => {
+  const currentNetwork = useGlobalStore((state) => state.currentNetwork)
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
-
-  // Upkeep id
-  const { data: upkeepId } = useContractRead({
-    address: contributorAccountAddress,
-    abi: DACContributorAccountAbi,
-    functionName: "getUpkeepId",
-  })
 
   // Min balance for upkeep
   const { data: minBalance } = useContractRead({
@@ -62,12 +56,16 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
               tooltipContent="You can't add funds to your Upkeep if it is canceled"
               condition={upkeep?.canceled || false}
             />
-            <UpkeepFundDialogComponent upkeepId={upkeepId as bigint} />
+            <UpkeepFundDialogComponent
+              upkeepId={upkeepId as bigint}
+              refetch={refetchUpkeep}
+            />
           </Dialog>
           <UpkeepPauseComponent
             upkeepId={upkeepId as bigint}
             paused={upkeep?.paused}
             canceled={upkeep?.canceled}
+            refetch={refetchUpkeep}
           />
           <Dialog>
             <TooltipWithConditionComponent
@@ -85,6 +83,7 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
             <UpkeepCancelDialogComponent
               upkeepId={upkeepId?.toString()}
               alreadyCanceled={upkeep?.canceled || false}
+              refetch={refetchUpkeep}
             />
           </Dialog>
         </div>
@@ -94,13 +93,13 @@ const UpkeepComponent: React.FC<UpkeepComponentProps> = ({ upkeep }) => {
         />
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="text-xs text-muted-foreground">
         Please try to keep a balance above{" "}
         {minBalance ? (
-          <>
-            <CurrencyComponent amount={Number(minBalance)} currency="link" />{" "}
+          <b>
+            {Number(Number(formatUnits(BigInt(minBalance), 18)).toFixed(4))}{" "}
             LINK
-          </>
+          </b>
         ) : (
           <Skeleton className="h-4 w-20" />
         )}{" "}

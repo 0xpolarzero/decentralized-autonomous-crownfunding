@@ -24,7 +24,11 @@ import {
   DialogTrigger,
 } from "./ui/dialog"
 
-export default function ContributorUpdatePaymentInterval() {
+export default function ContributorUpdatePaymentInterval({
+  refetch,
+}: {
+  refetch: () => void
+}) {
   const { contributorAccountAddress, currentNetwork } = useGlobalStore(
     (state) => ({
       contributorAccountAddress: state.contributorAccountAddress,
@@ -77,6 +81,8 @@ export default function ContributorUpdatePaymentInterval() {
               </>
             ),
           })
+
+          refetch()
         } else {
           toast({
             variant: "destructive",

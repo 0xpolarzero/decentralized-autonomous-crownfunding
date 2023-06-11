@@ -7,10 +7,11 @@ import useGlobalStore from "@/stores/useGlobalStore"
 import { useQuery } from "@apollo/client"
 import { waitForTransaction } from "@wagmi/core"
 import { Loader2, LucideCompass, LucideSend, PauseCircle } from "lucide-react"
-import { TransactionReceipt } from "viem"
+import { TransactionReceipt, zeroAddress } from "viem"
 import { useContractRead, useContractWrite } from "wagmi"
 
 import { Contribution, ContributionToSend } from "@/types/contributions"
+import { UpkeepInfo } from "@/types/contributor-account"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import {
   GET_CONTRIBUTOR_ACCOUNT,
@@ -22,7 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
-import UpkeepComponent from "@/components/base-account-contributor/base"
+import UpkeepBase from "@/components/base-account-contributor/base"
 import ClientOnly from "@/components/client-only"
 import ContributorCreateAccount from "@/components/contributor-create-account"
 import ContributorUpdatePaymentInterval from "@/components/contributor-update-payment-interval"
@@ -67,6 +68,7 @@ export default function AccountContributorPage() {
 
   const { toast } = useToast()
 
+  const [isUpkeepRegistered, setIsUpkeepRegistered] = useState<boolean>(false)
   const [searchValue, setSearchValue] = useState<string>("")
   const [contributions, setContributions] = useState<Contribution[]>([])
   const [totalDistributed, setTotalDistributed] = useState<number>(0)
@@ -80,6 +82,22 @@ export default function AccountContributorPage() {
     functionName: "getUpkeepInterval",
   })
 
+  // Upkeep id
+  const { data: upkeepId, refetch: refetchUpkeepId } = useContractRead({
+    address: contributorAccountAddress,
+    abi: DACContributorAccountAbi,
+    functionName: "getUpkeepId",
+  })
+
+  // Upkeep info
+  const { data: upkeepData, refetch: refetchUpkeepInfo } = useContractRead({
+    address: contributorAccountAddress,
+    abi: DACContributorAccountAbi,
+    functionName: "getUpkeep",
+  })
+  const upkeepInfo = upkeepData as UpkeepInfo
+
+  // Transactions
   const { isLoading: isSendingContributions, write: sendContributions } =
     useContractWrite({
       address: contributorAccountAddress,
@@ -194,6 +212,21 @@ export default function AccountContributorPage() {
     }
   }, [contributorData, address, hasContributorAccount])
 
+  useEffect(() => {
+    if (
+      !upkeepInfo ||
+      upkeepInfo.admin === zeroAddress ||
+      // Canceled & balance is 0
+      (Number(upkeepInfo.maxValidBlocknumber) !==
+        4_294_967_295 /* max uint32 */ &&
+        upkeepInfo.balance === BigInt(0))
+    ) {
+      setIsUpkeepRegistered(false)
+    } else {
+      setIsUpkeepRegistered(true)
+    }
+  }, [upkeepData])
+
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <ClientOnly>
@@ -228,7 +261,13 @@ export default function AccountContributorPage() {
           </>
         ) : (
           <>
-            <UpkeepComponent />
+            <UpkeepBase
+              upkeepInfo={upkeepInfo}
+              upkeepId={upkeepId as bigint | null}
+              isUpkeepRegistered={isUpkeepRegistered}
+              refetchUpkeepInfo={refetchUpkeepInfo}
+              refetchUpkeepId={refetchUpkeepId}
+            />
             <Separator />
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
@@ -265,10 +304,12 @@ export default function AccountContributorPage() {
                 Next payment expected
                 {loading || walletLoading ? (
                   <Skeleton className="h-6 w-20" />
-                ) : Number(
-                    contributorData?.contributorAccounts[0]
-                      .lastContributionsTransferedAt
-                  ) +
+                ) : !isUpkeepRegistered ? (
+                  <span className="text-sm text-muted-foreground">
+                    Upkeep not registered
+                  </span>
+                ) : contributorData?.contributorAccounts[0]
+                    .lastContributionsTransferedAt +
                     Number(paymentInterval) <
                   new Date().getTime() / 1000 ? (
                   // The last payment was missed
@@ -335,7 +376,7 @@ export default function AccountContributorPage() {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="default"
                 className="grow"
@@ -364,7 +405,7 @@ export default function AccountContributorPage() {
                 />
                 )
               </Button>
-              <ContributorUpdatePaymentInterval />
+              <ContributorUpdatePaymentInterval refetch={refetchUpkeepInfo} />
             </div>
             {isProcessingTransaction ? (
               <span className="text-sm text-muted-foreground">

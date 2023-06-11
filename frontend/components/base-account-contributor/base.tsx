@@ -8,9 +8,21 @@ import { Skeleton } from "@/components/ui/skeleton"
 import UpkeepComponent from "@/components/base-account-contributor/upkeep"
 import UpkeepCreateComponent from "@/components/base-account-contributor/upkeep-create"
 
-interface BaseComponentProps {}
+interface BaseComponentProps {
+  upkeepInfo: UpkeepInfo
+  upkeepId: bigint | null
+  isUpkeepRegistered: boolean
+  refetchUpkeepInfo: () => void
+  refetchUpkeepId: () => void
+}
 
-const BaseComponent: React.FC<BaseComponentProps> = () => {
+const BaseComponent: React.FC<BaseComponentProps> = ({
+  upkeepInfo,
+  upkeepId,
+  isUpkeepRegistered,
+  refetchUpkeepInfo,
+  refetchUpkeepId,
+}) => {
   const {
     connected,
     contributorAccountAddress,
@@ -23,35 +35,28 @@ const BaseComponent: React.FC<BaseComponentProps> = () => {
     walletLoading: state.loading,
   }))
 
-  const { data: upkeepData, refetch } = useContractRead({
-    address: contributorAccountAddress,
-    abi: DACContributorAccountAbi,
-    functionName: "getUpkeep",
-  })
-  const upkeepInfo = upkeepData as UpkeepInfo
-
   if (walletLoading) return <Skeleton className="h-20 w-full" />
   if (!connected || !hasContributorAccount) return null
 
-  if (
-    !upkeepInfo ||
-    upkeepInfo.admin === zeroAddress ||
-    // Canceled & balance is 0
-    (Number(upkeepInfo.maxValidBlocknumber) !==
-      4_294_967_295 /* max uint32 */ &&
-      upkeepInfo.balance === BigInt(0))
-  )
-    return <UpkeepCreateComponent refetch={refetch} />
+  if (!isUpkeepRegistered)
+    return (
+      <UpkeepCreateComponent
+        refetchUpkeepId={refetchUpkeepId}
+        refetchUpkeepInfo={refetchUpkeepInfo}
+      />
+    )
 
   return (
     <div className="flex flex-col gap-2">
       <UpkeepComponent
+        upkeepId={upkeepId}
         upkeep={{
           ...upkeepInfo,
           canceled:
             upkeepInfo.maxValidBlocknumber !==
             BigInt(4_294_967_295) /* max uint32 */,
         }}
+        refetchUpkeep={refetchUpkeepInfo}
       />
     </div>
   )

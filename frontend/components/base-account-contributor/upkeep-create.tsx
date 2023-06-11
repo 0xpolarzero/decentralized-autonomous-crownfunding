@@ -21,11 +21,13 @@ const parseAmount = (value: number | string) =>
   parseUnits(`${Number(value)}`, 18)
 
 interface UpkeepCreateComponentProps {
-  refetch: () => void
+  refetchUpkeepId: () => void
+  refetchUpkeepInfo: () => void
 }
 
 const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
-  refetch,
+  refetchUpkeepId,
+  refetchUpkeepInfo,
 }) => {
   const { contributorAccountAddress, currentNetwork } = useGlobalStore(
     (state) => ({
@@ -147,7 +149,8 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
           ),
         })
 
-        refetch()
+        refetchUpkeepId()
+        refetchUpkeepInfo()
       } else {
         toast({
           variant: "destructive",

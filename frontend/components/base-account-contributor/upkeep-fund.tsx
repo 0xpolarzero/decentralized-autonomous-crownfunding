@@ -26,10 +26,12 @@ import TooltipWithConditionComponent from "@/components/ui-extended/tooltip-with
 
 interface UpkeepFundDialogComponentProps {
   upkeepId: bigint
+  refetch: () => void
 }
 
 const UpkeepFundDialogComponent: React.FC<UpkeepFundDialogComponentProps> = ({
   upkeepId,
+  refetch,
 }) => {
   const { address, currentNetwork } = useGlobalStore((state) => ({
     address: state.address,
@@ -56,7 +58,6 @@ const UpkeepFundDialogComponent: React.FC<UpkeepFundDialogComponentProps> = ({
   })
 
   const fundUpkeep = async () => {
-    console.log(allowance, linkAmount)
     try {
       setIsProcessingTransaction(true)
 
@@ -152,6 +153,8 @@ const UpkeepFundDialogComponent: React.FC<UpkeepFundDialogComponentProps> = ({
             </>
           ),
         })
+
+        refetch()
       } else {
         toast({
           variant: "destructive",

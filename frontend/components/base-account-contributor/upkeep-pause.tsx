@@ -17,12 +17,14 @@ interface UpkeepPauseComponentProps {
   upkeepId: bigint
   paused: boolean | undefined
   canceled: boolean | undefined
+  refetch: () => void
 }
 
 const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
   upkeepId,
   paused,
   canceled,
+  refetch,
 }) => {
   const { toast } = useToast()
 
@@ -71,6 +73,8 @@ const UpkeepPauseComponent: React.FC<UpkeepPauseComponentProps> = ({
               </>
             ),
           })
+
+          refetch()
         } else {
           toast({
             variant: "destructive",
