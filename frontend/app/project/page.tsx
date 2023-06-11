@@ -12,6 +12,7 @@ import {
   GET_PROJECT_BY_SLUG_CONTRACT,
   POLL_INTERVAL,
 } from "@/config/constants/subgraph-queries"
+import useWindowSize from "@/hooks/window-size"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
@@ -35,6 +36,8 @@ export default function ProjectPage() {
     currentNetwork: state.currentNetwork,
     hasContributorAccount: state.hasContributorAccount,
   }))
+
+  const { width: windowWidth, isSizeSmallerThan } = useWindowSize()
 
   const [contractAddress, setContractAddress] = useState<string | null>("")
   const [project, setProject] = useState<Project | null>(null)
@@ -235,7 +238,7 @@ export default function ProjectPage() {
             {/* -------------------------------------------------------------------------- */
             /*                                   FOOTER                                   */
             /* -------------------------------------------------------------------------- */}
-            <div className="my-2 flex w-[100%] justify-between gap-4 text-sm text-muted-foreground">
+            <div className="my-2 flex w-[100%] flex-wrap justify-between gap-4 text-sm text-muted-foreground">
               <TooltipComponent
                 shownContent={
                   <>
@@ -297,7 +300,13 @@ export default function ProjectPage() {
             /*                                CONTRIBUTORS                                */
             /* -------------------------------------------------------------------------- */}
             <span className="text-lg opacity-80">Contributors</span>
-            <div className="w-[100%]">
+            <div
+              className="w-[100%]"
+              style={{
+                // Just a trick we need to use because this table won't shrink like the others
+                width: isSizeSmallerThan("md") ? `${windowWidth - 60}px` : "",
+              }}
+            >
               {loading ? (
                 <DataTableSkeleton
                   columns={columnsContributors}

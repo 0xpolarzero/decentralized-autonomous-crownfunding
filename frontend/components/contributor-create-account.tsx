@@ -10,10 +10,6 @@ import { useContractWrite } from "wagmi"
 import { DACAggregatorAbi } from "@/config/constants/abis/DACAggregator"
 import { networkConfig, networkMapping } from "@/config/network"
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
-import { useToast } from "@/components/ui/use-toast"
-import InfoComponent from "@/components/ui-extended/info"
-
 import {
   Dialog,
   DialogContent,
@@ -22,7 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog"
+} from "@/components/ui/dialog"
+import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/components/ui/use-toast"
+import InfoComponent from "@/components/ui-extended/info"
 
 export default function ContributorCreateAccount() {
   const { currentNetwork, getContributorAccount } = useGlobalStore((state) => ({

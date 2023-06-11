@@ -10,11 +10,6 @@ import { useContractWrite } from "wagmi"
 import { DACContributorAccountAbi } from "@/config/constants/abis/DACContributorAccount"
 import { networkConfig } from "@/config/network"
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
-import { useToast } from "@/components/ui/use-toast"
-import InfoComponent from "@/components/ui-extended/info"
-
-import DurationComponent from "./ui-extended/duration"
 import {
   Dialog,
   DialogContent,
@@ -23,7 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog"
+} from "@/components/ui/dialog"
+import { Slider } from "@/components/ui/slider"
+import { useToast } from "@/components/ui/use-toast"
+import DurationComponent from "@/components/ui-extended/duration"
+import InfoComponent from "@/components/ui-extended/info"
 
 export default function ContributorUpdatePaymentInterval({
   currentPaymentInterval,

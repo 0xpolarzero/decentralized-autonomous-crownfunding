@@ -18,6 +18,7 @@ export function SiteHeader() {
               href={siteConfig.links.github}
               target="_blank"
               rel="noreferrer"
+              className="hidden md:block"
             >
               <div
                 className={buttonVariants({
@@ -45,7 +46,6 @@ export function SiteHeader() {
               </div>
             </Link> */}
             <ThemeToggle />
-
             <ConnectButton />
           </nav>
         </div>

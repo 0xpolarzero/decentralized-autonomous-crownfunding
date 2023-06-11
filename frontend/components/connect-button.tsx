@@ -2,38 +2,29 @@
 
 import { useEffect } from "react"
 import useGlobalStore from "@/stores/useGlobalStore"
-import { readContract } from "@wagmi/core"
 import { ConnectKitButton } from "connectkit"
-import { zeroAddress } from "viem"
 import { useAccount, useNetwork } from "wagmi"
 
-import { NetworkInfo, NetworkName } from "@/types/network"
-import { abi, networkConfig, networkMapping } from "@/config/network"
+import { NetworkName } from "@/types/network"
+import { networkConfig } from "@/config/network"
+import { Button } from "@/components/ui/button"
 
 export function ConnectButton() {
   const { address, isConnected } = useAccount()
   const { chain } = useNetwork()
 
   const {
-    connected,
     currentNetwork,
     getContributorAccount,
     setConnected,
     setAddress,
     setCurrentNetwork,
-    setContributorAccountAddress,
-    setHasContributorAccount,
-    setLoading,
   } = useGlobalStore((state) => ({
-    connected: state.connected,
     currentNetwork: state.currentNetwork,
     getContributorAccount: state.getContributorAccount,
     setConnected: state.setConnected,
     setAddress: state.setAddress,
     setCurrentNetwork: state.setCurrentNetwork,
-    setContributorAccountAddress: state.setContributorAccountAddress,
-    setHasContributorAccount: state.setHasContributorAccount,
-    setLoading: state.setLoading,
   }))
 
   // Address & connected status
@@ -67,5 +58,19 @@ export function ConnectButton() {
     if (currentNetwork) getContributorAccount()
   }, [currentNetwork])
 
-  return <ConnectKitButton />
+  return (
+    <ConnectKitButton.Custom>
+      {({ isConnected, show, truncatedAddress, ensName }) => {
+        return (
+          <Button
+            variant="secondary"
+            className="whitespace-nowrap"
+            onClick={show}
+          >
+            {isConnected ? ensName ?? truncatedAddress : "Connect Wallet"}
+          </Button>
+        )
+      }}
+    </ConnectKitButton.Custom>
+  )
 }
