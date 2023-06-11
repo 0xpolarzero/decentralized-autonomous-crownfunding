@@ -148,7 +148,7 @@ export default function ExplorePage() {
               Clear
             </button>
           </div>
-          <div className="flex w-[100%] items-center justify-between gap-2">
+          <div className="flex w-[100%] flex-wrap items-center justify-between gap-2">
             <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
               Latest projects
             </h1>
@@ -174,7 +174,7 @@ export default function ExplorePage() {
               />
             )}
           </div>
-          <p className="max-w-[700px] text-lg text-muted-foreground">
+          <p className="hidden max-w-[700px] text-lg text-muted-foreground sm:block">
             Explore the latest projects campaigns listed on our platform.
           </p>
         </div>

@@ -442,7 +442,7 @@ export default function AccountContributorPage() {
                   Clear
                 </button>
               </div>
-              <div className="flex w-[100%] items-center justify-between gap-2">
+              <div className="flex w-[100%] flex-wrap items-center justify-between gap-2">
                 <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
                   Your contributions
                 </h1>
@@ -451,7 +451,7 @@ export default function AccountContributorPage() {
                   <span>Explore projects</span>
                 </Link>
               </div>
-              <p className="max-w-[700px] text-lg text-muted-foreground">
+              <p className="hidden max-w-[700px] text-lg text-muted-foreground sm:block">
                 Manage your contributions.
               </p>
             </div>
@@ -460,7 +460,7 @@ export default function AccountContributorPage() {
                 <DataTableSkeleton columns={columnsSkeleton} rowCount={10} />
               ) : error ? (
                 "There was an error fetching the projects. Please try again later."
-              ) : contributions.length ? (
+              ) : (
                 <DataTable
                   columns={columns}
                   // @ts-ignore
@@ -471,8 +471,6 @@ export default function AccountContributorPage() {
                     paymentInterval as bigint
                   )}
                 />
-              ) : (
-                "You don't have any contributions yet."
               )}
             </div>
           </>
