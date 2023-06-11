@@ -5,6 +5,7 @@ import { siteConfig } from "@/config/site"
 import { fontMono } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { ApolloProviderWrapper } from "@/components/apollo-provider"
 import { Footer } from "@/components/footer"
 import { SiteHeader } from "@/components/site-header"
@@ -49,7 +50,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
               <ApolloProviderWrapper>
                 <div className="relative flex min-h-screen flex-col">
                   <SiteHeader />
-                  <div className="flex-1">{children}</div>
+                  <TooltipProvider>
+                    <div className="flex-1">{children}</div>
+                  </TooltipProvider>
                   <Footer />
                   <Toaster />
                 </div>

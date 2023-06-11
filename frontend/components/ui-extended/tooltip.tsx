@@ -17,12 +17,10 @@ const TooltipComponent: React.FC<TooltipComponentProps> = ({
   tooltipContent,
 }) => {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger>{shownContent}</TooltipTrigger>
-        <TooltipContent>{tooltipContent}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger>{shownContent}</TooltipTrigger>
+      <TooltipContent>{tooltipContent}</TooltipContent>
+    </Tooltip>
   )
 }
 
