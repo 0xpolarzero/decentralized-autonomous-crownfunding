@@ -31,7 +31,7 @@ const useWindowSize = () => {
   }
 
   useEffect(() => {
-    if (!window) return
+    if (window === undefined) return
 
     const handleResize = () => {
       setWindowSize(getScreenSize(window.innerWidth))
