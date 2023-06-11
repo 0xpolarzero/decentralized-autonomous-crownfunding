@@ -21,9 +21,9 @@ const getScreenSize = (width: number): WindowSize => {
 }
 
 const useWindowSize = () => {
-  const [width, setWidth] = useState<number>(window.innerWidth)
+  const [width, setWidth] = useState<number>(window?.innerWidth)
   const [windowSize, setWindowSize] = useState<WindowSize>(
-    getScreenSize(window.innerWidth)
+    getScreenSize(window?.innerWidth)
   )
 
   const isSizeSmallerThan = (compareWith: WindowSize): boolean => {
@@ -31,6 +31,8 @@ const useWindowSize = () => {
   }
 
   useEffect(() => {
+    if (!window) return
+
     const handleResize = () => {
       setWindowSize(getScreenSize(window.innerWidth))
       setWidth(window.innerWidth)

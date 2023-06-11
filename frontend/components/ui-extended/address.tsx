@@ -39,7 +39,7 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
       fetchEnsName({ address }).then((name) => {
         setEnsName(name)
       })
-  }, [address, tryEns])
+  }, [address, tryEns, currentNetwork?.ensSupported])
 
   return (
     <TooltipProvider>

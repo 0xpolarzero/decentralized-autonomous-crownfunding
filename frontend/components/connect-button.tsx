@@ -56,7 +56,7 @@ export function ConnectButton() {
   // Contributor account
   useEffect(() => {
     if (currentNetwork) getContributorAccount()
-  }, [currentNetwork])
+  }, [currentNetwork, getContributorAccount])
 
   return (
     <ConnectKitButton.Custom>

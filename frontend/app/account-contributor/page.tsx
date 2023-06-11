@@ -226,7 +226,7 @@ export default function AccountContributorPage() {
     } else {
       setIsUpkeepRegistered(true)
     }
-  }, [upkeepData])
+  }, [upkeepData, upkeepInfo])
 
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">

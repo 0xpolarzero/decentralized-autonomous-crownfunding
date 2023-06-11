@@ -114,7 +114,7 @@ export default function ContributorUpdatePaymentInterval({
   useEffect(() => {
     if (paymentIntervalDays === 0 && paymentIntervalHours === 0)
       setPaymentIntervalHours(3600)
-  }, [paymentIntervalDays])
+  }, [paymentIntervalDays, paymentIntervalHours])
 
   return (
     <Dialog>
