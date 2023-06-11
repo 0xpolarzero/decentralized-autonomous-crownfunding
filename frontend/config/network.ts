@@ -66,6 +66,7 @@ export const networkConfig: NetworkConfig = {
       currency: currencies.matic,
       timeout: 120_000, // 2 minutes
       blockDuration: 2_500, // 2.5 seconds
+      confirmations: 3,
       ensSupported: false,
       contracts: {
         LINK: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",

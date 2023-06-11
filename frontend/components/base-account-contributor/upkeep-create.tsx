@@ -80,7 +80,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
 
         const receiptFunding = await waitForTransaction({
           hash: hashFunding,
-          confirmations: 5,
+          confirmations: networkInfo.confirmations || 3,
         })
 
         if (receiptFunding.status === "success") {
@@ -126,7 +126,7 @@ const UpkeepCreateComponent: React.FC<UpkeepCreateComponentProps> = ({
 
       const receiptRegistration = await waitForTransaction({
         hash: hashRegistration,
-        confirmations: 5,
+        confirmations: networkInfo.confirmations || 3,
       })
 
       if (receiptRegistration.status === "success") {

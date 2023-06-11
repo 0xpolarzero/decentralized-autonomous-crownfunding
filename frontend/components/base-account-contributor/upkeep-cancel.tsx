@@ -63,7 +63,7 @@ const UpkeepCancelDialogComponent: React.FC<
 
         const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
-          confirmations: 5,
+          confirmations: networkInfo.confirmations || 3,
         })
         console.log(receipt)
 
@@ -139,7 +139,7 @@ const UpkeepCancelDialogComponent: React.FC<
 
         const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
-          confirmations: 5,
+          confirmations: networkInfo.confirmations || 3,
         })
         console.log(receipt)
         if (receipt.status === "success") {

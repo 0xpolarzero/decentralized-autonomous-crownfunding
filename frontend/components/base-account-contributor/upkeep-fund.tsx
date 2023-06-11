@@ -76,7 +76,7 @@ const UpkeepFundDialogComponent: React.FC<UpkeepFundDialogComponentProps> = ({
 
         const receiptAllowance = await waitForTransaction({
           hash: hashAllowance,
-          confirmations: 5,
+          confirmations: networkInfo.confirmations || 3,
         })
 
         if (receiptAllowance.status === "success") {
@@ -128,7 +128,7 @@ const UpkeepFundDialogComponent: React.FC<UpkeepFundDialogComponentProps> = ({
 
       const receiptFunding = await waitForTransaction({
         hash: hashFunding,
-        confirmations: 5,
+        confirmations: networkInfo.confirmations || 3,
       })
 
       if (receiptFunding.status === "success") {

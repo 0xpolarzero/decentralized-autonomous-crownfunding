@@ -110,7 +110,7 @@ export default function AccountContributorPage() {
 
         const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
-          confirmations: 5,
+          confirmations: networkInfo.confirmations || 3,
         })
         console.log(receipt)
 
@@ -468,7 +468,7 @@ export default function AccountContributorPage() {
                     contributions,
                     totalDistributed,
                     totalStored,
-                    paymentInterval
+                    paymentInterval as bigint
                   )}
                 />
               ) : (

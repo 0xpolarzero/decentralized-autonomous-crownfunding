@@ -65,7 +65,7 @@ export default function ContributorUpdatePaymentInterval({
 
         const receipt: TransactionReceipt = await waitForTransaction({
           hash: tx.hash,
-          confirmations: 5,
+          confirmations: networkInfo.confirmations || 3,
         })
         console.log(receipt)
 
