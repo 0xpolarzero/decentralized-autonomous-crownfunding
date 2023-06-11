@@ -14,6 +14,7 @@ import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/components/ui/use-toast"
 import InfoComponent from "@/components/ui-extended/info"
 
+import DurationComponent from "./ui-extended/duration"
 import {
   Dialog,
   DialogContent,
@@ -25,8 +26,10 @@ import {
 } from "./ui/dialog"
 
 export default function ContributorUpdatePaymentInterval({
+  currentPaymentInterval,
   refetch,
 }: {
+  currentPaymentInterval: number
   refetch: () => void
 }) {
   const { contributorAccountAddress, currentNetwork } = useGlobalStore(
@@ -41,10 +44,17 @@ export default function ContributorUpdatePaymentInterval({
   const networkInfo =
     currentNetwork || networkConfig.networks[networkConfig.defaultNetwork]
 
+  console.log("raw", currentPaymentInterval)
+  console.log("days", Math.floor(currentPaymentInterval / 86400))
+
   const [isProcessingTransaction, setIsProcessingTransaction] =
     useState<boolean>(false)
-  const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(604800) // 7 days
-  const [paymentIntervalHours, setPaymentIntervalHours] = useState<number>(0)
+  const [paymentIntervalDays, setPaymentIntervalDays] = useState<number>(
+    currentPaymentInterval - (currentPaymentInterval % 86400)
+  )
+  const [paymentIntervalHours, setPaymentIntervalHours] = useState<number>(
+    currentPaymentInterval % 86400
+  )
 
   const { isLoading: isUpdatingInterval, write: updateInterval } =
     useContractWrite({
@@ -104,14 +114,26 @@ export default function ContributorUpdatePaymentInterval({
     })
 
   useEffect(() => {
-    if (paymentIntervalDays === 0) setPaymentIntervalHours(3600)
+    if (paymentIntervalDays === 0 && paymentIntervalHours === 0)
+      setPaymentIntervalHours(3600)
   }, [paymentIntervalDays])
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="secondary">
-          <LucideTimer className="mr-2 h-4 w-4" /> Update payment interval
+        <Button variant="secondary" className="gap-2">
+          <div className="flex">
+            <LucideTimer className="mr-2 h-4 w-4" />
+            Update payment interval
+          </div>
+          <div className="font-semibold text-muted-foreground">
+            (
+            <DurationComponent
+              startTimestamp={1} // Just so it's not 0
+              endTimestamp={currentPaymentInterval * 1000 + 1}
+            />
+            )
+          </div>
         </Button>
       </DialogTrigger>
       <DialogContent>

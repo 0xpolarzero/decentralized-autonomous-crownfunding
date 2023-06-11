@@ -407,6 +407,7 @@ export default function AccountContributorPage() {
                 )
               </Button>
               <ContributorUpdatePaymentInterval
+                currentPaymentInterval={Number(paymentInterval)}
                 refetch={refetchPaymentInterval}
               />
             </div>
